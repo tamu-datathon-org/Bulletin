@@ -1,0 +1,31 @@
+{
+  "name": "bulletin",
+  "version": "1.0.0",
+  "description": "Custom Participant Submission Interface & API",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npm run dev",
+    "dev": "node js/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamu-datathon-org/Bulletin.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tamu-datathon-org/Bulletin/issues"
+  },
+  "homepage": "https://github.com/tamu-datathon-org/Bulletin#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongodb": "^4.1.1",
+    "node-sass": "^6.0.1",
+    "pug": "^3.0.2",
+    "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0"
+  }
+}
