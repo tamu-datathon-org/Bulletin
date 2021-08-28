@@ -2,6 +2,7 @@ const path = require('path');
 const submissionService = require('../services/submission');
 const config = require('../utils/config');
 const logger = require('../utils/logger');
+const bouncer = require('./bouncer');
 
 exports.addSubmission = async (req, res) => {
     // define a standard response
@@ -24,7 +25,7 @@ exports.addSubmission = async (req, res) => {
             links: req.body.links || [],
             tags: req.body.tags || [],
             filename: req.body.filename || '',
-            likes: 0,
+            likes: [],
             comments: [],
             submission_time: (new Date()).toISOString(),
         };
@@ -80,15 +81,12 @@ exports.addSubmission = async (req, res) => {
 
 exports.deleteSubmission = async (req, res) => {
     const response = {};
-    const { title } = req.body;
-    const { submission_time } = req.body;
+    const { entryID } = req.params;
     try {
-        if (!title || !submission_time) {
-            throw new Error('title and submission_time fields are required');
+        if (!entryID) {
+            throw new Error('entryID is a required parameter');
         }
-        if (title.length === 0) throw new Error('title and submission_time fields are required');
-        const doc = await submissionService.deleteSubmission(title, submission_time);
-        response.deletedSubmission = doc;
+        response.result = await submissionService.deleteSubmission(entryID);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -119,6 +117,27 @@ exports.fileUpload = async (req, res) => {
         logger.info(err);
         response.error = err.message;
         res.status(400).json(response);
+    }
+};
+
+exports.fileDownload = async (req, res) => {
+    const { entryID } = req.params;
+    try {
+        if (!entryID) throw new Error('entryID is a required parameter');
+        const { filename } = (await submissionService.getSubmissionsDataWithFilters({ entryID }))[0];
+        if (!filename) {
+            throw new Error(`submission with entyID ${entryID} does not exist or does not have an associated file`);
+        }
+        logger.info(filename);
+        const filepath = await submissionService.downloadSubmissionFile(entryID, filename);
+        res.status(200).download(filepath, filename, async (error) => {
+            if (error) throw new Error('unable to send file');
+            await submissionService.removeTmpFile(filepath);
+        });
+    } catch (err) {
+        logger.info(err);
+        const error = err.message;
+        res.status(400).json({ error });
     }
 };
 
@@ -159,6 +178,7 @@ exports.getSubmissionQueryParameters = async (req, res) => {
 exports.updateSubmissionData = async (req, res) => {
     const response = {};
     try {
+        const { entryID } = req.params;
         if (Object.keys(req.body).length === 0) {
             throw new Error('No field(s) to update');
         }
@@ -167,17 +187,15 @@ exports.updateSubmissionData = async (req, res) => {
                 throw new Error(`${field} is not a valid submission field`);
             }
         });
+        if (!entryID) {
+            throw new Error('entryID is a required parameter');
+        }
         const { names } = req.body;
         const { title } = req.body;
         const { links } = req.body;
         const { tags } = req.body;
         const { challenges } = req.body;
-        const { submission_time } = req.body;
-        const { originalTitle } = req.body;
-        if (!submission_time || !originalTitle) {
-            throw new Error('originalTitle and submission_time are required fields');
-        }
-        response.modifiedCount = await submissionService.updateSubmissionData(originalTitle, (new Date(submission_time)).toISOString(), title, names, links, tags, challenges);
+        response.modifiedCount = await submissionService.updateSubmissionData(entryID, title, names, links, tags, challenges);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -186,23 +204,75 @@ exports.updateSubmissionData = async (req, res) => {
     }
 };
 
-exports.updateFileAndUpload = async (req, res) => {
+exports.addLike = async (req, res) => {
     const response = {};
-    const { buffer } = req.file;
     const { entryID } = req.params;
-    const { originalname } = req.file;
     try {
-        if (!buffer) {
-            throw new Error('no file provided');
-        }
+        const username = bouncer.getUsername(req.headers.authorization);
         if (!entryID) {
-            throw new Error('no entryID parameter');
+            throw new Error('entryID is a required parameter');
         }
-        if ((originalname?.length ?? 0) === 0) {
-            throw new Error('no filename provided');
+        response.result = `added ${await submissionService.addLike(username, entryID)} like`;
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+exports.addComment = async (req, res) => {
+    const response = {};
+    const { entryID } = req.params;
+    const { message } = req.body; 
+    try {
+        const username = bouncer.getUsername(req.headers.authorization);
+        if (!entryID) {
+            throw new Error('entryID is a required parameter');
         }
-        await submissionService.uploadSubmissionFile(buffer, entryID, originalname);
-        response.filename = originalname;
+        if (!message) {
+            throw new Error('message is a required field');
+        }
+        const comment_time = (new Date()).toISOString();
+        response.result = `added ${await submissionService.addComment(username, entryID, message, comment_time)} comment`;
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+exports.removeLike = async (req, res) => {
+    const response = {};
+    const { entryID } = req.params;
+    try {
+        const username = bouncer.getUsername(req.headers.authorization);
+        if (!entryID) {
+            throw new Error('entryID is a required parameter');
+        }
+        response.result = `removed ${await submissionService.removeLike(username, entryID)} like`;
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+exports.removeComment = async (req, res) => {
+    const response = {};
+    const { entryID } = req.params;
+    const { time } = req.body;
+    try {
+        const username = bouncer.getUsername(req.headers.authorization);
+        if (!entryID) {
+            throw new Error('entryID is a required parameter');
+        }
+        if (!time) {
+            throw new Error('time is a required field');
+        }
+        response.result = `removed ${await submissionService.removeComment(username, entryID, time)} comment`;
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);

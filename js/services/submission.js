@@ -1,10 +1,12 @@
 const fs = require('fs');
+const path = require('path');
 const { promisify } = require('util');
 const dbUtil = require('../utils/mongoDb');
 const logger = require('../utils/logger');
 const config = require('../utils/config');
 
 const unlink = promisify(fs.unlink);
+const writeFile = promisify(fs.writeFile);
 
 // upload compressed file to firebase
 exports.uploadSubmissionFile = async (buffer, entryID, filename) => {
@@ -13,6 +15,14 @@ exports.uploadSubmissionFile = async (buffer, entryID, filename) => {
     }
     await dbUtil.uploadFile(buffer, entryID, filename);
     logger.info('📌uploaded to GridFS');
+};
+
+exports.downloadSubmissionFile = async (entryID, filename) => {
+    const buffer = await dbUtil.getFileBuffer(entryID);
+    logger.info('📌downloaded from GridFS');
+    const newFilePath = path.join(config.tmp_download_path, `${Date.now()}_${filename}`);
+    await writeFile(newFilePath, buffer);
+    return newFilePath;
 };
 
 // uploads submission to database
@@ -24,7 +34,10 @@ exports.addSubmission = async (submissionObj) => {
 
 exports.removeTmpFile = async (filepath) => {
     try {
-        if (filepath) await unlink(filepath);
+        if (!filepath) {
+            throw new Error('no file path provided');
+        }
+        if (path.dirname(filepath) === config.tmp_download_path) await unlink(filepath);
     } catch (err) {
         if (err.code !== 'ENOENT') logger.info(err.message);
     }
@@ -90,11 +103,11 @@ exports.getAllSubmissionsData = async () => {
     return dbUtil.getAllSubmissionsData();
 };
 
-exports.deleteSubmission = async (title, submission_time) => {
-    return dbUtil.deleteSubmission(title, (new Date(submission_time)).toISOString());
+exports.deleteSubmission = async (entryID) => {
+    return dbUtil.deleteSubmission(entryID);
 };
 
-exports.updateSubmissionData = async (originalTitle, submission_time, title, names, links, tags, challenges) => {
+exports.updateSubmissionData = async (entryID, title, names, links, tags, challenges) => {
     const setOptions = {};
     if (title) setOptions.title = title;
     if (names) {
@@ -115,5 +128,21 @@ exports.updateSubmissionData = async (originalTitle, submission_time, title, nam
         if (!Array.isArray(links)) throw new Error('📌Submsision update names error:: challenges must be a list');
         setOptions.challenges = challenges;
     }
-    return dbUtil.updateSubmissionData(originalTitle, submission_time, setOptions);
+    return dbUtil.updateSubmissionData(entryID, setOptions);
+};
+
+exports.addLike = async (username, entryID) => {
+    return dbUtil.addLike(username, entryID);
+};
+
+exports.addComment = async (username, entryID, message, comment_time) => {
+    return dbUtil.addComment(username, entryID, message, comment_time);
+};
+
+exports.removeLike = async (username, entryID) => {
+    return dbUtil.removeLike(username, entryID);
+};
+
+exports.removeComment = async (username, entryID, comment_time) => {
+    return dbUtil.removeComment(username, entryID, comment_time);
 };

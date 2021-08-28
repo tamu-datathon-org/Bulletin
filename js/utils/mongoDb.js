@@ -1,5 +1,5 @@
-const { Readable } = require('stream');
 const config = require('./config');
+const { Readable } = require('stream');
 const { MongoClient, GridFSBucket, ObjectId } = require('mongodb');
 const logger = require('./logger');
 
@@ -46,7 +46,7 @@ exports.uploadFile = async (buffer, entryID, filename) => {
     try {
         client = await exports.getClient();
         const db = client.db(bulletinDb);
-        const bucket = new GridFSBucket(db, { bucketName: 'fs' });
+        const bucket = new GridFSBucket(db, { bucketName: config.database.bucket_name });
 
         // delete any previous file
         try {
@@ -61,7 +61,7 @@ exports.uploadFile = async (buffer, entryID, filename) => {
 
         // upload the new file
         const upload = new Promise((resolve) => {
-            const readable = Readable.from(buffer.toString());
+            const readable = Readable.from(buffer);
             const bucketStream = bucket.openUploadStream(entryID, {
                 chunkSizeBytes: 1048576,
                 metadata: { field: 'name', value: filename },
@@ -70,15 +70,49 @@ exports.uploadFile = async (buffer, entryID, filename) => {
             bucketStream.on('close', () => resolve());
         });
         await upload;
-        await db.collection(bulletinDb).updateOne(
+        const { modifiedCount } = await db.collection(collections.submissions).updateOne(
             { _id: new ObjectId(entryID) },
             { $set: { filename: filename } },
         );
+        logger.info(`${modifiedCount} submissions updated`);
         await exports.closeClient(client);
     } catch (err) {
         await exports.closeClient(client);
-        logger.info(`📌Error uploading files ${err.message}`);
-        throw new Error('Error uploading files');
+        logger.info(`📌Error uploading file ${err.message}`);
+        throw new Error('Error uploading file');
+    }
+};
+
+exports.getFileBuffer = async (entryID) => {
+    let client = null;
+    try {
+        client = await exports.getClient();
+        const db = client.db(bulletinDb);
+        const bucket = new GridFSBucket(db, { bucketName: config.database.bucket_name });
+
+        const fileId = (await db.collection(`${config.database.bucket_name}.files`)
+            .find({ filename: entryID }).toArray())[0]._id;
+        if (!fileId) throw new Error('no files found');
+
+        // download the new file
+        const download = new Promise((resolve) => {
+            const chunks = [];
+            const bucketStream = bucket.openDownloadStream(fileId);
+            bucketStream.on('data', (chunk) => {
+                chunks.push(chunk);
+            });
+            bucketStream.on('close', () => {
+                const buffer = Buffer.concat(chunks);
+                resolve(buffer);
+            });
+        });
+        const buffer = await download;
+        await exports.closeClient(client);
+        return buffer;
+    } catch (err) {
+        await exports.closeClient(client);
+        logger.info(`📌Error downloading file ${err.message}`);
+        throw new Error('Error downloading file');
     }
 };
 
@@ -124,7 +158,6 @@ exports.getSubmissionByEntryID = async (entryID) => {
     }
 };
 
-// TO-DO remove case-sensitivity
 exports.getSubmissionsByFilters = async (filters) => {
     let client = null;
     try {
@@ -171,32 +204,27 @@ exports.getAllSubmissionsData = async () => {
     }
 };
 
-exports.deleteSubmission = async (title, submission_time) => {
+exports.deleteSubmission = async (entryID) => {
     let client = null;
     try {
         client = await exports.getClient();
 
-        // delete the submission data
         const db = client.db(bulletinDb);
-        const doc = await db.collection(collections.submissions).findOne({
-            title: title, 
-            submission_time: submission_time,
-        });
-        if (!doc) return { doc: null, deletedFiles: 0 };
 
         // delete the files & chunks
-        const deletedFiles = await db.collection(`${config.database.bucket_name}.files`).find({ filename: (doc._id).toString() }).toArray();
-        const bucket = new GridFSBucket(db, { bucketName: 'fs' });
+        const deletedFiles = await db.collection(`${config.database.bucket_name}.files`).find({ filename: entryID }).toArray();
+        const bucket = new GridFSBucket(db, { bucketName: config.database.bucket_name });
         const fileIds = await Promise.all(deletedFiles.map(async (file) => {
             const id = new ObjectId(file._id);
             await bucket.delete(id);
             return id;
         }));
 
-        const { deletedCount } = await db.collection(collections.submissions).deleteOne({ _id: doc._id });
+        // delete the submission data
+        const { deletedCount } = await db.collection(collections.submissions).deleteOne({ _id: new ObjectId(entryID) });
 
         await exports.closeClient(client);
-        return { doc: doc, deletedSubmissions: deletedCount, deletedFiles: fileIds.length };
+        return { deletedSubmissions: deletedCount, deletedFiles: fileIds.length };
     } catch (err) {
         await exports.closeClient(client);
         logger.info(`📌Error deleting submission ${JSON.stringify(err.message)}`);
@@ -204,12 +232,12 @@ exports.deleteSubmission = async (title, submission_time) => {
     }
 };
 
-exports.updateSubmissionData = async (originalTitle, submission_time, setOptions) => {
+exports.updateSubmissionData = async (entryID, setOptions) => {
     let client = null;
     try {
         client = await exports.getClient();
         const { modifiedCount } = await client.db(bulletinDb).collection(collections.submissions).updateOne(
-            { title: originalTitle, submission_time: submission_time },
+            { _id: new ObjectId(entryID) },
             { $set: setOptions },
         );
         await exports.closeClient(client);
@@ -218,5 +246,78 @@ exports.updateSubmissionData = async (originalTitle, submission_time, setOptions
         await exports.closeClient(client);
         logger.info(`📌Error getting all submissions data ${err.message}`);
         throw new Error('Error getting all submission data');
+    }
+};
+
+exports.addLike = async (username, entryID) => {
+    let client = null;
+    try {
+        client = await exports.getClient();
+        const { modifiedCount } = await client.db(bulletinDb).collection(collections.submissions).updateOne(
+            { _id: new ObjectId(entryID) },
+            { $addToSet: { likes: username } },
+        );
+        await exports.closeClient(client);
+        return modifiedCount;
+    } catch (err) {
+        await exports.closeClient(client);
+        logger.info(`📌Error adding like ${err.message}`);
+        throw new Error('Error adding like');
+    }
+};
+
+exports.addComment = async (username, entryID, message, comment_time) => {
+    let client = null;
+    try {
+        const newComment = {
+            username: username,
+            message: message,
+            time: comment_time,
+        };
+        client = await exports.getClient();
+        const { modifiedCount } = await client.db(bulletinDb).collection(collections.submissions).updateOne(
+            { _id: new ObjectId(entryID) },
+            { $push: { comments: newComment } },
+        );
+        await exports.closeClient(client);
+        return modifiedCount;
+    } catch (err) {
+        await exports.closeClient(client);
+        logger.info(`📌Error adding comment ${err.message}`);
+        throw new Error('Error adding comment');
+    }
+};
+
+exports.removeLike = async (username, entryID) => {
+    let client = null;
+    try {
+        client = await exports.getClient();
+        const { modifiedCount } = await client.db(bulletinDb).collection(collections.submissions).updateOne(
+            { _id: new ObjectId(entryID) },
+            { $pull: { likes: username } },
+        );
+        await exports.closeClient(client);
+        return modifiedCount;
+    } catch (err) {
+        await exports.closeClient(client);
+        logger.info(`📌Error removing like ${err.message}`);
+        throw new Error('Error removing like');
+    }
+};
+
+exports.removeComment = async (username, entryID, time) => {
+    let client = null;
+    try {
+        client = await exports.getClient();
+        const { modifiedCount } = await client.db(bulletinDb).collection(collections.submissions).updateOne(
+            { _id: new ObjectId(entryID) },
+            { $pull: { comments: { username: username, time: time } } },
+        );
+        await exports.closeClient(client);
+        return modifiedCount;
+    } catch (err) {
+        await exports.closeClient(client);
+        logger.info(`📌Error removing comment ${err.message}`);
+        throw new Error('Error removing comment');
     }
 };

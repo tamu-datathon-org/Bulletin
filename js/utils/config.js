@@ -1,3 +1,6 @@
+const os = require('os');
+const logger = require('./logger');
+
 const defaultConfig = {
     siteName: 'bulletin',
     submission_constraints: {
@@ -19,11 +22,14 @@ const defaultConfig = {
         bucket_name: 'fs',
         entryID_length: 24,
     },
+    tmp_download_path: null,
 };
 
 const addConfigData = () => {
     defaultConfig.submission_constraints.start_time = (new Date('16 October 2021 12:00 UTC')).toISOString();
     defaultConfig.submission_constraints.end_time = (new Date('17 October 2021 12:00 UTC')).toISOString();
+    defaultConfig.tmp_download_path = os.tmpdir();
+    logger.info(defaultConfig.tmp_download_path);
     return defaultConfig;
 };
 
