@@ -1,17 +1,23 @@
 const defaultConfig = {
-    siteName: 'Bulletin',
+    siteName: 'bulletin',
     submission_constraints: {
         max_participants: 5,
         compression_formats: ['.tar', '.zip'],
         start_time: null,
         end_time: null,
+        max_tags: 12,
+        max_file_upload_size: 1000 * 1000 * 30, // 30 Mb
+        submission_fields: ['title', 'names', 'challenges', 'links', 'tags'],
+        submission_queries: ['titles', 'entryID', 'names', 'timespan', 'links', 'challenges', 'tags', 'numComments', 'numLikes']
     },
     database: {
         url: null,
-        database_name: 'bulletin',
-        collection_names: {
+        name: 'bulletin',
+        collections: {
             submissions: 'submissions',
         },
+        bucket_name: 'fs',
+        entryID_length: 24,
     },
 };
 

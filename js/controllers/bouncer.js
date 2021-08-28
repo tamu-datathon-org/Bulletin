@@ -6,3 +6,7 @@ exports.isAdmin = (req, res, next) => {
 exports.isParticipant = (req, res, next) => {
     next();
 };
+
+exports.isParticipantOrOrganizer = (req, res, next) => {
+    next();
+};
