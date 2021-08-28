@@ -27,6 +27,8 @@ exports.addSubmission = async (req, res) => {
             filename: req.body.filename || '',
             likes: [],
             comments: [],
+            iconId: '',
+            photosId: '',
             submission_time: (new Date()).toISOString(),
         };
 
@@ -273,6 +275,56 @@ exports.removeComment = async (req, res) => {
             throw new Error('time is a required field');
         }
         response.result = `removed ${await submissionService.removeComment(username, entryID, time)} comment`;
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+exports.iconUpload = async (req, res) => {
+    const response = {};
+    const { buffer } = req.file;
+    const { entryID } = req.params;
+    const { originalname } = req.file;
+    try {
+        if (!buffer) {
+            throw new Error('no file provided');
+        }
+        if (!entryID) {
+            throw new Error('no entryID parameter');
+        }
+        if ((originalname?.length ?? 0) === 0) {
+            throw new Error('no filename provided');
+        }
+        await submissionService.uploadSubmissionIcon(buffer, entryID, originalname);
+        response.filename = originalname;
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+exports.photosUpload = async (req, res) => {
+    const response = {};
+    const { buffer } = req.file;
+    const { entryID } = req.params;
+    const { originalname } = req.file;
+    try {
+        if (!buffer) {
+            throw new Error('no file provided');
+        }
+        if (!entryID) {
+            throw new Error('no entryID parameter');
+        }
+        if ((originalname?.length ?? 0) === 0) {
+            throw new Error('no filename provided');
+        }
+        await submissionService.uploadSubmissionPhotos(buffer, entryID, originalname);
+        response.filename = originalname;
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);

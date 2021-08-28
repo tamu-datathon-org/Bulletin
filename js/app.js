@@ -24,6 +24,8 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.post('/api/submission/add', bouncerController.isParticipant, submissionController.addSubmission);
 app.post('/api/submission/delete/:entryID', bouncerController.isParticipantOrOrganizer, submissionController.deleteSubmission);
 app.post('/api/submission/uploadFile/:entryID', multerUtil.submissionFileOptions.single('file'), submissionController.fileUpload);
+app.post('/api/submission/uploadIcon/:entryID', multerUtil.submissionIconOptions.single('file'), submissionController.iconUpload);
+app.post('/api/submission/uploadPhotos/:entryID', multerUtil.submissionPhotosOptions.single('file'), submissionController.photosUpload);
 app.get('/api/submission/downloadFile/:entryID', submissionController.fileDownload);
 app.post('/api/submission/submissionsData', submissionController.getSubmissionsData);
 app.post('/api/submission/updateSubmissionData/:entryID', submissionController.updateSubmissionData);

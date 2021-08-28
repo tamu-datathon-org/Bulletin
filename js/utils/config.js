@@ -6,6 +6,8 @@ const defaultConfig = {
     submission_constraints: {
         max_participants: 5,
         compression_formats: ['.tar', '.zip'],
+        photo_compression_formats: ['.zip'],
+        icon_compression_formats: ['.jpg', '.png'],
         start_time: null,
         end_time: null,
         max_tags: 12,

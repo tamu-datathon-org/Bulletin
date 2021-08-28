@@ -10,7 +10,7 @@ const writeFile = promisify(fs.writeFile);
 
 // upload compressed file to firebase
 exports.uploadSubmissionFile = async (buffer, entryID, filename) => {
-    if (!dbUtil.submissionExists(entryID)) {
+    if (!(await dbUtil.submissionExists(entryID))) {
         throw new Error(`submission with entyID ${entryID} does not exist`);
     }
     await dbUtil.uploadFile(buffer, entryID, filename);
@@ -145,4 +145,20 @@ exports.removeLike = async (username, entryID) => {
 
 exports.removeComment = async (username, entryID, comment_time) => {
     return dbUtil.removeComment(username, entryID, comment_time);
+};
+
+exports.uploadSubmissionPhotos = async (buffer, entryID, filename) => {
+    if (!(await dbUtil.submissionExists(entryID))) {
+        throw new Error(`submission with entyID ${entryID} does not exist`);
+    }
+    await dbUtil.uploadSubmissionPhotos(buffer, entryID, filename);
+    logger.info('📌uploaded to GridFS');
+};
+
+exports.uploadSubmissionIcon = async (buffer, entryID, filename) => {
+    if (!(await dbUtil.submissionExists(entryID))) {
+        throw new Error(`submission with entyID ${entryID} does not exist`);
+    }
+    await dbUtil.uploadSubmissionIcon(buffer, entryID, filename);
+    logger.info('📌uploaded to GridFS');
 };

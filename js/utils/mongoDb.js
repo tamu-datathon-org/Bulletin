@@ -213,18 +213,27 @@ exports.deleteSubmission = async (entryID) => {
 
         // delete the files & chunks
         const deletedFiles = await db.collection(`${config.database.bucket_name}.files`).find({ filename: entryID }).toArray();
+        const deletedPhotos = await db.collection(`${config.database.bucket_name}.files`).find({ filename: `${entryID}_photos` }).toArray();
+        const deletedIcons = await db.collection(`${config.database.bucket_name}.files`).find({ filename: `${entryID}_icon` }).toArray();
         const bucket = new GridFSBucket(db, { bucketName: config.database.bucket_name });
-        const fileIds = await Promise.all(deletedFiles.map(async (file) => {
+        await Promise.all(deletedFiles.map(async (file) => {
             const id = new ObjectId(file._id);
             await bucket.delete(id);
-            return id;
+        }));
+        await Promise.all(deletedPhotos.map(async (file) => {
+            const id = new ObjectId(file._id);
+            await bucket.delete(id);
+        }));
+        await Promise.all(deletedIcons.map(async (file) => {
+            const id = new ObjectId(file._id);
+            await bucket.delete(id);
         }));
 
         // delete the submission data
         const { deletedCount } = await db.collection(collections.submissions).deleteOne({ _id: new ObjectId(entryID) });
 
         await exports.closeClient(client);
-        return { deletedSubmissions: deletedCount, deletedFiles: fileIds.length };
+        return { deletedSubmissions: deletedCount, deletedFiles: (deletedFiles.length + deletedPhotos.length + deletedIcons.length) };
     } catch (err) {
         await exports.closeClient(client);
         logger.info(`📌Error deleting submission ${JSON.stringify(err.message)}`);
@@ -319,5 +328,87 @@ exports.removeComment = async (username, entryID, time) => {
         await exports.closeClient(client);
         logger.info(`📌Error removing comment ${err.message}`);
         throw new Error('Error removing comment');
+    }
+};
+
+exports.uploadSubmissionIcon = async (buffer, entryID, filename) => {
+    let client = null;
+    try {
+        client = await exports.getClient();
+        const db = client.db(bulletinDb);
+        const bucket = new GridFSBucket(db, { bucketName: config.database.bucket_name });
+
+        const iconId = `${entryID}_icon`;
+        // delete any previous icon
+        try {
+            const fileId = (await db.collection(`${config.database.bucket_name}.files`)
+                .find({ filename: iconId }).toArray())[0]._id;
+            await bucket.delete(fileId);
+        } catch (err) {
+            logger.info('no previous files');
+        }
+
+        // upload the new file
+        const upload = new Promise((resolve) => {
+            const readable = Readable.from(buffer);
+            const bucketStream = bucket.openUploadStream(iconId, {
+                chunkSizeBytes: 1048576,
+                metadata: { field: 'name', value: filename },
+            });
+            readable.pipe(bucketStream);
+            bucketStream.on('close', () => resolve());
+        });
+        await upload;
+        const { modifiedCount } = await db.collection(collections.submissions).updateOne(
+            { _id: new ObjectId(entryID) },
+            { $set: { iconId: iconId } },
+        );
+        logger.info(`${modifiedCount} submissions updated`);
+        await exports.closeClient(client);
+    } catch (err) {
+        await exports.closeClient(client);
+        logger.info(`📌Error uploading file ${err.message}`);
+        throw new Error('Error uploading file');
+    }
+};
+
+exports.uploadSubmissionPhotos = async (buffer, entryID, filename) => {
+    let client = null;
+    try {
+        client = await exports.getClient();
+        const db = client.db(bulletinDb);
+        const bucket = new GridFSBucket(db, { bucketName: config.database.bucket_name });
+
+        const photosId = `${entryID}_photos`;
+        // delete any previous icon
+        try {
+            const fileId = (await db.collection(`${config.database.bucket_name}.files`)
+                .find({ filename: photosId }).toArray())[0]._id;
+            await bucket.delete(fileId);
+        } catch (err) {
+            logger.info('no previous files');
+        }
+
+        // upload the new file
+        const upload = new Promise((resolve) => {
+            const readable = Readable.from(buffer);
+            const bucketStream = bucket.openUploadStream(photosId, {
+                chunkSizeBytes: 1048576,
+                metadata: { field: 'name', value: filename },
+            });
+            readable.pipe(bucketStream);
+            bucketStream.on('close', () => resolve());
+        });
+        await upload;
+        const { modifiedCount } = await db.collection(collections.submissions).updateOne(
+            { _id: new ObjectId(entryID) },
+            { $set: { photosId: photosId } },
+        );
+        logger.info(`${modifiedCount} submissions updated`);
+        await exports.closeClient(client);
+    } catch (err) {
+        await exports.closeClient(client);
+        logger.info(`📌Error uploading file ${err.message}`);
+        throw new Error('Error uploading file');
     }
 };
