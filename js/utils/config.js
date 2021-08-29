@@ -1,5 +1,4 @@
 const os = require('os');
-const logger = require('./logger');
 
 const defaultConfig = {
     siteName: 'bulletin',
@@ -13,7 +12,7 @@ const defaultConfig = {
         max_tags: 12,
         max_file_upload_size: 1000 * 1000 * 30, // 30 Mb
         submission_fields: ['title', 'names', 'challenges', 'links', 'tags'],
-        submission_queries: ['titles', 'entryID', 'names', 'timespan', 'links', 'challenges', 'tags', 'numComments', 'numLikes']
+        submission_queries: ['titles', 'entryID', 'names', 'timespan', 'links', 'challenges', 'tags', 'numComments', 'numLikes'],
     },
     database: {
         url: null,
@@ -31,7 +30,6 @@ const addConfigData = () => {
     defaultConfig.submission_constraints.start_time = (new Date('16 October 2021 12:00 UTC')).toISOString();
     defaultConfig.submission_constraints.end_time = (new Date('17 October 2021 12:00 UTC')).toISOString();
     defaultConfig.tmp_download_path = os.tmpdir();
-    logger.info(defaultConfig.tmp_download_path);
     return defaultConfig;
 };
 

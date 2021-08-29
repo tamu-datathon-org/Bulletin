@@ -162,3 +162,19 @@ exports.uploadSubmissionIcon = async (buffer, entryID, filename) => {
     await dbUtil.uploadSubmissionIcon(buffer, entryID, filename);
     logger.info('📌uploaded to GridFS');
 };
+
+exports.downloadSubmissionIcon = async (entryID, filename) => {
+    const buffer = await dbUtil.getIconBuffer(entryID);
+    logger.info('📌downloaded from GridFS');
+    const newFilePath = path.join(config.tmp_download_path, `${Date.now()}_${filename}`);
+    await writeFile(newFilePath, buffer[1]);
+    return [newFilePath, buffer[0]];
+};
+
+exports.downloadSubmissionPhotos = async (entryID, filename) => {
+    const buffer = await dbUtil.getPhotosBuffer(entryID);
+    logger.info('📌downloaded from GridFS');
+    const newFilePath = path.join(config.tmp_download_path, `${Date.now()}_${filename}`);
+    await writeFile(newFilePath, buffer[1]);
+    return [newFilePath, buffer[0]];
+};

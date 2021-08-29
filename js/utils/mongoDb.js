@@ -64,7 +64,7 @@ exports.uploadFile = async (buffer, entryID, filename) => {
             const readable = Readable.from(buffer);
             const bucketStream = bucket.openUploadStream(entryID, {
                 chunkSizeBytes: 1048576,
-                metadata: { field: 'name', value: filename },
+                metadata: { 'name': filename },
             });
             readable.pipe(bucketStream);
             bucketStream.on('close', () => resolve());
@@ -353,7 +353,7 @@ exports.uploadSubmissionIcon = async (buffer, entryID, filename) => {
             const readable = Readable.from(buffer);
             const bucketStream = bucket.openUploadStream(iconId, {
                 chunkSizeBytes: 1048576,
-                metadata: { field: 'name', value: filename },
+                metadata: { 'name': filename },
             });
             readable.pipe(bucketStream);
             bucketStream.on('close', () => resolve());
@@ -394,7 +394,7 @@ exports.uploadSubmissionPhotos = async (buffer, entryID, filename) => {
             const readable = Readable.from(buffer);
             const bucketStream = bucket.openUploadStream(photosId, {
                 chunkSizeBytes: 1048576,
-                metadata: { field: 'name', value: filename },
+                metadata: { 'name': filename },
             });
             readable.pipe(bucketStream);
             bucketStream.on('close', () => resolve());
@@ -410,5 +410,79 @@ exports.uploadSubmissionPhotos = async (buffer, entryID, filename) => {
         await exports.closeClient(client);
         logger.info(`📌Error uploading file ${err.message}`);
         throw new Error('Error uploading file');
+    }
+};
+
+exports.getIconBuffer = async (entryID) => {
+    let client = null;
+    try {
+        client = await exports.getClient();
+        const db = client.db(bulletinDb);
+        const bucket = new GridFSBucket(db, { bucketName: config.database.bucket_name });
+
+        const file = (await db.collection(`${config.database.bucket_name}.files`)
+            .find({ filename: `${entryID}_icon` }).toArray())[0];
+        if (!file) throw new Error('no files found');
+        const fileId = file._id;
+        const { name } = file.metadata;
+        logger.info(name);
+        if (!fileId) throw new Error('no icon found');
+
+        // download the icon
+        const download = new Promise((resolve) => {
+            const chunks = [];
+            const bucketStream = bucket.openDownloadStream(fileId);
+            bucketStream.on('data', (chunk) => {
+                chunks.push(chunk);
+            });
+            bucketStream.on('close', () => {
+                const buffer = Buffer.concat(chunks);
+                resolve(buffer);
+            });
+        });
+        const buffer = await download;
+        await exports.closeClient(client);
+        return [name, buffer];
+    } catch (err) {
+        await exports.closeClient(client);
+        logger.info(`📌Error downloading file ${err.message}`);
+        throw new Error('Error downloading file');
+    }
+};
+
+exports.getPhotosBuffer = async (entryID) => {
+    let client = null;
+    try {
+        client = await exports.getClient();
+        const db = client.db(bulletinDb);
+        const bucket = new GridFSBucket(db, { bucketName: config.database.bucket_name });
+
+        const file = (await db.collection(`${config.database.bucket_name}.files`)
+            .find({ filename: `${entryID}_photos` }).toArray())[0];
+        if (!file) throw new Error('no files found');
+        const fileId = file._id;
+        const { name } = file.metadata;
+        logger.info(name);
+        if (!fileId) throw new Error('no photos found');
+
+        // download the photos
+        const download = new Promise((resolve) => {
+            const chunks = [];
+            const bucketStream = bucket.openDownloadStream(fileId);
+            bucketStream.on('data', (chunk) => {
+                chunks.push(chunk);
+            });
+            bucketStream.on('close', () => {
+                const buffer = Buffer.concat(chunks);
+                resolve(buffer);
+            });
+        });
+        const buffer = await download;
+        await exports.closeClient(client);
+        return [name, buffer];
+    } catch (err) {
+        await exports.closeClient(client);
+        logger.info(`📌Error downloading file ${err.message}`);
+        throw new Error('Error downloading file');
     }
 };

@@ -27,6 +27,8 @@ app.post('/api/submission/uploadFile/:entryID', multerUtil.submissionFileOptions
 app.post('/api/submission/uploadIcon/:entryID', multerUtil.submissionIconOptions.single('file'), submissionController.iconUpload);
 app.post('/api/submission/uploadPhotos/:entryID', multerUtil.submissionPhotosOptions.single('file'), submissionController.photosUpload);
 app.get('/api/submission/downloadFile/:entryID', submissionController.fileDownload);
+app.get('/api/submission/downloadIcon/:entryID', submissionController.iconDownload);
+app.get('/api/submission/downloadPhotos/:entryID', submissionController.photosDownload);
 app.post('/api/submission/submissionsData', submissionController.getSubmissionsData);
 app.post('/api/submission/updateSubmissionData/:entryID', submissionController.updateSubmissionData);
 app.get('/api/submission/availableParameters', submissionController.getSubmissionQueryParameters);

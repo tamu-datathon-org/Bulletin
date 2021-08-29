@@ -126,10 +126,10 @@ exports.fileDownload = async (req, res) => {
     const { entryID } = req.params;
     try {
         if (!entryID) throw new Error('entryID is a required parameter');
-        const { filename } = (await submissionService.getSubmissionsDataWithFilters({ entryID }))[0];
-        if (!filename) {
-            throw new Error(`submission with entyID ${entryID} does not exist or does not have an associated file`);
-        }
+        const submission = (await submissionService.getSubmissionsDataWithFilters({ entryID }))[0];
+        if (!submission) throw new Error(`submission with entyID ${entryID} does not exist`);
+        const { filename } = submission;
+        if (!filename) throw new Error(`submission with entyID ${entryID} does not have an associated file`);
         logger.info(filename);
         const filepath = await submissionService.downloadSubmissionFile(entryID, filename);
         res.status(200).download(filepath, filename, async (error) => {
@@ -314,18 +314,58 @@ exports.photosUpload = async (req, res) => {
     const { entryID } = req.params;
     const { originalname } = req.file;
     try {
-        if (!buffer) {
-            throw new Error('no file provided');
-        }
-        if (!entryID) {
-            throw new Error('no entryID parameter');
-        }
+        if (!buffer) throw new Error('no file provided');
+        if (!entryID) throw new Error('entryID is a required parameter');
         if ((originalname?.length ?? 0) === 0) {
             throw new Error('no filename provided');
         }
         await submissionService.uploadSubmissionPhotos(buffer, entryID, originalname);
         response.filename = originalname;
         res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+exports.iconDownload = async (req, res) => {
+    const response = {};
+    const { entryID } = req.params;
+    try {
+        if (!entryID) throw new Error('entryID is a required parameter');
+        const submission = (await submissionService.getSubmissionsDataWithFilters({ entryID }))[0];
+        if (!submission) throw new Error(`submission with entyID ${entryID} does not exist`);
+        const { iconId } = submission;
+        if (!iconId) throw new Error(`submission with entyID ${entryID} does not have associated photos`);
+        logger.info(iconId);
+        const filepathAndName = await submissionService.downloadSubmissionIcon(entryID, iconId);
+        res.status(200).download(filepathAndName[0], filepathAndName[1], async (error) => {
+            if (error) throw new Error('unable to send icon');
+            await submissionService.removeTmpFile(filepathAndName[0]);
+        });
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+exports.photosDownload = async (req, res) => {
+    const response = {};
+    const { entryID } = req.params;
+    try {
+        if (!entryID) throw new Error('entryID is a required parameter');
+        const submission = (await submissionService.getSubmissionsDataWithFilters({ entryID }))[0];
+        if (!submission) throw new Error(`submission with entyID ${entryID} does not exist`);
+        const { photosId } = submission;
+        if (!photosId) throw new Error(`submission with entyID ${entryID} does not have associated photos`);
+        logger.info(photosId);
+        const filepathAndName = await submissionService.downloadSubmissionPhotos(entryID, photosId);
+        res.status(200).download(filepathAndName[0], filepathAndName[1], async (error) => {
+            if (error) throw new Error('unable to send photos');
+            await submissionService.removeTmpFile(filepathAndName[0]);
+        });
     } catch (err) {
         logger.info(err);
         response.error = err.message;
