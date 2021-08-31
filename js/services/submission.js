@@ -38,7 +38,7 @@ exports.downloadSubmissionFile = async (submissionId, type) => {
 // uploads submission to database
 exports.addSubmission = async (requestBody) => {
     const challengeIds = await challengesModel.getChallengesByTitles(requestBody.challenges);
-    const userObjArray = await discord.getUsernameFromAuthIds(requestBody.users);
+    const userObjArray = await discord.getUserAuthIdsFromTags(requestBody.users);
     const userSubmissionLinkIds = await Promise.all(userObjArray.map(async (nameObj) => {
         try {
             const userSubmissionLinkObj = await userSubmissionLinksModel

@@ -13,9 +13,11 @@ exports.addSubmission = async (req, res) => {
         logger.info(JSON.stringify(req.body));
 
         Object.keys(req.body).forEach((field) => {
-            if (!config.submission_constraints.submission_fields.includes(field)) {
-                throw new Error(`${field} is not a valid submission field`);
-            }
+            let inFields = false;
+            !config.submission_constraints.submission_fields.forEach((f) => {
+                if (f.field === field) inFields = true;
+            });
+            if (!inFields) throw new Error(`${field} is not a valid submission field`);
         });
 
         // submission time
@@ -117,7 +119,11 @@ exports.getMultipleSubmissions = async (req, res) => {
     };
     try {
         Object.keys(req.body).forEach((key) => {
-            if (!config.submission_constraints.submission_queries.includes(key)) throw new Error(`${key} is not a valid query parameter`);
+            let hasKey = false;
+            config.submission_constraints.submission_queries.forEach((field) => {
+                if (field === key) hasKey = true;
+            });
+            if (!hasKey) throw new Error(`${key} is not a valid query field`);
         });
         response.result.push(...await submissionService.getSubmissionsDataWithFilters(req.body));
         res.status(200).json(response);
@@ -145,8 +151,8 @@ exports.getAllSubmissions = async (req, res) => {
 exports.getSubmissionQueryFields = async (req, res) => {
     const response = {};
     try {
-        response.parameters = config.submission_constraints.submission_queries;
-        if (!response.parameters) throw new Error('Query parameters not available');
+        response.fields = config.submission_constraints.submission_queries;
+        if (!response.fields) throw new Error('Query parameters are not available');
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -158,8 +164,8 @@ exports.getSubmissionQueryFields = async (req, res) => {
 exports.getSubmissionUploadFields = async (req, res) => {
     const response = {};
     try {
-        response.parameters = config.submission_constraints.submission_fields;
-        if (!response.parameters) throw new Error('Submission fields not available');
+        response.fields = config.submission_constraints.submission_fields;
+        if (!response.fields) throw new Error('Submission fields are not available');
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
