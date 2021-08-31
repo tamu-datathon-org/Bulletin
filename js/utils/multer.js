@@ -44,8 +44,22 @@ const submissionIconOptions = multer({
     },
 });
 
+const submissionMarkdownOptions = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: FILE_SIZE_LIMIT,
+    },
+    fileFilter(req, file, cb) {
+        if (!config.submission_constraints.icon_compression_formats.includes(path.extname(file.originalname))) {
+            return cb(new Error(`Acceptable file types: ${config.submission_constraints.markdown_formats.toString()}`));
+        }
+        return cb(undefined, true);
+    },
+});
+
 module.exports = {
     submissionFileOptions,
     submissionPhotosOptions,
     submissionIconOptions,
+    submissionMarkdownOptions,
 };

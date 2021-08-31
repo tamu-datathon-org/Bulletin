@@ -4,38 +4,63 @@ const { promisify } = require('util');
 const dbUtil = require('../utils/mongoDb');
 const logger = require('../utils/logger');
 const config = require('../utils/config');
+const discord = require('./discordDriver');
+
+const submissionModel = require('../models/submission');
+const likesModel = require('../models/likes');
+const commentsModel = require('../models/comments');
+const userSubmissionLinksModel = require('../models/userSubmissionLinks');
+const challengesModel = require('../models/challenges');
 
 const unlink = promisify(fs.unlink);
 const writeFile = promisify(fs.writeFile);
 
 // upload compressed file to firebase
-exports.uploadSubmissionFile = async (buffer, entryID, filename) => {
-    if (!(await dbUtil.submissionExists(entryID))) {
-        throw new Error(`submission with entyID ${entryID} does not exist`);
+exports.uploadSubmissionFile = async (buffer, submissionId, filename, type) => {
+    if (!(await submissionModel.getSubmission(submissionId))) {
+        throw new Error(`submission with submissionId ${submissionId} does not exist`);
     }
-    await dbUtil.uploadFile(buffer, entryID, filename);
+    await dbUtil.uploadFile(buffer, submissionId, filename, type);
     logger.info('📌uploaded to GridFS');
 };
 
-exports.downloadSubmissionFile = async (entryID, filename) => {
-    const buffer = await dbUtil.getFileBuffer(entryID);
+exports.downloadSubmissionFile = async (submissionId, type) => {
+    if (!(await submissionModel.getSubmission(submissionId))) {
+        throw new Error(`submission with submissionId ${submissionId} does not exist`);
+    }
+    const file = await dbUtil.downloadFileBuffer(submissionId, type);
     logger.info('📌downloaded from GridFS');
-    const newFilePath = path.join(config.tmp_download_path, `${Date.now()}_${filename}`);
-    await writeFile(newFilePath, buffer);
+    const newFilePath = path.join(config.tmp_download_path, `${Date.now()}_${file.filename}`);
+    await writeFile(newFilePath, file.buffer);
     return newFilePath;
 };
 
 // uploads submission to database
-exports.addSubmission = async (submissionObj) => {
-    const id = await dbUtil.addSubmission(submissionObj);
-    logger.info(`📌submitted with id ${id}`);
-    return id;
+exports.addSubmission = async (requestBody) => {
+    const challengeIds = await challengesModel.getChallengesByTitles(requestBody.challenges);
+    const userObjArray = await discord.getUsernameFromAuthIds(requestBody.users);
+    const userSubmissionLinkIds = await Promise.all(userObjArray.map(async (nameObj) => {
+        try {
+            const userSubmissionLinkObj = await userSubmissionLinksModel
+                .createUserSubmissionLink(userObjArray.userAuthIds, '', nameObj.discordName);
+            return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj);
+        } catch (err) {
+            throw new Error(`📌Error updating getting discord username of ${nameObj.userAuthIds}`);
+        }
+    }));
+    const submissionObj = await submissionModel
+        .createSubmission(requestBody.title, userSubmissionLinkIds, challengeIds, requestBody.links, requestBody.tags);
+    const submissionId = await submissionModel.addSubmission(submissionObj);
+    const setOptions = { userSubmissionLinks: userSubmissionLinkIds };
+    await userSubmissionLinksModel.updateUserSubmissionLink(setOptions);
+    logger.info(`📌submitted with id ${submissionId}`);
+    return submissionId;
 };
 
 exports.removeTmpFile = async (filepath) => {
     try {
         if (!filepath) {
-            throw new Error('no file path provided');
+            throw new Error('📌Error deleting temp file:: no file path provided');
         }
         if (path.dirname(filepath) === config.tmp_download_path) await unlink(filepath);
     } catch (err) {
@@ -100,81 +125,75 @@ exports.getSubmissionsDataWithFilters = async (filters) => {
 };
 
 exports.getAllSubmissionsData = async () => {
-    return dbUtil.getAllSubmissionsData();
+    return submissionModel.getSubmissionsDump();
 };
 
-exports.deleteSubmission = async (entryID) => {
-    return dbUtil.deleteSubmission(entryID);
+exports.getSubmissionData = async (submissionId) => {
+    return submissionModel.getSubmission(submissionId);
 };
 
-exports.updateSubmissionData = async (entryID, title, names, links, tags, challenges) => {
-    const setOptions = {};
-    if (title) setOptions.title = title;
-    if (names) {
-        if ((names?.length ?? 0) === 0) {
-            throw new Error('📌Submsision update names error:: minimum number of names is 0');
-        } 
-        setOptions.names = names;
+exports.deleteSubmission = async (submissionId) => {
+    const doc = await submissionModel.deleteSubmission(submissionId);
+    if (doc.userSubmissionLinkIds) await userSubmissionLinksModel.removeUserSubmissionLinks(doc.userSubmissionLinkIds);
+    if (doc.sourceCodeId) await dbUtil.removeFile(doc.sourceCodeId);
+    if (doc.iconId) await dbUtil.removeFile(doc.iconId);
+    if (doc.photosId) await dbUtil.removeFile(doc.photosId);
+    if (doc.markdownId) await dbUtil.removeFile(doc.markdownId);
+    if (doc.likeIds) await likesModel.removeLikes(doc.likeIds);
+    if (doc.commentIds) await commentsModel.removeComments(doc.commentIds);
+};
+
+exports.updateSubmission = async (submissionId, requestBody) => {
+    const submissionSetOptions = {};
+    const userAuthLinksSetOptions = {};
+    if (requestBody.title) submissionSetOptions.title = requestBody.title;
+    if (requestBody.userAuthIds) userAuthLinksSetOptions.userAuthIds = requestBody.userAuthIds;
+    if (requestBody.links) submissionSetOptions.links = requestBody.links;
+    if (requestBody.tags) submissionSetOptions.tags = requestBody.tags;
+    if (requestBody.challenges) submissionSetOptions.challenges = requestBody.challenges;
+    await submissionModel.updateSubmission(submissionId, submissionSetOptions);
+    await userSubmissionLinksModel.updateUserSubmissionLink(submissionId, userAuthLinksSetOptions);
+};
+
+exports.addLike = async (userAuthId, submissionId) => {
+    const likeObj = await likesModel.createLike(userAuthId, submissionId);
+    const likeId = await likesModel.addLike(likeObj);
+    return submissionModel.addLike(submissionId, likeId);
+};
+
+exports.addComment = async (userAuthId, submissionId, message) => {
+    const commentObj = await commentsModel.createComment(userAuthId, submissionId, message);
+    const commentId = await commentsModel.addComment(commentObj);
+    return submissionModel.addComment(submissionId, commentId);
+};
+
+exports.removeLike = async (userAuthId, submissionId) => {
+    const { _id } = await likesModel.getLikeBySubmissionIdAndUserAuthId(submissionId, userAuthId);
+    await likesModel.removeLike(_id);
+    return submissionModel.removeLike(submissionId, _id);
+};
+
+exports.removeComment = async (userAuthId, submissionId, commentTime) => {
+    const { _id } = await commentsModel.getCommentBySubmissionIdAndUserAuthIdAndTime(submissionId, userAuthId, commentTime);
+    await commentsModel.removeComment(_id);
+    return submissionModel.removeComment(submissionId, _id);
+};
+
+exports.uploadSubmissionFile = async (buffer, submissionId, filename, type) => {
+    if (!(await submissionModel.getSubmission(submissionId))) {
+        throw new Error(`📌Error uploading file:: submission with submissionId ${submissionId} does not exist`);
     }
-    if (links) {
-        if (!Array.isArray(links)) throw new Error('📌Submsision update names error:: links must be a list');
-        setOptions.links = links;
-    }
-    if (tags) {
-        if (!Array.isArray(tags)) throw new Error('📌Submsision update names error:: tags must be a list');
-        setOptions.tags = tags;
-    }
-    if (challenges) {
-        if (!Array.isArray(links)) throw new Error('📌Submsision update names error:: challenges must be a list');
-        setOptions.challenges = challenges;
-    }
-    return dbUtil.updateSubmissionData(entryID, setOptions);
-};
-
-exports.addLike = async (username, entryID) => {
-    return dbUtil.addLike(username, entryID);
-};
-
-exports.addComment = async (username, entryID, message, comment_time) => {
-    return dbUtil.addComment(username, entryID, message, comment_time);
-};
-
-exports.removeLike = async (username, entryID) => {
-    return dbUtil.removeLike(username, entryID);
-};
-
-exports.removeComment = async (username, entryID, comment_time) => {
-    return dbUtil.removeComment(username, entryID, comment_time);
-};
-
-exports.uploadSubmissionPhotos = async (buffer, entryID, filename) => {
-    if (!(await dbUtil.submissionExists(entryID))) {
-        throw new Error(`submission with entyID ${entryID} does not exist`);
-    }
-    await dbUtil.uploadSubmissionPhotos(buffer, entryID, filename);
+    await dbUtil.uploadFile(buffer, submissionId, filename, type);
     logger.info('📌uploaded to GridFS');
 };
 
-exports.uploadSubmissionIcon = async (buffer, entryID, filename) => {
-    if (!(await dbUtil.submissionExists(entryID))) {
-        throw new Error(`submission with entyID ${entryID} does not exist`);
+exports.downloadSubmissionFile = async (submissionId, type) => {
+    if (!(await submissionModel.getSubmission(submissionId))) {
+        throw new Error(`📌Error downloading file:: submission with submissionId ${submissionId} does not exist`);
     }
-    await dbUtil.uploadSubmissionIcon(buffer, entryID, filename);
-    logger.info('📌uploaded to GridFS');
-};
-
-exports.downloadSubmissionIcon = async (entryID, filename) => {
-    const buffer = await dbUtil.getIconBuffer(entryID);
+    const bufferObj = await dbUtil.downloadFileBuffer(submissionId, type);
     logger.info('📌downloaded from GridFS');
-    const newFilePath = path.join(config.tmp_download_path, `${Date.now()}_${filename}`);
-    await writeFile(newFilePath, buffer[1]);
-    return [newFilePath, buffer[0]];
-};
-
-exports.downloadSubmissionPhotos = async (entryID, filename) => {
-    const buffer = await dbUtil.getPhotosBuffer(entryID);
-    logger.info('📌downloaded from GridFS');
-    const newFilePath = path.join(config.tmp_download_path, `${Date.now()}_${filename}`);
-    await writeFile(newFilePath, buffer[1]);
-    return [newFilePath, buffer[0]];
+    const newFilePath = path.join(config.tmp_download_path, `${Date.now()}_${bufferObj.filename}`);
+    await writeFile(newFilePath, bufferObj.buffer);
+    return { filepath: newFilePath, filename: bufferObj.filename };
 };
