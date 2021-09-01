@@ -1,7 +1,9 @@
 const path = require('path');
+const mimetypes = require('mime-types');
 const submissionService = require('../services/submission');
 const config = require('../utils/config');
 const logger = require('../utils/logger');
+const bouncer = require('./bouncer');
 
 let IS_TESTING = false;
 
@@ -15,12 +17,14 @@ const addSubmission = async (req, res) => {
         logger.info(JSON.stringify(req.body));
 
         const requiredFields = [];
+        const validFields = [];
         config.submission_constraints.submission_fields.forEach(f => {
             if (f.required) requiredFields.push(f.field);
+            validFields.push(f.field);
         });
         const providedFields = Object.keys(req.body);
         if (!requiredFields.every(f => providedFields.includes(f))) throw new Error('📌missing required field');
-        if (!providedFields.every(f => config.submission_constraints.submission_fields.includes(f))) throw new Error('📌invalid field');
+        if (!providedFields.every(f => validFields.includes(f))) throw new Error('📌invalid field');
 
         // submission time
         const submission_time = !IS_TESTING ? (new Date()).toISOString() : (new Date(config.submission_constraints.start_time)).toISOString();
@@ -30,7 +34,7 @@ const addSubmission = async (req, res) => {
         const st = (new Date(config.submission_constraints.start_time)).getTime();
         const et = (new Date(config.submission_constraints.end_time)).getTime();
         if (submissionDate < st || submissionDate > et) {
-            throw new Error('📌Submission error:: Submissions are not allowed at this time');
+            // throw new Error('📌Submission error:: Submissions are not allowed at this time');
         }
 
         // validate title
@@ -48,6 +52,14 @@ const addSubmission = async (req, res) => {
         if (req.body.users.length > config.submission_constraints.max_participants) {
             throw new Error(`📌Submission users error:: maximum number of users is ${config.submission_constraints.max_participants}`);
         }
+
+        const token = req.cookies.accessToken || '';
+        if (!token) throw new Error('📌you are not logged in!');
+        const discordTags = IS_TESTING ?
+            [{ userAuthId: Date.now(), discordTag: 'greg' }] : 
+            await submissionService.validateSubmitterAndGetDiscordTags(token, req.body.users);
+
+        if (discordTags.length === 0) throw new Error('📌no users are in the discord');
 
         // validate compression file uploads
         if (req.body.sourceCodeFile && !config.submission_constraints.source_code_formats.includes(path.extname(req.body.sourceCodeFile))) {
@@ -73,7 +85,7 @@ const addSubmission = async (req, res) => {
             throw new Error(`📌Submission links error:: maximum number of tags is ${config.submission_constraints.max_links}`);
         }
 
-        response.entryID = await submissionService.addSubmission(req.body);
+        response.submissionId = await submissionService.addSubmission(req.body, discordTags);
         response.submission_time = submission_time;
 
         logger.info('📌Uploaded successful');
@@ -86,12 +98,15 @@ const addSubmission = async (req, res) => {
 
 const deleteSubmission = async (req, res) => {
     const response = {};
-    const { entryID } = req.params;
+    const { submissionId } = req.params;
     try {
-        if (!entryID) {
+        if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
         }
-        response.result = await submissionService.deleteSubmission(entryID);
+        const token = req.cookies.accessToken || '';
+        if (!token) throw new Error('📌you are not logged in!');
+        if (!IS_TESTING) await submissionService.validateSubmitterForUpdate(token, submissionId);
+        response.result = await submissionService.deleteSubmission(submissionId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -208,6 +223,9 @@ const updateSubmission = async (req, res) => {
         if (req.body.challenges) {
             if (!Array.isArray(req.body.links)) throw new Error('📌Submsision update challenges error:: challenges must be a list');
         }
+        const token = req.cookies.accessToken || '';
+        if (!token) throw new Error('📌you are not logged in!');
+        if (!IS_TESTING) await submissionService.validateSubmitterForUpdate(token, submissionId);
         response.modifiedCount = await submissionService.updateSubmission(submissionId, req.body);
         res.status(200).json(response);
     } catch (err) {
@@ -221,10 +239,12 @@ const addLike = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
     try {
-        const { userAuthId } = 'test';
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
         }
+        const token = req.cookies.accessToken || '';
+        if (!token) throw new Error('📌you are not logged in!');
+        const userAuthId = await bouncer.getAuthId(token);
         response.result = await submissionService.addLike(userAuthId, submissionId);
         res.status(200).json(response);
     } catch (err) {
@@ -239,13 +259,15 @@ const addComment = async (req, res) => {
     const { submissionId } = req.params;
     const { message } = req.body;
     try {
-        const userAuthId = 'test';
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
         }
         if (!message) {
             throw new Error('📌message is a required field');
         }
+        const token = req.cookies.accessToken || '';
+        if (!token) throw new Error('📌you are not logged in!');
+        const userAuthId = await bouncer.getAuthId(token);
         response.result = await submissionService.addComment(userAuthId, submissionId, message);
         res.status(200).json(response);
     } catch (err) {
@@ -259,10 +281,12 @@ const removeLike = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
     try {
-        const userAuthId = 'test';
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
         }
+        const token = req.cookies.accessToken || '';
+        if (!token) throw new Error('📌you are not logged in!');
+        const userAuthId = await bouncer.getAuthId(token);
         response.result = await submissionService.removeLike(userAuthId, submissionId);
         res.status(200).json(response);
     } catch (err) {
@@ -277,13 +301,15 @@ const removeComment = async (req, res) => {
     const { submissionId } = req.params;
     const { time } = req.body;
     try {
-        const userAuthId = 'test';
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
         }
         if (!time) {
             throw new Error('📌time is a required field');
         }
+        const token = req.cookies.accessToken || '';
+        if (!token) throw new Error('📌you are not logged in!');
+        const userAuthId = await bouncer.getAuthId(token);
         response.result = `removed ${await submissionService.removeComment(userAuthId, submissionId, time)} comment`;
         res.status(200).json(response);
     } catch (err) {
@@ -309,6 +335,9 @@ const submissionFileUpload = async (req, res) => {
         if (!config.submission_constraints.submission_upload_types.includes(type)) {
             throw new Error(`📌invalid type parameter provided, valid types are ${config.submission_constraints.submission_upload_types.toString()}`);
         }
+        const token = req.cookies.accessToken || '';
+        if (!token) throw new Error('📌you are not logged in!');
+        if (!IS_TESTING) await submissionService.validateSubmitterForUpdate(token, submissionId);
         await submissionService.uploadSubmissionFile(buffer, submissionId, originalname, config.submission_constraints.submission_upload_types[type]);
         response.filename = originalname;
         res.status(200).json(response);
@@ -329,11 +358,15 @@ const submissionFileDownload = async (req, res) => {
         if (!config.submission_constraints.submission_upload_types.includes(type)) {
             throw new Error(`📌invalid type parameter provided, valid types are ${config.submission_constraints.submission_upload_types.toString()}`);
         }
-        const fileObj = await submissionService.downloadSubmissionFile(submissionId, config.submission_constraints.submission_upload_types.markdown);
-        res.status(200).download(fileObj.filepath, fileObj.filename, async (error) => {
-            if (error) throw new Error('📌unable to send markdown');
-            await submissionService.removeTmpFile(fileObj.filepath);
-        });
+        const fileObj = await submissionService.downloadSubmissionFile(submissionId, config.submission_constraints.submission_upload_types.type);
+        res.set('Content-disposition', 'attachment; filename=' + fileObj.filename);
+        const contentType = mimetypes.contentType(fileObj.filename);
+        res.set('Content-Type', contentType);
+        fileObj.stream.pipe(response);
+        // res.status(200).download(fileObj.filepath, fileObj.filename, async (error) => {
+        //     if (error) throw new Error('📌unable to send markdown');
+        //     await submissionService.removeTmpFile(fileObj.filepath);
+        // });
     } catch (err) {
         logger.info(err);
         response.error = err.message;

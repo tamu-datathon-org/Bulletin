@@ -49,7 +49,7 @@ const createSubmission = async (title, userSubmissionLinkIds, challengeIds, link
     if (!title) throw new Error('submission title is required');
     const submissionObj = {
         title: title,
-        userSubmissionLinkids: [],
+        userSubmissionLinkids: userSubmissionLinkIds || [],
         accoladeIds: [],
         challengeIds: challengeIds || [],
         links: links || [],

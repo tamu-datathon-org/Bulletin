@@ -15,6 +15,25 @@ exports.closeClient = async (client) => {
 
 exports.ObjectId = async (id) => id ? new ObjectId(id) : '';
 
+exports.dbInit = async () => {
+    let client = null;
+    try {
+        client = (await exports.getClient());
+        await Promise.all(Object.values(config.database.collections).map(async (collectionName) => {
+            try {
+                await client.db(bulletinDb).createCollection(collectionName);
+            } catch (err) {
+                logger.info(`📌${collectionName} exists`);
+            }
+        }));
+        await exports.closeClient(client);
+        logger.info(`📌📌📌Successfully initilized mongoDb/${bulletinDb}📌📌📌`);
+    } catch (err) {
+        await exports.closeClient(client);
+        logger.info(`📌Error initializing mongoDb:: ${err.message}`);
+    }
+};
+
 exports.uploadFile = async (buffer, submissionId, filename, type) => {
     let client = null;
     try {

@@ -1,13 +1,15 @@
 const express = require('express');
 const path = require('path');
-// const proxy = require('express-http-proxy');
+const proxy = require('express-http-proxy');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const logger = require('./utils/logger');
 const submissionController = require('./controllers/submission');
 const bouncerController = require('./controllers/bouncer');
 const pageRouter = require('./controllers/router');
 const multerUtil = require('./utils/multer');
-// const config = require('./utils/config');
+const mongoUtil = require('./utils/mongoDb');
+const config = require('./utils/config');
 
 const PORT = process.env.PORT || 3000;
 
@@ -18,12 +20,13 @@ app.set('view engine', 'pug');
 
 app.get('/', pageRouter.loginPage);
 
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // add or update submission
-app.post('/bulletin/api/submission/add', bouncerController.checkIfLoggedIn, submissionController.addSubmission);
+app.post('/bulletin/api/submission/add', submissionController.addSubmission);
 app.post('/bulletin/api/submission/update/:submissionId/delete', bouncerController.checkIfLoggedIn, submissionController.deleteSubmission);
 app.post('/bulletin/api/submission/update/:submissionId/update', bouncerController.checkIfLoggedIn, submissionController.updateSubmission);
 app.post('/bulletin/api/submission/update/:submissionId/upload/:type', bouncerController.checkIfLoggedIn, multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
@@ -45,7 +48,9 @@ app.get('/bulletin/api/submission/help/queryFields', submissionController.getSub
 app.get('/bulletin/api/submission/help/instructions', submissionController.getSubmissionInstructions);
 app.get('/bulletin/api/submission/help/instructions/file', submissionController.getSubmissionFileInstructions);
 
-// app.use('/*', proxy(config.redirect_url));
+app.use('/*', proxy(`${config.redirect_url}/#`));
+
+mongoUtil.dbInit();
 
 app.listen(PORT, () => {
     logger.info(`📌📌📌Listening on port ${PORT}📌📌📌`);

@@ -1,10 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 const { promisify } = require('util');
+const stream = require('stream');
+
 const dbUtil = require('../utils/mongoDb');
 const logger = require('../utils/logger');
 const config = require('../utils/config');
 const discord = require('./discordDriver');
+const { getAuthId } = require('../controllers/bouncer');
 
 const submissionModel = require('../models/submission');
 const likesModel = require('../models/likes');
@@ -13,26 +16,21 @@ const userSubmissionLinksModel = require('../models/userSubmissionLinks');
 const challengesModel = require('../models/challenges');
 
 const unlink = promisify(fs.unlink);
-const writeFile = promisify(fs.writeFile);
+// const writeFile = promisify(fs.writeFile);
 
 // uploads submission to database
-const addSubmission = async (requestBody) => {
-    const challengeIds = await challengesModel.getChallengesByTitles(requestBody.challenges);
-    const userObjArray = await discord.getUserAuthIdsFromTags(requestBody.users);
-    const userSubmissionLinkIds = await Promise.all(userObjArray.map(async (userObj) => {
-        try {
-            const userSubmissionLinkObj = await userSubmissionLinksModel
-                .createUserSubmissionLink(userObj.userAuthId, '', userObj.discordTag); // no submissionId yet
-            return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj);
-        } catch (err) {
-            throw new Error(`📌Error updating getting discord username of ${userObj.userAuthId}`);
-        }
+const addSubmission = async (requestBody, discordObjs) => {
+    const challengeIds = await Promise.all((await challengesModel.getChallengesByTitles(requestBody.challenges))
+        .map(c => c._id));
+    const userSubmissionLinkIds = await Promise.all(discordObjs.map(async (discordObj) => {
+        const userSubmissionLinkObj = await userSubmissionLinksModel
+            .createUserSubmissionLink(discordObj.userAuthId, '', discordObj.discordTag); // no submissionId yet
+        return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj);
     }));
     const submissionObj = await submissionModel
-        .createSubmission(requestBody.title, userSubmissionLinkIds, challengeIds, requestBody.links, requestBody.tags);
+        .createSubmission(requestBody.title, userSubmissionLinkIds, challengeIds, requestBody.links, requestBody.tags, requestBody.videoLink);
     const submissionId = await submissionModel.addSubmission(submissionObj);
-    const setOptions = { submissionId: submissionId };
-    await userSubmissionLinksModel.updateUserSubmissionLink(setOptions);
+    await userSubmissionLinksModel.updateUserSubmissionLinkIds(userSubmissionLinkIds, submissionId);
     logger.info(`📌submitted with id ${submissionId}`);
     return submissionId;
 };
@@ -173,9 +171,12 @@ const downloadSubmissionFile = async (submissionId, type) => {
     }
     const bufferObj = await dbUtil.downloadFileBuffer(submissionId, type);
     logger.info('📌downloaded from GridFS');
-    const newFilePath = path.join(config.tmp_download_path, `${Date.now()}_${bufferObj.filename}`);
-    await writeFile(newFilePath, bufferObj.buffer);
-    return { filepath: newFilePath, filename: bufferObj.filename };
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(bufferObj.buffer);
+    return { stream: bufferStream, filename: bufferObj.filename };
+    // const newFilePath = path.join(config.tmp_download_path, `${Date.now()}_${bufferObj.filename}`);
+    // await writeFile(newFilePath, bufferObj.buffer);
+    // return { filepath: newFilePath, filename: bufferObj.filename };
 };
 
 const getSubmissionInstructions = async () => {
@@ -184,6 +185,27 @@ const getSubmissionInstructions = async () => {
 
 const getSubmissionFileInstructions = async () => {
     return submissionModel.submissionFileInstructions || { error: 'instructions not available' };
+};
+
+const validateSubmitterAndGetDiscordTags = async (token, userTags) => {
+    const submittedUserAuthId = await getAuthId(token);
+    const discordObjs = await discord.getUserAuthIdsFromTags(userTags);
+    let includesSubmitter = false;
+    discordObjs.forEach((discordObj) => {
+        if (discordObj.userAuthId === submittedUserAuthId) includesSubmitter = true;
+    });
+    if (includesSubmitter) return discordObjs;
+    throw new Error('📌you cannot submit a project that does not include yourself');
+};
+
+const validateSubmitterForUpdate = async (token, submissionId) => {
+    const submittedUserAuthId = await getAuthId(token);
+    const doc = await userSubmissionLinksModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(
+        submittedUserAuthId,
+        submissionId,
+    );
+    if (!doc) throw new Error('you are not authorized to update this project');
+    return doc.userAuthId;
 };
 
 module.exports = {
@@ -202,4 +224,6 @@ module.exports = {
     getSubmissionsDataWithFilters,
     getSubmissionInstructions,
     getSubmissionFileInstructions,
+    validateSubmitterAndGetDiscordTags,
+    validateSubmitterForUpdate,
 };

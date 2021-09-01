@@ -25,6 +25,7 @@ const addChallenge = async (challengeObj) => {
         client = await mongoUtil.getClient();
         const { insertedId } = await client.db(config.database.name)
             .collection(config.database.collections.challenges).insertOne(challengeObj);
+        await mongoUtil.closeClient(client);
         return insertedId;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -38,6 +39,7 @@ const removeChallenge = async (challengeId) => {
         client = await mongoUtil.getClient();
         const challenge = await client.db(config.database.name)
             .collection(config.database.collections.challenges).findOneAndDelete({ _id: mongoUtil.ObjectId(challengeId) });
+        await mongoUtil.closeClient(client);
         return challenge;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -51,10 +53,25 @@ const getChallenge = async (challengeId) => {
         client = await mongoUtil.getClient();
         const challenge = await client.db(config.database.name)
             .collection(config.database.collections.challenges).findOne({ _id: mongoUtil.ObjectId(challengeId) });
+        await mongoUtil.closeClient(client);
         return challenge;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error getting challenge:: ${err.message}`);
+    }
+};
+
+const getChallengesByTitles = async (titles) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const challenges = await client.db(config.database.name)
+            .collection(config.database.collections.challenges).find({ title: titles }).toArray();
+        await mongoUtil.closeClient(client);
+        return challenges;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting challenges by titles:: ${err.message}`);
     }
 };
 
@@ -64,4 +81,5 @@ module.exports = {
     addChallenge,
     removeChallenge,
     getChallenge,
+    getChallengesByTitles,
 };

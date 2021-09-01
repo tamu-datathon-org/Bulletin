@@ -47,6 +47,18 @@ const checkIfLoggedIn = (onlyAllowIfAdminstrator) => async (req, res, next) => {
     return next();
 };
 
+const getAuthId = async (token) => {
+    const { authId } = await (await fetch(`${gatekeeperUrl}/user`, {
+        headers: {
+            Cookie: `accessToken=${token}`,
+            Accept: 'application/json',
+        }
+    })).json();
+    if (!authId) throw new Error('📌you are not logged in!');
+    return authId;
+};
+
 module.exports = {
-    checkIfLoggedIn
+    checkIfLoggedIn,
+    getAuthId,
 };

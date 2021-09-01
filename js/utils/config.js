@@ -48,7 +48,7 @@ const defaultConfig = {
             field: 'videoLink',
             description: 'Youtube or Vimeo link to present this submission',
             type: 'String',
-            required: false,
+            required: true,
         }],
         submission_queries: [{
             field: 'titles',
@@ -90,7 +90,7 @@ const defaultConfig = {
             submissions: 'submissions',
             likes: 'likes',
             comments: 'comments',
-            userSubmissionLinks: 'user-submission-links',
+            userSubmissionLinks: 'userSubmissionLinks',
             accolades: 'accolades',
             challenges: 'challenges',
         },
