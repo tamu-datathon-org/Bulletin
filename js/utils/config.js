@@ -44,6 +44,11 @@ const defaultConfig = {
             description: 'Tags that help people find this submission ie. \'Image Recognition\', \'Django\', etc.',
             type: 'List<String>',
             required: false,
+        }, {
+            field: 'videoLink',
+            description: 'Youtube or Vimeo link to present this submission',
+            type: 'String',
+            required: false,
         }],
         submission_queries: [{
             field: 'titles',

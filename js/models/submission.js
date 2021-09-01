@@ -1,6 +1,33 @@
 const config = require('../utils/config');
 const mongoUtil = require('../utils/mongoDb');
 
+const sampleSubmission = {
+    title: 'Hello World!',
+    users: ['Woody', 'Buzz', 'Bo-Peep', 'Ham'],
+    links: ['https://www.google.com/', 'https://github.com/'],
+    tags: ['pixar', 'film making'],
+    videoLink: 'https://www.youtube.com/watch?v=pcbNb9pPNLw',
+};
+
+const submissionInstructions = {
+    URL: '[domain]/bulletin/api/submission/add',
+    'Content-Type': 'application/json',
+    body: sampleSubmission,
+};
+
+const submissionFileInstructions = {
+    URL: '[domain]/bulletin/api/submission/:submissionId/upload/:type',
+    params: {
+        submissionId: `${config.database.entryID_length} character string corresponding to the submission`,
+        type: `upload type string. one of the following: ${config.submission_constraints.submission_upload_types}`,
+    },
+    'Content-Type': 'multipart/form-data',
+    body: {
+        key: 'file',
+        value: '<your-file-name>'
+    },
+};
+
 const submission = {
     title: null,
     userSubmissionLinks: [],
@@ -8,6 +35,7 @@ const submission = {
     challengeIds: [],
     links: [],
     tags: [],
+    videoLink: null,
     likeIds: [],
     commentIds: [],
     sourceCodeId: null,
@@ -17,7 +45,7 @@ const submission = {
     submission_time: null,
 };
 
-const createSubmission = async (title, userSubmissionLinkIds, challengeIds, links, tags) => {
+const createSubmission = async (title, userSubmissionLinkIds, challengeIds, links, tags, videoLink) => {
     if (!title) throw new Error('submission title is required');
     const submissionObj = {
         title: title,
@@ -26,6 +54,7 @@ const createSubmission = async (title, userSubmissionLinkIds, challengeIds, link
         challengeIds: challengeIds || [],
         links: links || [],
         tags: tags || [],
+        videoLink: videoLink || '',
         likeIds: [],
         commentIds: [],
         sourceCodeId: '',
@@ -173,6 +202,9 @@ const updateSubmissionData = async (submissionId, setOptions) => {
 };
 
 module.exports = {
+    sampleSubmission,
+    submissionFileInstructions,
+    submissionInstructions,
     submission,
     createSubmission,
     addSubmission,

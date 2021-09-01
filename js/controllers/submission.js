@@ -3,7 +3,9 @@ const submissionService = require('../services/submission');
 const config = require('../utils/config');
 const logger = require('../utils/logger');
 
-exports.addSubmission = async (req, res) => {
+let IS_TESTING = false;
+
+const addSubmission = async (req, res) => {
     // define a standard response
     const response = {
         submissionId: null,
@@ -12,22 +14,22 @@ exports.addSubmission = async (req, res) => {
     try {
         logger.info(JSON.stringify(req.body));
 
-        Object.keys(req.body).forEach((field) => {
-            let inFields = false;
-            !config.submission_constraints.submission_fields.forEach((f) => {
-                if (f.field === field) inFields = true;
-            });
-            if (!inFields) throw new Error(`${field} is not a valid submission field`);
+        const requiredFields = [];
+        config.submission_constraints.submission_fields.forEach(f => {
+            if (f.required) requiredFields.push(f.field);
         });
+        const providedFields = Object.keys(req.body);
+        if (!requiredFields.every(f => providedFields.includes(f))) throw new Error('📌missing required field');
+        if (!providedFields.every(f => config.submission_constraints.submission_fields.includes(f))) throw new Error('📌invalid field');
 
         // submission time
-        const submission_time = (new Date('16 October 2021 13:00 UTC')).toISOString();
+        const submission_time = !IS_TESTING ? (new Date()).toISOString() : (new Date(config.submission_constraints.start_time)).toISOString();
 
         // validate submission time
         const submissionDate = (new Date(submission_time)).getTime();
         const st = (new Date(config.submission_constraints.start_time)).getTime();
         const et = (new Date(config.submission_constraints.end_time)).getTime();
-        if (submissionDate <= st || submissionDate > et) {
+        if (submissionDate < st || submissionDate > et) {
             throw new Error('📌Submission error:: Submissions are not allowed at this time');
         }
 
@@ -82,12 +84,12 @@ exports.addSubmission = async (req, res) => {
     }
 };
 
-exports.deleteSubmission = async (req, res) => {
+const deleteSubmission = async (req, res) => {
     const response = {};
     const { entryID } = req.params;
     try {
         if (!entryID) {
-            throw new Error('entryID is a required parameter');
+            throw new Error('📌submissionId is a required parameter');
         }
         response.result = await submissionService.deleteSubmission(entryID);
         res.status(200).json(response);
@@ -98,7 +100,7 @@ exports.deleteSubmission = async (req, res) => {
     }
 };
 
-exports.getSingleSubmission = async (req, res) => {
+const getSingleSubmission = async (req, res) => {
     const response = {
         result: null,
     };
@@ -113,7 +115,7 @@ exports.getSingleSubmission = async (req, res) => {
     }
 };
 
-exports.getMultipleSubmissions = async (req, res) => {
+const getMultipleSubmissions = async (req, res) => {
     const response = {
         result: [],
     };
@@ -123,7 +125,7 @@ exports.getMultipleSubmissions = async (req, res) => {
             config.submission_constraints.submission_queries.forEach((field) => {
                 if (field === key) hasKey = true;
             });
-            if (!hasKey) throw new Error(`${key} is not a valid query field`);
+            if (!hasKey) throw new Error(`📌${key} is not a valid query field`);
         });
         response.result.push(...await submissionService.getSubmissionsDataWithFilters(req.body));
         res.status(200).json(response);
@@ -134,7 +136,7 @@ exports.getMultipleSubmissions = async (req, res) => {
     }
 };
 
-exports.getAllSubmissions = async (req, res) => {
+const getAllSubmissions = async (req, res) => {
     const response = {
         result: [],
     };
@@ -148,11 +150,11 @@ exports.getAllSubmissions = async (req, res) => {
     }
 };
 
-exports.getSubmissionQueryFields = async (req, res) => {
+const getSubmissionQueryFields = async (req, res) => {
     const response = {};
     try {
         response.fields = config.submission_constraints.submission_queries;
-        if (!response.fields) throw new Error('Query parameters are not available');
+        if (!response.fields) throw new Error('📌Query parameters are not available');
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -161,11 +163,11 @@ exports.getSubmissionQueryFields = async (req, res) => {
     }
 };
 
-exports.getSubmissionUploadFields = async (req, res) => {
+const getSubmissionUploadFields = async (req, res) => {
     const response = {};
     try {
         response.fields = config.submission_constraints.submission_fields;
-        if (!response.fields) throw new Error('Submission fields are not available');
+        if (!response.fields) throw new Error('📌Submission fields are not available');
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -174,20 +176,20 @@ exports.getSubmissionUploadFields = async (req, res) => {
     }
 };
 
-exports.updateSubmission = async (req, res) => {
+const updateSubmission = async (req, res) => {
     const response = {};
     try {
         const { submissionId } = req.params;
         if (Object.keys(req.body).length === 0) {
-            throw new Error('No field(s) to update');
+            throw new Error('📌No field(s) to update');
         }
         Object.keys(req.body).forEach((field) => {
             if (!config.submission_constraints.submission_fields.includes(field)) {
-                throw new Error(`${field} is not a valid submission field`);
+                throw new Error(`📌${field} is not a valid submission field`);
             }
         });
         if (!submissionId) {
-            throw new Error('entryID is a required parameter');
+            throw new Error('📌submissionId is a required parameter');
         }
         if (req.body.userAuthIds) {
             if ((req.body.userAuthIds?.length ?? 0) === 0) {
@@ -215,13 +217,13 @@ exports.updateSubmission = async (req, res) => {
     }
 };
 
-exports.addLike = async (req, res) => {
+const addLike = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
     try {
         const { userAuthId } = 'test';
         if (!submissionId) {
-            throw new Error('submissionId is a required parameter');
+            throw new Error('📌submissionId is a required parameter');
         }
         response.result = await submissionService.addLike(userAuthId, submissionId);
         res.status(200).json(response);
@@ -232,17 +234,17 @@ exports.addLike = async (req, res) => {
     }
 };
 
-exports.addComment = async (req, res) => {
+const addComment = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
     const { message } = req.body;
     try {
         const userAuthId = 'test';
         if (!submissionId) {
-            throw new Error('submissionId is a required parameter');
+            throw new Error('📌submissionId is a required parameter');
         }
         if (!message) {
-            throw new Error('message is a required field');
+            throw new Error('📌message is a required field');
         }
         response.result = await submissionService.addComment(userAuthId, submissionId, message);
         res.status(200).json(response);
@@ -253,13 +255,13 @@ exports.addComment = async (req, res) => {
     }
 };
 
-exports.removeLike = async (req, res) => {
+const removeLike = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
     try {
         const userAuthId = 'test';
         if (!submissionId) {
-            throw new Error('submissionId is a required parameter');
+            throw new Error('📌submissionId is a required parameter');
         }
         response.result = await submissionService.removeLike(userAuthId, submissionId);
         res.status(200).json(response);
@@ -270,17 +272,17 @@ exports.removeLike = async (req, res) => {
     }
 };
 
-exports.removeComment = async (req, res) => {
+const removeComment = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
     const { time } = req.body;
     try {
         const userAuthId = 'test';
         if (!submissionId) {
-            throw new Error('entryID is a required parameter');
+            throw new Error('📌submissionId is a required parameter');
         }
         if (!time) {
-            throw new Error('time is a required field');
+            throw new Error('📌time is a required field');
         }
         response.result = `removed ${await submissionService.removeComment(userAuthId, submissionId, time)} comment`;
         res.status(200).json(response);
@@ -291,18 +293,23 @@ exports.removeComment = async (req, res) => {
     }
 };
 
-exports.sourceCodeUpload = async (req, res) => {
+const submissionFileUpload = async (req, res) => {
     const response = {};
     const { buffer } = req.file;
     const { submissionId } = req.params;
+    const { type } = req.params;
     const { originalname } = req.file;
     try {
-        if (!buffer) throw new Error('no file provided');
-        if (!submissionId) throw new Error('submissionId is a required parameter');
+        if (!buffer) throw new Error('📌no file provided');
+        if (!submissionId) throw new Error('📌submissionId is a required parameter');
+        if (!type) throw new Error('📌type is a required parameter');
         if ((originalname?.length ?? 0) === 0) {
-            throw new Error('no filename provided');
+            throw new Error('📌no filename provided');
         }
-        await submissionService.uploadSubmissionFile(buffer, submissionId, originalname, config.submission_constraints.submission_upload_types.sourceCode);
+        if (!config.submission_constraints.submission_upload_types.includes(type)) {
+            throw new Error(`📌invalid type parameter provided, valid types are ${config.submission_constraints.submission_upload_types.toString()}`);
+        }
+        await submissionService.uploadSubmissionFile(buffer, submissionId, originalname, config.submission_constraints.submission_upload_types[type]);
         response.filename = originalname;
         res.status(200).json(response);
     } catch (err) {
@@ -312,128 +319,19 @@ exports.sourceCodeUpload = async (req, res) => {
     }
 };
 
-exports.sourceCodeDownload = async (req, res) => {
+const submissionFileDownload = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
+    const { type } = req.params;
     try {
-        if (!submissionId) throw new Error('submissionId is a required parameter');
-        const fileObj = await submissionService.downloadSubmissionFile(submissionId, config.submission_constraints.submission_upload_types.sourceCode);
-        res.status(200).download(fileObj.filepath, fileObj.filename, async (error) => {
-            if (error) throw new Error('unable to send sourceCode');
-            await submissionService.removeTmpFile(fileObj.filepath);
-        });
-    } catch (err) {
-        logger.info(err);
-        response.error = err.message;
-        res.status(400).json(response);
-    }
-};
-
-exports.iconUpload = async (req, res) => {
-    const response = {};
-    const { buffer } = req.file;
-    const { submissionId } = req.params;
-    const { originalname } = req.file;
-    try {
-        if (!buffer) throw new Error('no file provided');
-        if (!submissionId) throw new Error('submissionId is a required parameter');
-        if ((originalname?.length ?? 0) === 0) {
-            throw new Error('no filename provided');
+        if (!submissionId) throw new Error('📌submissionId is a required parameter');
+        if (!type) throw new Error('📌type is a requied parameter');
+        if (!config.submission_constraints.submission_upload_types.includes(type)) {
+            throw new Error(`📌invalid type parameter provided, valid types are ${config.submission_constraints.submission_upload_types.toString()}`);
         }
-        await submissionService.uploadSubmissionFile(buffer, submissionId, originalname, config.submission_constraints.submission_upload_types.icon);
-        response.filename = originalname;
-        res.status(200).json(response);
-    } catch (err) {
-        logger.info(err);
-        response.error = err.message;
-        res.status(400).json(response);
-    }
-};
-
-exports.iconDownload = async (req, res) => {
-    const response = {};
-    const { submissionId } = req.params;
-    try {
-        if (!submissionId) throw new Error('submissionId is a required parameter');
-        const fileObj = await submissionService.downloadSubmissionFile(submissionId, config.submission_constraints.submission_upload_types.icon);
-        res.status(200).download(fileObj.filepath, fileObj.filename, async (error) => {
-            if (error) throw new Error('unable to send icon');
-            await submissionService.removeTmpFile(fileObj.filepath);
-        });
-    } catch (err) {
-        logger.info(err);
-        response.error = err.message;
-        res.status(400).json(response);
-    }
-};
-
-exports.photosUpload = async (req, res) => {
-    const response = {};
-    const { buffer } = req.file;
-    const { submissionId } = req.params;
-    const { originalname } = req.file;
-    try {
-        if (!buffer) throw new Error('no file provided');
-        if (!submissionId) throw new Error('submissionId is a required parameter');
-        if ((originalname?.length ?? 0) === 0) {
-            throw new Error('no filename provided');
-        }
-        await submissionService.uploadSubmissionFile(buffer, submissionId, originalname, config.submission_constraints.submission_upload_types.photos);
-        response.filename = originalname;
-        res.status(200).json(response);
-    } catch (err) {
-        logger.info(err);
-        response.error = err.message;
-        res.status(400).json(response);
-    }
-};
-
-exports.photosDownload = async (req, res) => {
-    const response = {};
-    const { submissionId } = req.params;
-    try {
-        if (!submissionId) throw new Error('submissionId is a required parameter');
-        const fileObj = await submissionService.downloadSubmissionFile(submissionId, config.submission_constraints.submission_upload_types.photos);
-        res.status(200).download(fileObj.filepath, fileObj.filename, async (error) => {
-            if (error) throw new Error('unable to send photos');
-            await submissionService.removeTmpFile(fileObj.filepath);
-        });
-    } catch (err) {
-        logger.info(err);
-        response.error = err.message;
-        res.status(400).json(response);
-    }
-};
-
-exports.markdownUpload = async (req, res) => {
-    const response = {};
-    const { buffer } = req.file;
-    const { submissionId } = req.params;
-    const { originalname } = req.file;
-    try {
-        if (!buffer) throw new Error('no file provided');
-        if (!submissionId) throw new Error('submissionId is a required parameter');
-        if ((originalname?.length ?? 0) === 0) {
-            throw new Error('no filename provided');
-        }
-        await submissionService.uploadSubmissionFile(buffer, submissionId, originalname, config.submission_constraints.submission_upload_types.markdown);
-        response.filename = originalname;
-        res.status(200).json(response);
-    } catch (err) {
-        logger.info(err);
-        response.error = err.message;
-        res.status(400).json(response);
-    }
-};
-
-exports.markdownDownload = async (req, res) => {
-    const response = {};
-    const { submissionId } = req.params;
-    try {
-        if (!submissionId) throw new Error('submissionId is a required parameter');
         const fileObj = await submissionService.downloadSubmissionFile(submissionId, config.submission_constraints.submission_upload_types.markdown);
         res.status(200).download(fileObj.filepath, fileObj.filename, async (error) => {
-            if (error) throw new Error('unable to send markdown');
+            if (error) throw new Error('📌unable to send markdown');
             await submissionService.removeTmpFile(fileObj.filepath);
         });
     } catch (err) {
@@ -441,4 +339,41 @@ exports.markdownDownload = async (req, res) => {
         response.error = err.message;
         res.status(400).json(response);
     }
+};
+
+const getSubmissionInstructions = async (req, res) => {
+    res.status(200).json(await submissionService.getSubmissionInstructions());
+};
+
+const getSubmissionFileInstructions = async (req, res) => {
+    res.status(200).json(await submissionService.getSubmissionFileInstructions());
+};
+
+const sendHelpLinks = async (req, res) => {
+    res.status(200).json({ helpLinks: [
+        '.. /help/submissionFields',
+        '.. /help/queryFields',
+        '.. /help/instructions',
+        '.. /help/instructions/file',
+    ]});
+};
+
+module.exports = {
+    addSubmission,
+    deleteSubmission,
+    getAllSubmissions,
+    getSingleSubmission,
+    getMultipleSubmissions,
+    addLike,
+    removeLike,
+    addComment,
+    removeComment,
+    updateSubmission,
+    submissionFileUpload,
+    submissionFileDownload,
+    getSubmissionQueryFields,
+    getSubmissionUploadFields,
+    getSubmissionInstructions,
+    getSubmissionFileInstructions,
+    sendHelpLinks,
 };

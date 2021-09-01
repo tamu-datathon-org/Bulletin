@@ -3,7 +3,7 @@ const { Readable } = require('stream');
 const { MongoClient, GridFSBucket, ObjectId } = require('mongodb');
 const logger = require('./logger');
 
-const url = process.env.MONGODB_URL; // config.database;
+const url = process.env.MONGODB_URL;
 const bulletinDb = config.database.name;
 const { collections } = config.database;
 
@@ -13,7 +13,7 @@ exports.closeClient = async (client) => {
     if (client) await client.close();
 };
 
-exports.ObjectId = async (id) => new ObjectId(id);
+exports.ObjectId = async (id) => id ? new ObjectId(id) : '';
 
 exports.uploadFile = async (buffer, submissionId, filename, type) => {
     let client = null;
