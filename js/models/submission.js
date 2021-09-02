@@ -2,6 +2,7 @@ const config = require('../utils/config');
 const mongoUtil = require('../utils/mongoDb');
 
 const sampleSubmission = {
+    event: 'TD2021',
     title: 'Hello World!',
     users: ['Woody', 'Buzz', 'Bo-Peep', 'Ham'],
     links: ['https://www.google.com/', 'https://github.com/'],
@@ -10,8 +11,11 @@ const sampleSubmission = {
 };
 
 const submissionInstructions = {
-    URL: '[domain]/bulletin/api/submission/add',
+    URL: '[domain]/bulletin/[event]/api/submission/add',
     'Content-Type': 'application/json',
+    params: {
+        event: 'name of the event you are submitting to',
+    },
     body: sampleSubmission,
 };
 
@@ -29,6 +33,7 @@ const submissionFileInstructions = {
 };
 
 const submission = {
+    eventId: null,
     title: null,
     userSubmissionLinks: [],
     accoladeIds: [],
@@ -45,9 +50,11 @@ const submission = {
     submission_time: null,
 };
 
-const createSubmission = async (title, userSubmissionLinkIds, challengeIds, links, tags, videoLink) => {
+const createSubmission = async (eventId, title, userSubmissionLinkIds, challengeIds, links, tags, videoLink) => {
+    if (!eventId) throw new Error('submission eventId is required');
     if (!title) throw new Error('submission title is required');
     const submissionObj = {
+        eventId: eventId,
         title: title,
         userSubmissionLinkids: userSubmissionLinkIds || [],
         accoladeIds: [],
@@ -85,7 +92,7 @@ const removeSubmission = async (submissionId) => {
     try {
         client = mongoUtil.getClient();
         const doc = await client.db(config.database.name)
-            .collection(config.database.collections.submissions).findOneAndDelete({ _id: mongoUtil.ObjectId(submissionId) });
+            .collection(config.database.collections.submissions).findOneAndDelete({ _id: await mongoUtil.ObjectId(submissionId) });
         await mongoUtil.closeClient(client);
         return doc;
     } catch (err) {
@@ -99,7 +106,7 @@ const addLike = async (submissionId, likeId) => {
     try {
         const { upsertedId } = await client.db(config.database.name)
             .collection(config.collections.submissions).updateOne(
-                { _id: mongoUtil.ObjectId(submissionId) },
+                { _id: await mongoUtil.ObjectId(submissionId) },
                 { $addToSet: { likeIds: likeId } },
             );
         await mongoUtil.closeClient(client);
@@ -115,7 +122,7 @@ const removeLike = async (submissionId, likeId) => {
     try {
         const { upsertedId } = await client.db(config.database.name)
             .collection(config.collections.submissions).updateOne(
-                { _id: mongoUtil.ObjectId(submissionId) },
+                { _id: await mongoUtil.ObjectId(submissionId) },
                 { $pull: { likeIds: likeId } },
             );
         await mongoUtil.closeClient(client);
@@ -131,7 +138,7 @@ const addComment = async (submissionId, commentId) => {
     try {
         const { upsertedId } = await client.db(config.database.name)
             .collection(config.collections.comments).updateOne(
-                { _id: mongoUtil.ObjectId(submissionId) },
+                { _id: await mongoUtil.ObjectId(submissionId) },
                 { $pull: { commentIds: commentId } },
             );
         await mongoUtil.closeClient(client);
@@ -147,7 +154,7 @@ const removeComment = async (submissionId, commentId) => {
     try {
         const { upsertedId } = await client.db(config.database.name)
             .collection(config.database.collections.submissions).updateOne(
-                { _id: mongoUtil.ObjectId(submissionId) },
+                { _id: await mongoUtil.ObjectId(submissionId) },
                 { $push: { commentIds: commentId } },
             );
         await mongoUtil.closeClient(client);
@@ -163,7 +170,7 @@ const getSubmission = async (submissionId) => {
     try {
         client = await mongoUtil.getClient();
         const doc = await client.db(config.database.name)
-            .collection(config.database.collections.submissions).findOne({ _id: mongoUtil.ObjectId(submissionId) });
+            .collection(config.database.collections.submissions).findOne({ _id: await mongoUtil.ObjectId(submissionId) });
         return doc;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -181,7 +188,7 @@ const getSubmissionsDump = async () => {
         return docs;
     } catch (err) {
         await mongoUtil.closeClient(client);
-        throw new Error(`📌Error getting all submission data ${err.message}`);
+        throw new Error(`📌Error getting submission data:: ${err.message}`);
     }
 };
 
@@ -190,14 +197,94 @@ const updateSubmissionData = async (submissionId, setOptions) => {
     try {
         client = await mongoUtil.getClient();
         const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.submissions).updateOne(
-            { _id: mongoUtil.bjectId(submissionId) },
+            { _id: await mongoUtil.ObjectId(submissionId) },
             { $set: setOptions },
         );
         await mongoUtil.closeClient(client);
         return upsertedId;
     } catch (err) {
         await mongoUtil.closeClient(client);
-        throw new Error(`📌Error getting all submission data ${err.message}`);
+        throw new Error(`📌Error updating submission:: ${err.message}`);
+    }
+};
+
+const addSubmissionUserSubmissionLinkId = async (submissionId, userSubmissionLinkId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.submissions).updateOne(
+            { _id: await mongoUtil.ObjectId(submissionId) },
+            { $addToSet: { userSubmissionLinkIds: userSubmissionLinkId } },
+        );
+        await mongoUtil.closeClient(client);
+        return upsertedId;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error updating submission:: ${err.message}`);
+    }
+};
+
+const removeSubmissionUserSubmissionLinkId = async (submissionId, userSubmissionLinkId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.submissions).updateOne(
+            { _id: await mongoUtil.ObjectId(submissionId) },
+            { $pull: { userSubmissionLinkIds: userSubmissionLinkId } },
+        );
+        await mongoUtil.closeClient(client);
+        return upsertedId;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error updating submission:: ${err.message}`);
+    }
+};
+
+
+
+const removeSubmissionUserAccoladeId = async (submissionId, accoladeId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.submissions).updateOne(
+            { _id: await mongoUtil.ObjectId(submissionId) },
+            { $pull: { accoladeIds: accoladeId } },
+        );
+        await mongoUtil.closeClient(client);
+        return upsertedId;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error updating submission:: ${err.message}`);
+    }
+};
+
+const addSubmissionUserAccoladeId = async (submissionId, accoladeId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.submissions).updateOne(
+            { _id: await mongoUtil.ObjectId(submissionId) },
+            { $addToSet: { accoladeIds: accoladeId } },
+        );
+        await mongoUtil.closeClient(client);
+        return upsertedId;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error updating submission:: ${err.message}`);
+    }
+};
+
+const getAllSubmissionsByEventId = async (eventId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const docs = (await client.db(config.database.name)
+            .collection(config.database.collections.submissions).find({ eventId: eventId })).toArray();
+        await mongoUtil.closeClient(client);
+        return docs;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting all event submissions ${err.message}`);
     }
 };
 
@@ -216,4 +303,9 @@ module.exports = {
     getSubmission,
     getSubmissionsDump,
     updateSubmissionData,
+    getAllSubmissionsByEventId,
+    addSubmissionUserAccoladeId,
+    removeSubmissionUserAccoladeId,
+    addSubmissionUserSubmissionLinkId,
+    removeSubmissionUserSubmissionLinkId,
 };

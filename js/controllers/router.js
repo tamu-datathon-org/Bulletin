@@ -1,6 +1,6 @@
 const config = require('../utils/config');
 
-exports.loginPage = (req, res) => {
+exports.splashPage = (req, res) => {
     res.render('login', { title: config.siteName });
 };
 

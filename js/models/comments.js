@@ -39,7 +39,7 @@ const removeComment = async (commentId) => {
     try {
         client = await mongoUtil.getClient();
         const comment = await client.db(config.database.name)
-            .collection(config.database.collections.comments).findOneAndDelete({ _id: mongoUtil.ObjectId(commentId) });
+            .collection(config.database.collections.comments).findOneAndDelete({ _id: await mongoUtil.ObjectId(commentId) });
         return comment;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -64,7 +64,7 @@ const getComment = async (commentId) => {
     try {
         client = await mongoUtil.getClient();
         const comment = await client.db(config.database.name)
-            .collection(config.database.collections.comments).findOne({ _id: mongoUtil.ObjectId(commentId) });
+            .collection(config.database.collections.comments).findOne({ _id: await mongoUtil.ObjectId(commentId) });
         return comment;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -89,6 +89,18 @@ const getCommentBySubmissionIdAndUserAuthIdAndTime = async (submissionId, userAu
     }
 };
 
+const removeAllCommentsOfSubmissionId = async (submissionId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        await client.db(config.database.name)
+            .collection(config.database.collections.comments).deleteMany({ submissionId: submissionId });
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error removing comments:: ${err.message}`);
+    }
+};
+
 module.exports = {
     comment,
     createComment,
@@ -97,4 +109,5 @@ module.exports = {
     removeComments,
     getComment,
     getCommentBySubmissionIdAndUserAuthIdAndTime,
+    removeAllCommentsOfSubmissionId,
 };

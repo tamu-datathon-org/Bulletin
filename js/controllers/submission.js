@@ -4,8 +4,9 @@ const submissionService = require('../services/submission');
 const config = require('../utils/config');
 const logger = require('../utils/logger');
 const bouncer = require('./bouncer');
+const eventModel = require('../models/events');
 
-let IS_TESTING = false;
+let IS_TESTING = process.env.IS_TESTING || false;
 
 const addSubmission = async (req, res) => {
     // define a standard response
@@ -15,6 +16,11 @@ const addSubmission = async (req, res) => {
     };
     try {
         logger.info(JSON.stringify(req.body));
+
+        const { event } = req.params;
+        if (!event) throw new Error('📌event is a required parameter');
+        const eventId = await eventModel.getEventByName(event);
+        if (!eventId) throw new Error(`event ${event} does not exist`);
 
         const requiredFields = [];
         const validFields = [];
@@ -27,14 +33,13 @@ const addSubmission = async (req, res) => {
         if (!providedFields.every(f => validFields.includes(f))) throw new Error('📌invalid field');
 
         // submission time
-        const submission_time = !IS_TESTING ? (new Date()).toISOString() : (new Date(config.submission_constraints.start_time)).toISOString();
+        const dateSpan = await submissionService.getEventTimeSpan(eventId);
+        const submission_time = !IS_TESTING ? (new Date()).toISOString() : (new Date(dateSpan[0])).toISOString();
 
         // validate submission time
         const submissionDate = (new Date(submission_time)).getTime();
-        const st = (new Date(config.submission_constraints.start_time)).getTime();
-        const et = (new Date(config.submission_constraints.end_time)).getTime();
-        if (submissionDate < st || submissionDate > et) {
-            // throw new Error('📌Submission error:: Submissions are not allowed at this time');
+        if (submissionDate < (new Date(dateSpan[0]).toISOString() || submissionDate > (new Date(dateSpan[1]).toISOString()))) {
+            throw new Error('📌Submission error:: Submissions are not allowed at this time');
         }
 
         // validate title
@@ -85,12 +90,13 @@ const addSubmission = async (req, res) => {
             throw new Error(`📌Submission links error:: maximum number of tags is ${config.submission_constraints.max_links}`);
         }
 
-        response.submissionId = await submissionService.addSubmission(req.body, discordTags);
+        response.submissionId = await submissionService.addSubmission(req.body, eventId, discordTags);
         response.submission_time = submission_time;
 
         logger.info('📌Uploaded successful');
         res.status(200).json(response);
     } catch (err) {
+        logger.info(err);
         response.error = err.message;
         res.status(400).json(response);
     }
@@ -158,6 +164,21 @@ const getAllSubmissions = async (req, res) => {
     try {
         response.result.push(...await submissionService.getAllSubmissionsData());
         res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+const getAllSubmissionsByEvent = async (req, res) => {
+    const response = {};
+    const { event } = req.params;
+    try {
+        if (!event) throw new Error('📌event is a required parameter');
+        const eventId = await eventModel.getEventByName(event);
+        if (!eventId) throw new Error(`📌event ${event} does not exist`);
+        response.result = await submissionService.getAllSubmissionsByEventId(eventId);
     } catch (err) {
         logger.info(err);
         response.error = err.message;
@@ -409,4 +430,5 @@ module.exports = {
     getSubmissionInstructions,
     getSubmissionFileInstructions,
     sendHelpLinks,
+    getAllSubmissionsByEvent,
 };

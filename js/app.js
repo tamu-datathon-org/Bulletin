@@ -1,15 +1,16 @@
 const express = require('express');
 const path = require('path');
-const proxy = require('express-http-proxy');
+// const proxy = require('express-http-proxy');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const logger = require('./utils/logger');
 const submissionController = require('./controllers/submission');
+const adminController = require('./controllers/admin');
 const bouncerController = require('./controllers/bouncer');
+const eventsController = require('./controllers/events');
 const pageRouter = require('./controllers/router');
 const multerUtil = require('./utils/multer');
 const mongoUtil = require('./utils/mongoDb');
-const config = require('./utils/config');
 
 const PORT = process.env.PORT || 3000;
 
@@ -18,27 +19,30 @@ const app = express();
 app.set('views', path.join(__dirname, '..', 'views'));
 app.set('view engine', 'pug');
 
-app.get('/', pageRouter.loginPage);
+app.get('/bulletin', bouncerController.checkIfLoggedIn, pageRouter.splashPage);
 
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// add or update submission
-app.post('/bulletin/api/submission/add', submissionController.addSubmission);
-app.post('/bulletin/api/submission/update/:submissionId/delete', bouncerController.checkIfLoggedIn, submissionController.deleteSubmission);
-app.post('/bulletin/api/submission/update/:submissionId/update', bouncerController.checkIfLoggedIn, submissionController.updateSubmission);
-app.post('/bulletin/api/submission/update/:submissionId/upload/:type', bouncerController.checkIfLoggedIn, multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
-app.post('/bulletin/api/submission/update/:submissionId/like/add', bouncerController.checkIfLoggedIn, submissionController.addLike);
-app.post('/bulletin/api/submission/update/:submissionId/comment/add', bouncerController.checkIfLoggedIn, submissionController.addComment);
-app.post('/bulletin/api/submission/update/:submissionId/like/remove', bouncerController.checkIfLoggedIn, submissionController.removeLike);
-app.post('/bulletin/api/submission/update/:submissionId/comment/remove', bouncerController.checkIfLoggedIn, submissionController.removeComment);
+app.get('/bulletin/:event/api', eventsController.getEvent);
+
+// add or update submission || add bouncerController.checkIfLoggedIn for production
+app.post('/bulletin/:event/api/submission/add', submissionController.addSubmission);
+app.post('/bulletin/api/submission/update/:submissionId/delete', submissionController.deleteSubmission);
+app.post('/bulletin/api/submission/update/:submissionId/update', submissionController.updateSubmission);
+app.post('/bulletin/api/submission/update/:submissionId/upload/:type', multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
+app.post('/bulletin/api/submission/update/:submissionId/like/add', submissionController.addLike);
+app.post('/bulletin/api/submission/update/:submissionId/comment/add', submissionController.addComment);
+app.post('/bulletin/api/submission/update/:submissionId/like/remove', submissionController.removeLike);
+app.post('/bulletin/api/submission/update/:submissionId/comment/remove', submissionController.removeComment);
 
 // request submission data/files
 app.get('/bulletin/api/submission/get/one/:submissionId/download/:type', submissionController.submissionFileDownload);
 app.get('/bulletin/api/submission/get/one/:submissionId', submissionController.getSingleSubmission);
 app.get('/bulletin/api/submission/get/all', submissionController.getAllSubmissions);
+app.get('/bulletin/:event/api/submission/get/all', submissionController.getAllSubmissionsByEvent);
 app.post('/bulletin/api/submission/get/query', submissionController.getMultipleSubmissions);
 
 // get help
@@ -48,7 +52,15 @@ app.get('/bulletin/api/submission/help/queryFields', submissionController.getSub
 app.get('/bulletin/api/submission/help/instructions', submissionController.getSubmissionInstructions);
 app.get('/bulletin/api/submission/help/instructions/file', submissionController.getSubmissionFileInstructions);
 
-app.use('/*', proxy(`${config.redirect_url}/#`));
+// admin
+app.post('/bulletin/api/admin/add/event', adminController.addEvent);
+app.post('/bulletin/:event/api/admin/add/accolade', adminController.addAccolade);
+app.post('/bulletin/:event/api/admin/add/challenge', adminController.addChallenge);
+app.post('/bulletin/:event/api/admin/remove/event', adminController.removeEvent);
+app.post('/bulletin/:event/api/admin/remove/accolades', adminController.removeAccolades);
+app.post('/bulletin/:event/api/admin/remove/challenges', adminController.removeChallenges);
+
+// app.use('/*', (req, res) => res.redirect(`${process.env.REDIRECT_URL}`));
 
 mongoUtil.dbInit();
 

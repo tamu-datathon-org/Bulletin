@@ -14,12 +14,13 @@ const likesModel = require('../models/likes');
 const commentsModel = require('../models/comments');
 const userSubmissionLinksModel = require('../models/userSubmissionLinks');
 const challengesModel = require('../models/challenges');
+const eventsModel = require('../models/events');
 
 const unlink = promisify(fs.unlink);
 // const writeFile = promisify(fs.writeFile);
 
 // uploads submission to database
-const addSubmission = async (requestBody, discordObjs) => {
+const addSubmission = async (requestBody, eventId, discordObjs) => {
     const challengeIds = await Promise.all((await challengesModel.getChallengesByTitles(requestBody.challenges))
         .map(c => c._id));
     const userSubmissionLinkIds = await Promise.all(discordObjs.map(async (discordObj) => {
@@ -28,9 +29,10 @@ const addSubmission = async (requestBody, discordObjs) => {
         return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj);
     }));
     const submissionObj = await submissionModel
-        .createSubmission(requestBody.title, userSubmissionLinkIds, challengeIds, requestBody.links, requestBody.tags, requestBody.videoLink);
+        .createSubmission(eventId, requestBody.title, userSubmissionLinkIds, challengeIds, requestBody.links, requestBody.tags, requestBody.videoLink);
     const submissionId = await submissionModel.addSubmission(submissionObj);
     await userSubmissionLinksModel.updateUserSubmissionLinkIds(userSubmissionLinkIds, submissionId);
+    await Promise.all((await eventsModel.addEventSubmissionId(eventId, submissionId)));
     logger.info(`📌submitted with id ${submissionId}`);
     return submissionId;
 };
@@ -106,12 +108,19 @@ const getAllSubmissionsData = async () => {
     return submissionModel.getSubmissionsDump();
 };
 
+const getAllSubmissionsByEventId = async (eventId) => {
+    return submissionModel.getAllSubmissionsByEventId(eventId);
+};
+
 const getSubmission = async (submissionId) => {
     return submissionModel.getSubmission(submissionId);
 };
 
 const deleteSubmission = async (submissionId) => {
     const doc = await submissionModel.deleteSubmission(submissionId);
+    await eventsModel.removeEventSubmissionId(submissionId);
+    await commentsModel.removeAllCommentsOfSubmissionId(submissionId);
+    await likesModel.removeAllLikesOfSubmissionId(submissionId);
     if (doc.userSubmissionLinkIds) await userSubmissionLinksModel.removeUserSubmissionLinks(doc.userSubmissionLinkIds);
     if (doc.sourceCodeId) await dbUtil.removeFile(doc.sourceCodeId);
     if (doc.iconId) await dbUtil.removeFile(doc.iconId);
@@ -198,6 +207,11 @@ const validateSubmitterAndGetDiscordTags = async (token, userTags) => {
     throw new Error('📌you cannot submit a project that does not include yourself');
 };
 
+const getEventTimeSpan = async (eventId) => {
+    const event = await eventsModel.getEventById(eventId);
+    return [event.start_time, event.end_time];
+};
+
 const validateSubmitterForUpdate = async (token, submissionId) => {
     const submittedUserAuthId = await getAuthId(token);
     const doc = await userSubmissionLinksModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(
@@ -226,4 +240,6 @@ module.exports = {
     getSubmissionFileInstructions,
     validateSubmitterAndGetDiscordTags,
     validateSubmitterForUpdate,
+    getAllSubmissionsByEventId,
+    getEventTimeSpan,
 };

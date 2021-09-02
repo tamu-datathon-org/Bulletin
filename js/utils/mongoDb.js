@@ -22,6 +22,7 @@ exports.dbInit = async () => {
         await Promise.all(Object.values(config.database.collections).map(async (collectionName) => {
             try {
                 await client.db(bulletinDb).createCollection(collectionName);
+                logger.info(`📌${collectionName} created`);
             } catch (err) {
                 logger.info(`📌${collectionName} exists`);
             }

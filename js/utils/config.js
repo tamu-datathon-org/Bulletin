@@ -14,10 +14,8 @@ const defaultConfig = {
             icon: 'icon',
             markdown: 'markdown',
         },
-        start_time: null,
-        end_time: null,
         max_tags: 12,
-        max_links:  12,
+        max_links: 12,
         max_file_upload_size: 1000 * 1000 * 30, // 30 Mb
         submission_fields: [{
             field: 'title',
@@ -93,12 +91,15 @@ const defaultConfig = {
             userSubmissionLinks: 'userSubmissionLinks',
             accolades: 'accolades',
             challenges: 'challenges',
+            events: 'events',
+            questions: 'questions',
+            sponsors: 'sponsors',
         },
         bucket_name: 'fs',
         entryID_length: 24,
     },
     tmp_download_path: null,
-    redirect_url: 'https://tamudatathon.com/',
+    redirect_url: 'https://tamudatathon.com/bulletin',
 };
 
 const addConfigData = () => {

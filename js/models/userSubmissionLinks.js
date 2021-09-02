@@ -36,7 +36,7 @@ const removeUserSubmissionLink = async (userSubmissionLinkId) => {
     try {
         client = await mongoUtil.getClient();
         const link = await client.db(config.database.name)
-            .collection(config.database.collections.userSubmissionLinks).findOneAndDelete({ _id: mongoUtil.ObjectId(userSubmissionLinkId) });
+            .collection(config.database.collections.userSubmissionLinks).findOneAndDelete({ _id: await mongoUtil.ObjectId(userSubmissionLinkId) });
         return link;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -62,7 +62,7 @@ const getUserSubmissionLink = async (userSubmissionLinkId) => {
     try {
         client = await mongoUtil.getClient();
         const doc = await client.db(config.database.name)
-            .collection(config.database.collections.userSubmissionLinks).findOne({ _id: mongoUtil.ObjectId(userSubmissionLinkId) });
+            .collection(config.database.collections.userSubmissionLinks).findOne({ _id: await mongoUtil.ObjectId(userSubmissionLinkId) });
         return doc;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -108,7 +108,7 @@ const updateUserSubmissionLink = async (submissionId, setOptions) => {
     try {
         client = await mongoUtil.getClient();
         const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.userSubmissionLinks).updateOne(
-            { _id: mongoUtil.ObjectId(submissionId) },
+            { _id: await mongoUtil.ObjectId(submissionId) },
             { $set: { setOptions } },
         );
         await mongoUtil.closeClient(client);
