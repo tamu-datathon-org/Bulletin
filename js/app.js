@@ -59,6 +59,9 @@ app.post('/bulletin/:event/api/admin/add/challenge', adminController.addChalleng
 app.post('/bulletin/:event/api/admin/remove/event', adminController.removeEvent);
 app.post('/bulletin/:event/api/admin/remove/accolades', adminController.removeAccolades);
 app.post('/bulletin/:event/api/admin/remove/challenges', adminController.removeChallenges);
+// app.post('/bulletin/:event/api/admin/update/accolades', adminController.updateAccolades);
+// app.post('/bulletin/:event/api/admin/update/challenges', adminController.updateChallenges);
+app.post('/bulletin/:event/api/admin/update/event', adminController.updateEvent);
 
 // app.use('/*', (req, res) => res.redirect(`${process.env.REDIRECT_URL}`));
 

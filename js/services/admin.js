@@ -1,7 +1,7 @@
-const accoladeModel = require('../models/accolades');
-const challengeModel = require('../models/challenges');
-const eventsModel = require('../models/events');
-const questionsModel = require('../models/questions');
+let accoladeModel = require('../models/accolades');
+let challengeModel = require('../models/challenges');
+let eventsModel = require('../models/events');
+let questionsModel = require('../models/questions');
 const logger = require('../utils/logger');
 
 const addAccolade = async (title, description, challenges, emoji, event) => {
@@ -44,15 +44,32 @@ const removeAccolades = async (event, accoladeTitles) => {
 
 const addEvent = async (name, description, start_time, end_time) => {
     const dupEvent = await eventsModel.getEventByName(name);
-    if (dupEvent) throw new Error(`event ${name} already exists`);
+    if (dupEvent) throw new Error(`📌event ${name} already exists`);
     const eventObj = await eventsModel.createEvent(name, description, start_time, end_time);
     return eventsModel.addEvent(eventObj);
 };
 
 const removeEvent = async (name) => {
     const eventObj = await eventsModel.getEventByName(name);
-    if (eventObj) throw new Error(`event ${name} does not exists`);
+    if (!eventObj) throw new Error(`📌event ${name} does not exist`);
     return eventsModel.removeEventById(eventObj._id);
+};
+
+const updateEvent = async (name, description, start_time, end_time) => {
+    const eventObj = await eventsModel.getEventByName(name);
+    if (!eventObj) throw new Error(`📌event ${name} does not exist`);
+    const setOptions = {};
+    if (name) setOptions.name = name;
+    if (description) setOptions.description = description;
+    if (start_time) setOptions.start_time = start_time;
+    if (end_time) setOptions.end_time = end_time;
+    return eventsModel.updateEvent(eventObj._id, setOptions);
+};
+
+const getEvent = async (name) => {
+    const eventObj = await eventsModel.getEventByName(name);
+    if (!eventObj) throw new Error(`📌event ${name} does not exist`);
+    return eventObj;
 };
 
 const addChallenge = async (title, description, questions, accolades, event) => {
@@ -106,11 +123,68 @@ const removeChallenges = async (event, challengeTitles) => {
     return challengeIds;
 };
 
+const updateChallenges = async (challenges) => {
+    await Promise.all(challenges.map(async (challenge) => {
+        const challengeObj = await challengeModel.getChallengeByTitle(challenge.oldTtle);
+        if (!challengeObj) throw new Error(`${challenge.oldTitle} does not exist`);
+        const setOptions = {};
+        if (challenge.title) setOptions.title = challenge.title;
+        if (challenge.description) setOptions.description = challenge.description;
+        await challengeModel.updateChallenge(challengeObj._id, setOptions);
+        if (challenge.addAccolades) {
+            await Promise.all(challenge.addAccolades.map(async (accolade) => {
+                const accoladeObj = await accoladeModel.getEventByName(accolade);
+                if (!accoladeObj) throw new Error(`${accolade} does not exist`);
+                await challengeModel.addChallengeAccoladeId(challengeObj._id, accoladeObj._id);
+            }));
+        }
+        if (challenge.removeAccolades) {
+            await Promise.all(challenge.removeAccolades.map(async (accolade) => {
+                const accoladeObj = await accoladeModel.getEventByName(accolade);
+                if (!accoladeObj) throw new Error(`${accolade} does not exist`);
+                await challengeModel.removeChallengeAccoladeId(challengeObj._id, accoladeObj._id);
+            }));
+        }
+        if (challenge.addQuestion) {
+            await Promise.all(challenge.addQuestion.map(async (text) => {
+                const question = await questionsModel.getQuestionByText(text);
+                if (question?._id) await challengeModel.addChallengeQuestionId(question._id);
+                else {
+                    // const questionObj = await questionsModel.createQuestion(text);
+                    // questionIds.push(await questionsModel.addQuestion(questionObj));
+                }
+            }));
+        }
+    }));
+};
+
+/* for testing only */
+const setEventModel = (testModel) => {
+    eventsModel = testModel;
+};
+const setChallengeModel = (testModel) => {
+    challengeModel = testModel;
+};
+const setAccoladeModel = (testModel) => {
+    accoladeModel = testModel;
+};
+const setQuestionModel = (testModel) => {
+    questionsModel = testModel;
+};
+
 module.exports = {
     addAccolade,
     removeAccolades,
     addEvent,
     removeEvent,
+    updateEvent,
+    getEvent,
     addChallenge,
     removeChallenges,
+    updateChallenges,
+    // testing
+    setEventModel,
+    setChallengeModel,
+    setAccoladeModel,
+    setQuestionModel,
 };

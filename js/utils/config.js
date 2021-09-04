@@ -98,6 +98,9 @@ const defaultConfig = {
         bucket_name: 'fs',
         entryID_length: 24,
     },
+    event: {
+        fields: ['name', 'description', 'start_time', 'end_time'],
+    },
     tmp_download_path: null,
     redirect_url: 'https://tamudatathon.com/bulletin',
 };
