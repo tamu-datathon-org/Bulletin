@@ -3,17 +3,16 @@ const mongoUtil = require('../utils/mongoDb');
 const logger = require('../utils/logger');
 
 const challenge = {
-    title: null,
+    name: null,
     description: null,
     accoladeIds: [],
     questionsIds: [],
     sponsorsIds: [],
 };
 
-const createChallenge = async (title, description, accoladeIds, questionIds) => {
-    if (!title) throw new Error('challenge title is required');
+const createChallenge = async (name, description, accoladeIds, questionIds) => {
     const challengeObj = {
-        title: title,
+        name: name,
         description: description || '',
         accoladeIds: accoladeIds || [],
         questionIds: questionIds || [],
@@ -49,7 +48,7 @@ const removeChallenge = async (challengeId) => {
     }
 };
 
-const removeChallengeByTitle = async (title) => {
+const removeChallengeByName = async (title) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
@@ -77,12 +76,28 @@ const getChallenge = async (challengeId) => {
     }
 };
 
-const getChallengeByTitle = async (title) => {
+const getChallenges = async (challengeIds) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
         const challenge = await client.db(config.database.name)
-            .collection(config.database.collections.challenges).findOne({ title: title });
+            .collection(config.database.collections.challenges)
+            .find({ _id: { $in: challengeIds } }).toArray();
+        await mongoUtil.closeClient(client);
+        return challenge;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting challenges:: ${err.message}`);
+    }
+};
+
+const getChallengeByName = async (title) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const challenge = await client.db(config.database.name)
+            .collection(config.database.collections.challenges)
+            .findOne({ title: title });
         await mongoUtil.closeClient(client);
         return challenge;
     } catch (err) {
@@ -91,12 +106,13 @@ const getChallengeByTitle = async (title) => {
     }
 };
 
-const getChallengesByTitles = async (titles) => {
+const getChallengesByNames = async (titles) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
         const challenges = await client.db(config.database.name)
-            .collection(config.database.collections.challenges).find({ title: { $in: titles || [] } }).toArray();
+            .collection(config.database.collections.challenges)
+            .find({ title: { $in: titles || [] } }).toArray();
         await mongoUtil.closeClient(client);
         return challenges;
     } catch (err) {
@@ -109,10 +125,11 @@ const updateChallenge = async (challengeId, setOptions) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.challenges).updateOne(
-            { _id: await mongoUtil.ObjectId(challengeId) },
-            { $set: setOptions },
-        );
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.challenges).updateOne(
+                { _id: await mongoUtil.ObjectId(challengeId) },
+                { $set: setOptions },
+            );
         await mongoUtil.closeClient(client);
         return upsertedId;
     } catch (err) {
@@ -143,10 +160,11 @@ const removeChallengeAccoladeId = async (challengeId, accoladeId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.challenges).updateOne(
-            { _id: await mongoUtil.ObjectId(challengeId) },
-            { $pull: { accoladeIds: accoladeId } },
-        );
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.challenges).updateOne(
+                { _id: await mongoUtil.ObjectId(challengeId) },
+                { $pull: { accoladeIds: accoladeId } },
+            );
         await mongoUtil.closeClient(client);
         return upsertedId;
     } catch (err) {
@@ -159,10 +177,11 @@ const addChallengeQuestionId = async (challengeId, questionId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.challenges).updateOne(
-            { _id: await mongoUtil.ObjectId(challengeId) },
-            { $addToSet: { questionIds: questionId } },
-        );
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.challenges).updateOne(
+                { _id: await mongoUtil.ObjectId(challengeId) },
+                { $addToSet: { questionIds: questionId } },
+            );
         await mongoUtil.closeClient(client);
         return upsertedId;
     } catch (err) {
@@ -175,10 +194,11 @@ const removeChallengeQuestionId = async (challengeId, questionId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.challenges).updateOne(
-            { _id: await mongoUtil.ObjectId(challengeId) },
-            { $pull: { questionIds: questionId } },
-        );
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.challenges).updateOne(
+                { _id: await mongoUtil.ObjectId(challengeId) },
+                { $pull: { questionIds: questionId } },
+            );
         await mongoUtil.closeClient(client);
         return upsertedId;
     } catch (err) {
@@ -191,10 +211,11 @@ const addChallengeSponsorId = async (challengeId, sponsorId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.challenges).updateOne(
-            { _id: await mongoUtil.ObjectId(challengeId) },
-            { $addToSet: { sponsorIds: sponsorId } },
-        );
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.challenges).updateOne(
+                { _id: await mongoUtil.ObjectId(challengeId) },
+                { $addToSet: { sponsorIds: sponsorId } },
+            );
         await mongoUtil.closeClient(client);
         return upsertedId;
     } catch (err) {
@@ -207,10 +228,11 @@ const removeChallengeSponsorId = async (challengeId, sponsorId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.challenges).updateOne(
-            { _id: await mongoUtil.ObjectId(challengeId) },
-            { $pull: { sponsorIds: sponsorId } },
-        );
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.challenges).updateOne(
+                { _id: await mongoUtil.ObjectId(challengeId) },
+                { $pull: { sponsorIds: sponsorId } },
+            );
         await mongoUtil.closeClient(client);
         return upsertedId;
     } catch (err) {
@@ -224,10 +246,11 @@ module.exports = {
     createChallenge,
     addChallenge,
     removeChallenge,
-    removeChallengeByTitle,
+    removeChallengeByName,
     getChallenge,
-    getChallengeByTitle,
-    getChallengesByTitles,
+    getChallenges,
+    getChallengeByName,
+    getChallengesByNames,
     updateChallenge,
     addChallengeAccoladeId,
     removeChallengeAccoladeId,

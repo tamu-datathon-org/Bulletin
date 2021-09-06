@@ -178,6 +178,21 @@ const getSubmission = async (submissionId) => {
     }
 };
 
+const getSubmissions = async (submissionIds) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const doc = await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .find({ _id: { $in: submissionIds } }).toArray();
+        await mongoUtil.closeClient(client);
+        return doc;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting submissions:: ${err.message}`);
+    }
+};
+
 const getSubmissionsDump = async () => {
     let client = null;
     try {
@@ -301,6 +316,7 @@ module.exports = {
     addComment,
     removeComment,
     getSubmission,
+    getSubmissions,
     getSubmissionsDump,
     updateSubmissionData,
     getAllSubmissionsByEventId,

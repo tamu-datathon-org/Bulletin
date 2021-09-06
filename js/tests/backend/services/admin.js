@@ -10,20 +10,20 @@ describe('admin service', () => {
         createAccolade: () => mockModelResponse,
         addAccolade: () => mockModelResponse,
         removeAccolade: () => mockModelResponse,
-        removeAccoladeByTitle: () => mockModelResponse,
+        removeAccoladeByName: () => mockModelResponse,
         getAccolade: () => mockModelResponse,
-        getAccoladeByTitle: () => mockModelResponse,
-        getAccoladesByTitles: () => mockModelResponse,
+        getAccoladeByName: () => mockModelResponse,
+        getAccoladesByNames: () => mockModelResponse,
         updateAccolade: () => mockModelResponse,
     };
     const mockChallengeModel = {
         createChallenge: () => mockModelResponse,
         addChallenge: () => mockModelResponse,
         removeChallenge: () => mockModelResponse,
-        removeChallengeByTitle: () => mockModelResponse,
+        removeChallengeByName: () => mockModelResponse,
         getChallenge: () => mockModelResponse,
-        getChallengeByTitle: () => mockModelResponse,
-        getChallengesByTitles: () => mockModelResponse,
+        getChallengeByName: () => mockModelResponse,
+        getChallengesByNames: () => mockModelResponse,
         updateChallenge: () => mockModelResponse,
         addChallengeAccoladeId: () => mockModelResponse,
         removeChallengeAccoladeId: () => mockModelResponse,
@@ -162,23 +162,6 @@ describe('admin service', () => {
                     mockRequestBody.start_time,
                     mockRequestBody.end_time,
                 );
-            } catch (err) {
-                expect(err.message).to.equal(`📌event ${mockRequestBody.name} does not exist`);
-            }
-            expect(eventModelSpy.callCount).to.be.equal(1);
-        });
-        it('get event - VALID', async () => {
-            const result = await adminService.getEvent(mockRequestBody.name);
-            expect(eventModelSpy.callCount).to.be.equal(1);
-            expect(result).to.be.equal(mockModelResponse);
-        });
-        it('get event - INVALID', async () => {
-            const mockEventModel2 = {
-                getEventByName: () => { eventModelSpy(); return null; },
-            };
-            adminService.setEventModel(mockEventModel2);
-            try {
-                await adminService.getEvent(mockRequestBody.name);
             } catch (err) {
                 expect(err.message).to.equal(`📌event ${mockRequestBody.name} does not exist`);
             }

@@ -24,6 +24,7 @@ const createEvent = async (name, description, start_time, end_time) => {
         end_time: end_time,
         challengeIds: [],
         accoladeIds: [],
+        submissionIds: [],
     };
     return event;
 };
@@ -49,7 +50,7 @@ const removeEventById = async (eventId) => {
         const event = await client.db(config.database.name)
             .collection(config.database.collections.events).findOneAndDelete({ _id: await mongoUtil.ObjectId(eventId) });
         await mongoUtil.closeClient(client);
-        return event;
+        return event._id;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error removing event:: ${err.message}`);
@@ -63,7 +64,7 @@ const removeEventByName = async (name) => {
         const event = await client.db(config.database.name)
             .collection(config.database.collections.events).findOneAndDelete({ name: name });
         await mongoUtil.closeClient(client);
-        return event;
+        return event._id;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error removing event:: ${err.message}`);
@@ -102,8 +103,9 @@ const getAllEvents = async () => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const events = (await client.db(config.database.name)
-            .collection(config.database.collections.events).find({})).toArray();
+        const events = await client.db(config.database.name)
+            .collection(config.database.collections.events)
+            .find({}).toArray();
         await mongoUtil.closeClient(client);
         return events;
     } catch (err) {
@@ -116,10 +118,12 @@ const updateEvent = async (eventId, setOptions) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.events).updateOne(
-            { _id: await mongoUtil.ObjectId(eventId) },
-            { $set: setOptions },
-        );
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.events)
+            .updateOne(
+                { _id: await mongoUtil.ObjectId(eventId) },
+                { $set: setOptions },
+            );
         await mongoUtil.closeClient(client);
         return upsertedId;
     } catch (err) {
