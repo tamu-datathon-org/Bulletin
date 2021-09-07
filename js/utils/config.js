@@ -101,6 +101,14 @@ const defaultConfig = {
     event: {
         fields: ['name', 'description', 'start_time', 'end_time'],
     },
+    challenges: {
+        max_places: 5,
+        place_emojis: {
+            1: '🥇',
+            2: '🥈',
+            3: '🥉',
+        },
+    },
     tmp_download_path: null,
     redirect_url: 'https://tamudatathon.com/bulletin',
 };

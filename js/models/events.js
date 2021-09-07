@@ -1,5 +1,4 @@
 const config = require('../utils/config');
-// const logger = require('../utils/logger');
 const mongoUtil = require('../utils/mongoDb');
 
 const event = {
@@ -118,17 +117,17 @@ const updateEvent = async (eventId, setOptions) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name)
+        const { modifiedCount } = await client.db(config.database.name)
             .collection(config.database.collections.events)
             .updateOne(
                 { _id: await mongoUtil.ObjectId(eventId) },
                 { $set: setOptions },
             );
         await mongoUtil.closeClient(client);
-        return upsertedId;
+        return modifiedCount;
     } catch (err) {
         await mongoUtil.closeClient(client);
-        throw new Error(`📌Error updating events ${err.message}`);
+        throw new Error(`📌Error updating events:: ${err.message}`);
     }
 };
 
@@ -196,6 +195,24 @@ const removeEventChallengeId = async (eventId, challengeId) => {
     }
 };
 
+const removeEventChallengeIds = async (eventId, challengeIds) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.events)
+            .updateOne(
+                { _id: await mongoUtil.ObjectId(eventId) },
+                { $pullAll: { challengeIds: challengeIds } },
+            );
+        await mongoUtil.closeClient(client);
+        return upsertedId;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error updating events ${err.message}`);
+    }
+};
+
 const addEventAccoladeId = async (eventId, accoladeId) => {
     let client = null;
     try {
@@ -228,6 +245,22 @@ const removeEventAccoladeId = async (eventId, accoladeId) => {
     }
 };
 
+const removeEventAccoladeIds = async (eventId, accoladeIds) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.events).updateOne(
+            { _id: await mongoUtil.ObjectId(eventId) },
+            { $pullAll: { accoladeIds: accoladeIds } },
+        );
+        await mongoUtil.closeClient(client);
+        return upsertedId;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error updating events ${err.message}`);
+    }
+};
+
 module.exports = {
     event,
     createEvent,
@@ -240,8 +273,10 @@ module.exports = {
     updateEvent,
     addEventAccoladeId,
     removeEventAccoladeId,
+    removeEventAccoladeIds,
     addEventChallengeId,
     removeEventChallengeId,
+    removeEventChallengeIds,
     addEventSubmissionId,
     removeEventSubmissionId,
 };

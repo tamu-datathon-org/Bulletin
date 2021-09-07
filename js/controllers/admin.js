@@ -1,5 +1,5 @@
 const logger = require('../utils/logger');
-// const config = require('../utils/config');
+const config = require('../utils/config');
 let adminService = require('../services/admin');
 
 const validateAddEventInput = (requestBody) => {
@@ -30,29 +30,38 @@ const validateUpdateEventInput = (requestBody) => {
 const validateAddAccolade = async (event, requestBody) => {
     const { name } = requestBody;
     const { description } = requestBody;
-    const { challenge } = requestBody;
+    const { challengeId } = requestBody;
     const { emoji } = requestBody;
 
     if ((name?.length ?? 0) === 0 || typeof name !== 'string') throw new Error('📌name is a required field');
     if ((event?.length ?? 0) === 0 || typeof event !== 'string') throw new Error('📌event is a required parameter');
     if (description && typeof description !== 'string') throw new Error('📌description must be a string');
-    if (challenge && typeof challenge !== 'string') throw new Error('📌challenge must be a string');
+    if (challengeId && typeof challenge !== 'string') throw new Error('📌challengeId must be a string');
     if (emoji && typeof emoji !== 'string') throw new Error('📌emoji must be a string');
 };
 
 const validateUpdateAccolade = async (event, requestBody) => {
     const { accolade } = requestBody;
-    const { newName } = requestBody;
+    const { name } = requestBody;
     const { description } = requestBody;
     const { emoji } = requestBody;
-    const { challenge } = requestBody;
 
     if ((event?.length ?? 0) === 0 || typeof event !== 'string') throw new Error('📌event is a required parameter');
     if ((accolade?.length ?? 0) === 0 || typeof accolade !== 'string') throw new Error('📌accolade is a required field');
-    if (newName && typeof newName !== 'string') throw new Error('📌newName must be a string');
+    if (name && typeof name !== 'string') throw new Error('📌name must be a string');
     if (description && typeof description !== 'string') throw new Error('📌description must be a string');
-    if (challenge && typeof challenge !== 'string') throw new Error('📌challenge must be a string');
     if (emoji && typeof emoji !== 'string') throw new Error('📌emoji must be a string');
+};
+
+const validateAddChallenge = async (event, requestBody) => {
+    const { name } = requestBody;
+    const { description } = requestBody;
+    const { questions } = requestBody;
+
+    if ((event?.length ?? 0) === 0 || typeof event !== 'string') throw new Error('📌event is a required parameter');
+    if ((name?.length ?? 0) === 0 || typeof name !== 'string') throw new Error('📌name is a required field');
+    if (questions && !Array.isArray(questions)) throw new Error('📌questions must be an array');
+    if (description && typeof description !== 'string') throw new Error('📌description must be a string');
 };
 
 // ======================================================= //
@@ -65,12 +74,11 @@ const addAccolade = async (req, res) => {
         const { event } = req.params;
         const { name } = req.body;
         const { description } = req.body;
-        const { challenge } = req.body;
         const { emoji } = req.body;
 
         await validateAddAccolade(event, req.body);
         const _event = event.replace(' ', '_');
-        response.accoladeId = await adminService.addAccolade(_event, name, description, emoji, challenge);
+        response.accoladeId = await adminService.addAccolade(_event, name, description, emoji);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -102,15 +110,14 @@ const updateAccolade = async (req, res) => {
     try {
         const { event } = req.params;
         const { accolade } = req.body;
-        const { newName } = req.body;
+        const { name } = req.body;
         const { description } = req.body;
         const { emoji } = req.body;
-        const { challenge } = req.body;
 
         await validateUpdateAccolade(event, req.body);
         const _event = event.replace(' ', '_');
-        response.accoladeId = await adminService
-            .updateAccolade(_event, accolade, newName, description, emoji, challenge);
+        response.modifiedCount = await adminService
+            .updateAccolade(_event, accolade, name, description, emoji);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -165,7 +172,8 @@ const updateEvent = async (req, res) => {
         const _event = event.replace(' ', '_');
         let _name = null;
         if (req.body.name) _name = req.body.name.replace(' ', '_');
-        response.eventId = await adminService.updateEvent(_event, _name, req.body.description, req.body.start_time, req.body.end_time);
+        response.modifiedCount = await adminService
+            .updateEvent(_event, _name, req.body.description, req.body.start_time, req.body.end_time);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -182,18 +190,18 @@ const addChallenge = async (req, res) => {
     const response = {};
     try {
         const { name } = req.body;
-        const { description } = req.body;
         const { questions } = req.body;
-        const { accolades } = req.body;
+        const { places } = req.body;
         const { event } = req.params;
 
-        if ((name?.length ?? 0) === 0 || typeof name !== 'string') throw new Error('📌name is a required field');
-        if ((event?.length ?? 0) === 0 || typeof event !== 'string') throw new Error('📌event is a required parameter');
-        if (questions && !Array.isArray(questions)) throw new Error('📌questions must be an array');
-        if (accolades && !Array.isArray(accolades)) throw new Error('📌accolades must be an array');
-        if (description && typeof description !== 'string') throw new Error('📌description must be a string');
+        await validateAddChallenge(event, req.body);
+        const _places = typeof places === 'number' ? places : parseInt(places);
+        if (_places > config.challenges.max_places) {
+            throw new Error(`📌places must be <= ${config.challenges.max_places}`);
+        }
         const _event = event.replace(' ', '_');
-        response.challengeId = await adminService.addChallenge(_event, name, description, questions, accolades, event);
+        response.challengeId = await adminService
+            .addChallenge(_event, name, questions, _places);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -211,7 +219,8 @@ const removeChallenges = async (req, res) => {
         if ((event?.length ?? 0) === 0 || typeof event !== 'string') throw new Error('📌event is a required parameter');
         if (!challenges || !Array.isArray(challenges)) throw new Error('📌challenges is a required field');
         const _event = event.replace(' ', '_');
-        response.challengeIds = await adminService.removeChallenges(_event, challenges);
+        response.challengeIds = await adminService
+            .removeChallenges(_event, challenges);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -229,7 +238,8 @@ const updateChallenge = async (req, res) => {
         if ((event?.length ?? 0) === 0 || typeof event !== 'string') throw new Error('📌event is a required parameter');
         if (!challenges || !Array.isArray(challenges)) throw new Error('📌challenges is a required field');
         const _event = event.replace(' ', '_');
-        response.challengeIds = await adminService.removeChallenges(_event, challenges);
+        response.modifiedCount = await adminService
+            .updateChallenge(_event, challenges);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);

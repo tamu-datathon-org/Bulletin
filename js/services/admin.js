@@ -3,7 +3,22 @@ let challengeModel = require('../models/challenges');
 let eventsModel = require('../models/events');
 let questionsModel = require('../models/questions');
 const logger = require('../utils/logger');
-// const logger = require('../utils/logger');
+const config = require('../utils/config');
+
+const ordinalSuffixOf = (i) => {
+    var j = i % 10,
+        k = i % 100;
+    if (j == 1 && k != 11) {
+        return i + 'st';
+    }
+    if (j == 2 && k != 12) {
+        return i + 'nd';
+    }
+    if (j == 3 && k != 13) {
+        return i + 'rd';
+    }
+    return i + 'th';
+};
 
 /**
  * @function addAccolade
@@ -16,32 +31,14 @@ const logger = require('../utils/logger');
  *              the accolade to (optional)
  * @returns {String} accolade id that was created
  */
-const addAccolade = async (event, name, description, emoji, challenge) => {
+const addAccolade = async (event, name, description, emoji) => {
     const eventObj = await eventsModel.getEventByName(event);
     if (!eventObj) throw new Error(`📌event ${event} does not exist`);
     const eventId = eventObj._id;
     const dupAccolade = await accoladeModel.getAccoladeByName(name);
-    let challengeId = null;
-    if (challenge) {
-        logger.info('challenge provided');
-        const challengeObj = await challengeModel.getChallengeByName(challenge);
-        if (!challengeObj) throw new Error(`📌challenge ${challenge} does not exist`);
-        if (dupAccolade && challengeObj) {
-            throw new Error(`📌accolade ${name} already created for this challenge`);
-        }
-        challengeId = challengeObj._id;
-    } else {
-        logger.info('no challenge provided');
-        logger.info(JSON.stringify(dupAccolade));
-        if (dupAccolade) {
-            throw new Error(`📌accolade ${name} already exists & is not associated to a challenge`);
-        }
-    }
-    const accoladeObj = await accoladeModel.createAccolade(name, description, emoji, eventId, challengeId);
+    if (dupAccolade) throw new Error(`📌accolade ${name} already exists`);
+    const accoladeObj = await accoladeModel.createAccolade(name, description, emoji, eventId);
     const accoladeId = await accoladeModel.addAccolade(accoladeObj);
-    if (challenge) {
-        await challengeModel.addChallengeAccoladeId(challengeId, accoladeId);
-    }
     await eventsModel.addEventAccoladeId(eventId, accoladeId);
     return accoladeId;
 };
@@ -81,22 +78,16 @@ const removeAccolades = async (event, accolades) => {
  *          (to remove a challenge make this 'rm')
  * @returns 
  */
-const updateAccolade = async (event, accolade, newName, description, emoji, challenge) => {
+const updateAccolade = async (event, accolade, name, description, emoji) => {
     const eventObj = await eventsModel.getEventByName(event);
     if (!eventObj) throw new Error(`📌${event} does not exist`);
-    const accoladeObj = await accoladeModel.getAccoladeByName(accolade);
+    const accoladeObj = await accoladeModel.getAccoladeByName(accolade, eventObj._id);
+    if (!accoladeObj) throw new Error(`📌${accolade} does not exist`);
     const setOptions = {};
-    if (newName) setOptions.name = newName;
+    if (name) setOptions.name = name;
     if (description) setOptions.description = description;
     if (emoji) setOptions.emoji = emoji;
-    if (challenge === 'rm') {
-        setOptions.challengeId = '';
-    } else if (challenge) {
-        const challengeObj = await challengeModel.getChallengeByName(challenge);
-        if (!challengeObj) throw new Error(`📌challenge ${challenge} does not exist`);
-        setOptions.challengeId = challengeObj._id;
-    }
-    return accoladeModel.updateAccolade(accoladeObj._id, setOptions);
+    return accoladeModel.updateAccolade(accoladeObj._id, eventObj._id, setOptions);
 };
 
 /**
@@ -156,12 +147,11 @@ const getEvent = async (name) => {
     return eventObj;
 };
 
-const addChallenge = async (title, description, questions, accolades, event) => {
-    const dupChallenge = await challengeModel.getChallengeByName(title);
-    if (dupChallenge) throw new Error(`${title} already exists`);
+const addChallenge = async (event, name, questions, places) => {
+    const dupChallenge = await challengeModel.getChallengeByName(name);
+    if (dupChallenge) throw new Error(`📌challenge ${name} already exists`);
     const questionIds = [];
-    const eventObj = await eventsModel.getEventByName(event);
-    if (!eventObj) throw new Error(`${event} does not exist`);
+    const eventObj = await getEvent(event);
     const eventId = eventObj._id;
     if (questions && Array.isArray(questions)) {
         await Promise.all(questions.map(async (text) => {
@@ -174,36 +164,34 @@ const addChallenge = async (title, description, questions, accolades, event) => 
         }));
     }
     const accoladeIds = [];
-    if (accolades && Array.isArray(accolades)) {
-        await Promise.all(accolades.map(async (title) => {
-            const accolade = await accoladeModel.getAccoladeByName(title);
-            if (accolade?._id) accoladeIds.push(accolade._id);
-        }));
+    let currPlace = 1;
+    while (currPlace <= places) {
+        const emoji = config.challenges.place_emojis[currPlace] || config.challenges.place_emojis[1];
+        accoladeIds.push(await addAccolade(event, `${ordinalSuffixOf(currPlace)} in ${name}`, null, emoji));
+        currPlace += 1;
     }
-    const challengeObj = await challengeModel.createChallenge(title, description, accoladeIds, questionIds);
+    const challengeObj = await challengeModel.createChallenge(name, places, accoladeIds, questionIds);
     const challengeId = await challengeModel.addChallenge(challengeObj);
     await eventsModel.addEventChallengeId(eventId, challengeId);
     return challengeId;
 };
 
 const removeChallenges = async (event, challengeNames) => {
-    const eventObj = await eventsModel.getEventByName(event);
-    if (!eventObj) throw new Error(`${event} does not exist`);
+    const eventObj = await getEvent(event);
     const eventId = eventObj._id;
     const challengeIds = [];
-    await Promise.all(challengeNames.map(async (title) => {
-        const challenge = await challengeModel.removeChallengeByName(title);
+    const accoladeIds = [];
+    await Promise.all(challengeNames.map(async (name) => {
+        const challenge = await challengeModel.getChallengeByName(name);
         if (challenge) {
+            await challengeModel.removeChallenge(challenge._id);
             challengeIds.push(challenge._id);
-            await Promise.all(challenge.accoladeIds.map(async (challengeId) => {
-                await challengeModel.removeChallengeAccoladeId(challengeId, challenge._id);
-            }));
+            accoladeIds.push(...challenge.accoladeIds);
         }
     }));
-    if (challengeIds.length === 0) throw new Error('no valid accolade titles provided');
-    await Promise.all(challengeIds.map(async (id) => {
-        await eventsModel.removeEventAccoladeId(eventId, id);
-    }));
+    await eventsModel.removeEventChallengeIds(eventId, challengeIds);
+    await eventsModel.removeEventAccoladeIds(eventId, accoladeIds);
+    await accoladeModel.removeAccolades(accoladeIds);
     return challengeIds;
 };
 

@@ -4,16 +4,16 @@ const logger = require('../utils/logger');
 
 const challenge = {
     name: null,
-    description: null,
+    places: null,
     accoladeIds: [],
     questionsIds: [],
     sponsorsIds: [],
 };
 
-const createChallenge = async (name, description, accoladeIds, questionIds) => {
+const createChallenge = async (name, places, accoladeIds, questionIds) => {
     const challengeObj = {
         name: name,
-        description: description || '',
+        places: places || 0,
         accoladeIds: accoladeIds || [],
         questionIds: questionIds || [],
     };
@@ -91,33 +91,33 @@ const getChallenges = async (challengeIds) => {
     }
 };
 
-const getChallengeByName = async (title) => {
+const getChallengeByName = async (name) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
         const challenge = await client.db(config.database.name)
             .collection(config.database.collections.challenges)
-            .findOne({ title: title });
+            .findOne({ name: name });
         await mongoUtil.closeClient(client);
         return challenge;
     } catch (err) {
         await mongoUtil.closeClient(client);
-        throw new Error(`📌Error getting challenges by title:: ${err.message}`);
+        throw new Error(`📌Error getting challenges by name:: ${err.message}`);
     }
 };
 
-const getChallengesByNames = async (titles) => {
+const getChallengesByNames = async (names) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
         const challenges = await client.db(config.database.name)
             .collection(config.database.collections.challenges)
-            .find({ title: { $in: titles || [] } }).toArray();
+            .find({ names: { $in: names || [] } }).toArray();
         await mongoUtil.closeClient(client);
         return challenges;
     } catch (err) {
         await mongoUtil.closeClient(client);
-        throw new Error(`📌Error getting challenges by titles:: ${err.message}`);
+        throw new Error(`📌Error getting challenges by names:: ${err.message}`);
     }
 };
 
@@ -125,13 +125,13 @@ const updateChallenge = async (challengeId, setOptions) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name)
+        const { modifiedCount } = await client.db(config.database.name)
             .collection(config.database.collections.challenges).updateOne(
                 { _id: await mongoUtil.ObjectId(challengeId) },
                 { $set: setOptions },
             );
         await mongoUtil.closeClient(client);
-        return upsertedId;
+        return modifiedCount;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error updating challenge ${err.message}`);

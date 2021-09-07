@@ -216,7 +216,7 @@ describe('admin controller', () => {
 
         it('update event - VALID name', async () => {
             const expectedRes = {
-                eventId: mockServiceResponse,
+                modifiedCount: mockServiceResponse,
             };
             mockRequest.body.name = 'Test Edit Name',
             await adminController.updateEvent(mockRequest, mockResponse);
@@ -226,7 +226,7 @@ describe('admin controller', () => {
         it('update event - VALID description', async () => {
             mockRequest.body.description = 'Test Event Description';
             const expectedRes = {
-                eventId: mockServiceResponse,
+                modifiedCount: mockServiceResponse,
             };
             await adminController.updateEvent(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(200)).to.equal(true);
@@ -235,7 +235,7 @@ describe('admin controller', () => {
         it('update event - VALID start time', async () => {
             mockRequest.body.start_time = currDate.toISOString();
             const expectedRes = {
-                eventId: mockServiceResponse,
+                modifiedCount: mockServiceResponse,
             };
             await adminController.updateEvent(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(200)).to.equal(true);
@@ -246,7 +246,7 @@ describe('admin controller', () => {
             nextDate.setDate(currDate.getDate() + 1); 
             mockRequest.body.end_time = nextDate.toISOString();
             const expectedRes = {
-                eventId: mockServiceResponse,
+                modifiedCount: mockServiceResponse,
             };
             await adminController.updateEvent(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(200)).to.equal(true);
@@ -258,7 +258,7 @@ describe('admin controller', () => {
             nextDate.setDate(currDate.getDate() + 1); 
             mockRequest.body.end_time = nextDate.toISOString();
             const expectedRes = {
-                eventId: mockServiceResponse,
+                modifiedCount: mockServiceResponse,
             };
             await adminController.updateEvent(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(200)).to.equal(true);
@@ -322,7 +322,6 @@ describe('admin controller', () => {
             body: {
                 name: null,
                 description: null,
-                challenge: null,
                 emoji: null,
             },
         };
@@ -331,7 +330,6 @@ describe('admin controller', () => {
             mockRequest.params.event = 'Test Event';
             mockRequest.body.name = 'Test Accolade';
             mockRequest.body.description = null;
-            mockRequest.body.challenge = null;
             mockRequest.body.emoji = null;
         });
 
@@ -415,15 +413,6 @@ describe('admin controller', () => {
             expect(mockResponse.status.calledWith(400)).to.equal(true);
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
         });
-        it('add accolade - INVALID challenge', async () => {
-            const expectedRes = {
-                error: '📌challenge must be a string',
-            };
-            mockRequest.body.challenge = 9;
-            await adminController.addAccolade(mockRequest, mockResponse);
-            expect(mockResponse.status.calledWith(400)).to.equal(true);
-            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
-        });
     });
 
     describe('remove accolade tests', () => {
@@ -492,20 +481,18 @@ describe('admin controller', () => {
             },
             body: {
                 accolade: null,
-                newName: null,
+                name: null,
                 description: null,
                 emoji: null,
-                challenge: null,
             },
         };
 
         beforeEach(() => {
             mockRequest.params.event = 'Test Event';
             mockRequest.body.accolade = 'Test Accolade';
-            mockRequest.body.newName = null;
+            mockRequest.body.name = null;
             mockRequest.body.description = null;
             mockRequest.body.emoji = null;
-            mockRequest.body.challenge = null;
         });
 
         afterEach(() => {
@@ -517,7 +504,7 @@ describe('admin controller', () => {
 
         it('update accolade - VALID', async () => {
             const expectedRes = {
-                accoladeId: mockServiceResponse,
+                modifiedCount: mockServiceResponse,
             };
             await adminController.updateAccolade(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(200)).to.equal(true);
@@ -525,9 +512,9 @@ describe('admin controller', () => {
         });
         it('update accolade - VALID all fields', async () => {
             const expectedRes = {
-                accoladeId: mockServiceResponse,
+                modifiedCount: mockServiceResponse,
             };
-            mockRequest.body.newName = 'New Name';
+            mockRequest.body.name = 'New Name';
             mockRequest.body.description = 'test description';
             mockRequest.body.emoji = '🍇';
             mockRequest.body.challenge = 'Challenge change';
@@ -571,11 +558,11 @@ describe('admin controller', () => {
             expect(mockResponse.status.calledWith(400)).to.equal(true);
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
         });
-        it('update accolade - INVALID bad newName', async () => {
+        it('update accolade - INVALID bad name', async () => {
             const expectedRes = {
-                error: '📌newName must be a string',
+                error: '📌name must be a string',
             };
-            mockRequest.body.newName = 45;
+            mockRequest.body.name = 45;
             await adminController.updateAccolade(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(400)).to.equal(true);
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
@@ -585,15 +572,6 @@ describe('admin controller', () => {
                 error: '📌description must be a string',
             };
             mockRequest.body.description = [];
-            await adminController.updateAccolade(mockRequest, mockResponse);
-            expect(mockResponse.status.calledWith(400)).to.equal(true);
-            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
-        });
-        it('update accolade - INVALID bad challenge', async () => {
-            const expectedRes = {
-                error: '📌challenge must be a string',
-            };
-            mockRequest.body.challenge = 0.342;
             await adminController.updateAccolade(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(400)).to.equal(true);
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
