@@ -195,9 +195,13 @@ const addChallenge = async (req, res) => {
         const { event } = req.params;
 
         await validateAddChallenge(event, req.body);
-        const _places = typeof places === 'number' ? places : parseInt(places);
-        if (_places > config.challenges.max_places) {
-            throw new Error(`📌places must be <= ${config.challenges.max_places}`);
+        let _places = null;
+        if (places) {
+            _places = typeof places === 'number' ? places : parseInt(places);
+            if (isNaN(_places)) throw new Error('📌places must be a number');
+            if (_places > config.challenges.max_places || _places < 0) {
+                throw new Error(`📌places must be <= ${config.challenges.max_places} and > 0`);
+            }
         }
         const _event = event.replace(' ', '_');
         response.challengeId = await adminService
@@ -229,25 +233,6 @@ const removeChallenges = async (req, res) => {
     }
 };
 
-const updateChallenge = async (req, res) => {
-    const response = {};
-    try {
-        const { event } = req.params;
-        const { challenges } = req.body;
-
-        if ((event?.length ?? 0) === 0 || typeof event !== 'string') throw new Error('📌event is a required parameter');
-        if (!challenges || !Array.isArray(challenges)) throw new Error('📌challenges is a required field');
-        const _event = event.replace(' ', '_');
-        response.modifiedCount = await adminService
-            .updateChallenge(_event, challenges);
-        res.status(200).json(response);
-    } catch (err) {
-        logger.info(err);
-        response.error = err.message;
-        res.status(400).json(response);
-    }
-};
-
 /* for testing only */
 const setAdminService = (testAdminService) => {
     adminService = testAdminService;
@@ -262,7 +247,6 @@ module.exports = {
     updateEvent,
     addChallenge,
     removeChallenges,
-    updateChallenge,
     // testing
     setAdminService,
 };

@@ -3,6 +3,7 @@ const { assert, expect } = require('chai');
 const sinon = require('sinon');
 const logger = require('../../../utils/logger');
 const adminController = require('../../../controllers/admin');
+const config = require('../../../utils/config');
 
 describe('admin controller', () => {
     const mockResponse = {
@@ -415,7 +416,7 @@ describe('admin controller', () => {
         });
     });
 
-    describe('remove accolade tests', () => {
+    describe('remove accolades tests', () => {
         const mockRequest = {
             params: {
                 event: null,
@@ -437,7 +438,7 @@ describe('admin controller', () => {
             sinon.reset(mockResponse, 'download');
         });
 
-        it('remove accolade - VALID', async () => {
+        it('remove accolades - VALID', async () => {
             const expectedRes = {
                 accoladeIds: mockServiceResponse,
             };
@@ -445,7 +446,7 @@ describe('admin controller', () => {
             expect(mockResponse.status.calledWith(200)).to.equal(true);
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
         });
-        it('remove accolade - INVALID null event parameter', async () => {
+        it('remove accolades - INVALID null event parameter', async () => {
             const expectedRes = {
                 error: '📌event is a required parameter',
             };
@@ -454,7 +455,7 @@ describe('admin controller', () => {
             expect(mockResponse.status.calledWith(400)).to.equal(true);
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
         });
-        it('remove accolade - INVALID no event parameter', async () => {
+        it('remove accolades - INVALID no event parameter', async () => {
             const expectedRes = {
                 error: '📌event is a required parameter',
             };
@@ -463,7 +464,7 @@ describe('admin controller', () => {
             expect(mockResponse.status.calledWith(400)).to.equal(true);
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
         });
-        it('remove accolade - INVALID accolades list', async () => {
+        it('remove accolades - INVALID accolades list', async () => {
             const expectedRes = {
                 error: '📌accolades is a required field',
             };
@@ -582,6 +583,172 @@ describe('admin controller', () => {
             };
             mockRequest.body.emoji = 45;
             await adminController.updateAccolade(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+    });
+    describe('add challenge tests', () => {
+        const mockRequest = {
+            params: {
+                event: null,
+            },
+            body: {
+                name: null,
+                questions: null,
+                places: null,
+            },
+        };
+
+        beforeEach(() => {
+            mockRequest.params.event = 'Test Event';
+            mockRequest.body.name = 'Test Challenge';
+            mockRequest.body.places = null;
+            mockRequest.body.questions = null;
+        });
+
+        afterEach(() => {
+            sinon.reset(mockResponse, 'status');
+            sinon.reset(mockResponse, 'json');
+            sinon.reset(mockResponse, 'send');
+            sinon.reset(mockResponse, 'download');
+        });
+
+        it('add challenge - VALID', async () => {
+            const expectedRes = {
+                challengeId: mockServiceResponse,
+            };
+            await adminController.addChallenge(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(200)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+        it('add challenge - VALID all fields', async () => {
+            const expectedRes = {
+                challengeId: mockServiceResponse,
+            };
+            mockRequest.body.questions = ['first question', 'second question'];
+            mockRequest.body.places = config.challenges.max_places;
+            await adminController.addChallenge(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(200)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+        it('add challenge - INVALID no event', async () => {
+            const expectedRes = {
+                error: '📌event is a required parameter',
+            };
+            mockRequest.params.event = null;
+            await adminController.addChallenge(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+        it('add challenge - INVALID no event parameter', async () => {
+            const expectedRes = {
+                error: '📌event is a required parameter',
+            };
+            mockRequest.params.event = '';
+            await adminController.updateAccolade(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+        it('add challenge - INVALID no name', async () => {
+            const expectedRes = {
+                error: '📌name is a required field',
+            };
+            mockRequest.body.name = '';
+            await adminController.addChallenge(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+        it('add challenge - INVALID places type', async () => {
+            const expectedRes = {
+                error: '📌places must be a number',
+            };
+            mockRequest.body.places = 'false';
+            await adminController.addChallenge(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+        it('add challenge - INVALID places too large', async () => {
+            const expectedRes = {
+                error: `📌places must be <= ${config.challenges.max_places} and > 0`,
+            };
+            mockRequest.body.places = 10;
+            await adminController.addChallenge(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+        it('add challenge - INVALID places too small', async () => {
+            const expectedRes = {
+                error: `📌places must be <= ${config.challenges.max_places} and > 0`,
+            };
+            mockRequest.body.places = -1;
+            await adminController.addChallenge(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+        it('add challenge - INVALID questions invalid type', async () => {
+            const expectedRes = {
+                error: '📌questions must be an array',
+            };
+            mockRequest.body.questions = 'howdy?';
+            await adminController.addChallenge(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+    });
+    describe('remove challenges tests', () => {
+        const mockRequest = {
+            params: {
+                event: null,
+            },
+            body: {
+                challenges: null,
+            },
+        };
+
+        beforeEach(() => {
+            mockRequest.params.event = 'Test Event';
+            mockRequest.body.challenges = [];
+        });
+
+        afterEach(() => {
+            sinon.reset(mockResponse, 'status');
+            sinon.reset(mockResponse, 'json');
+            sinon.reset(mockResponse, 'send');
+            sinon.reset(mockResponse, 'download');
+        });
+
+        it('remove challenges - VALID', async () => {
+            const expectedRes = {
+                challengeIds: mockServiceResponse,
+            };
+            await adminController.removeChallenges(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(200)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+        it('remove challenges - INVALID null event parameter', async () => {
+            const expectedRes = {
+                error: '📌event is a required parameter',
+            };
+            mockRequest.params.event = null;
+            await adminController.removeChallenges(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+        it('remove challenges - INVALID no event parameter', async () => {
+            const expectedRes = {
+                error: '📌event is a required parameter',
+            };
+            mockRequest.params.event = '';
+            await adminController.removeChallenges(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+        it('remove challenges - INVALID challenges list', async () => {
+            const expectedRes = {
+                error: '📌challenges is a required field',
+            };
+            mockRequest.body.challenges = '';
+            await adminController.removeChallenges(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(400)).to.equal(true);
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
         });

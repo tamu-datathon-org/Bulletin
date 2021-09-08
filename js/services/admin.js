@@ -195,41 +195,6 @@ const removeChallenges = async (event, challengeNames) => {
     return challengeIds;
 };
 
-const updateChallenges = async (challenges) => {
-    await Promise.all(challenges.map(async (challenge) => {
-        const challengeObj = await challengeModel.getChallengeByName(challenge.oldTtle);
-        if (!challengeObj) throw new Error(`${challenge.oldName} does not exist`);
-        const setOptions = {};
-        if (challenge.title) setOptions.title = challenge.title;
-        if (challenge.description) setOptions.description = challenge.description;
-        await challengeModel.updateChallenge(challengeObj._id, setOptions);
-        if (challenge.addAccolades) {
-            await Promise.all(challenge.addAccolades.map(async (accolade) => {
-                const accoladeObj = await accoladeModel.getEventByName(accolade);
-                if (!accoladeObj) throw new Error(`${accolade} does not exist`);
-                await challengeModel.addChallengeAccoladeId(challengeObj._id, accoladeObj._id);
-            }));
-        }
-        if (challenge.removeAccolades) {
-            await Promise.all(challenge.removeAccolades.map(async (accolade) => {
-                const accoladeObj = await accoladeModel.getEventByName(accolade);
-                if (!accoladeObj) throw new Error(`${accolade} does not exist`);
-                await challengeModel.removeChallengeAccoladeId(challengeObj._id, accoladeObj._id);
-            }));
-        }
-        if (challenge.addQuestion) {
-            await Promise.all(challenge.addQuestion.map(async (text) => {
-                const question = await questionsModel.getQuestionByText(text);
-                if (question?._id) await challengeModel.addChallengeQuestionId(question._id);
-                else {
-                    // const questionObj = await questionsModel.createQuestion(text);
-                    // questionIds.push(await questionsModel.addQuestion(questionObj));
-                }
-            }));
-        }
-    }));
-};
-
 /* for testing only */
 const setEventModel = (testModel) => {
     eventsModel = testModel;
@@ -254,7 +219,6 @@ module.exports = {
     getEvent,
     addChallenge,
     removeChallenges,
-    updateChallenges,
     // testing
     setEventModel,
     setChallengeModel,

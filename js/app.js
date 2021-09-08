@@ -62,7 +62,6 @@ app.post('/bulletin/api/:event/admin/remove/event', adminController.removeEvent)
 app.post('/bulletin/api/:event/admin/remove/accolades', adminController.removeAccolades);
 app.post('/bulletin/api/:event/admin/remove/challenges', adminController.removeChallenges);
 app.post('/bulletin/api/:event/admin/update/accolade', adminController.updateAccolade);
-app.post('/bulletin/api/:event/admin/update/challenge', adminController.updateChallenge);
 app.post('/bulletin/api/:event/admin/update/event', adminController.updateEvent);
 
 // app.use('/*', (req, res) => res.redirect(`${process.env.REDIRECT_URL}`));

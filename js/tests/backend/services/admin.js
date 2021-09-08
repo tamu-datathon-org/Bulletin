@@ -68,7 +68,6 @@ describe('admin service', () => {
         assert.isDefined(adminService.updateEvent);
         assert.isDefined(adminService.addChallenge);
         assert.isDefined(adminService.removeChallenges);
-        assert.isDefined(adminService.updateChallenges);
     });
 
     describe('event tests', () => {
