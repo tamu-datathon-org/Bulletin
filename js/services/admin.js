@@ -1,9 +1,11 @@
+const path = require('path');
 let accoladeModel = require('../models/accolades');
 let challengeModel = require('../models/challenges');
 let eventsModel = require('../models/events');
 let questionsModel = require('../models/questions');
 const logger = require('../utils/logger');
 const config = require('../utils/config');
+const frontendS3 = require('../utils/frontendS3');
 
 const ordinalSuffixOf = (i) => {
     var j = i % 10,
@@ -195,6 +197,50 @@ const removeChallenges = async (event, challengeNames) => {
     return challengeIds;
 };
 
+const uploadEventImage = async (event, filename, buffer) => {
+    const eventObj = await eventsModel.getEventByName(event);
+    if (!eventObj) throw new Error(`📌event ${event} does not exist`);
+    const data = await frontendS3.uploadFile(`${config.event.imagePrefix}${path.extname(filename)}`, buffer);
+    const setOptions = {
+        image: data.Location,
+        imageKey: data.Key,
+    };
+    await eventsModel.updateEvent(eventObj._id, setOptions);
+    return data.Key;
+};
+
+const uploadChallengeImage = async (event, challenge, filename, buffer) => {
+    const eventObj = await eventsModel.getEventByName(event);
+    if (!eventObj) throw new Error(`📌event ${event} does not exist`);
+    const challengeObj = await challengeModel.getChallengeByName(challenge);
+    if (!challengeObj) throw new Error(`📌challenge ${challenge} does not exist`);
+    const data = await frontendS3.uploadFile(`${config.challenges.imagePrefix}${path.extname(filename)}`, buffer);
+    const setOptions = {
+        image: data.Location,
+        imageKey: data.Key,
+    };
+    await challengeModel.updateChallenge(challengeObj._id, setOptions);
+    return data.Key;
+};
+
+const getEventImage = async (event) => {
+    const eventObj = await eventsModel.getEventByName(event);
+    if (!eventObj) throw new Error(`📌event ${event} does not exist`);
+    if (eventObj.imageKey) return getImageByKey(eventObj.imageKey);
+    throw new Error(`📌event ${event} does not have an assigned image`);
+};
+
+const getChallengeImage = async (challenge) => {
+    const challengeObj = await challengeModel.getChallengeByName(challenge);
+    if (!challengeObj) throw new Error(`📌challenge ${challenge} does not exist`);
+    if (challengeObj.imageKey) return getImageByKey(challengeObj.imageKey);
+    throw new Error(`📌challenge ${challenge} does not have an assigned image`);
+};
+
+const getImageByKey = async (fileKey) => {
+    return frontendS3.getFileStream(fileKey);
+};
+
 /* for testing only */
 const setEventModel = (testModel) => {
     eventsModel = testModel;
@@ -219,6 +265,10 @@ module.exports = {
     getEvent,
     addChallenge,
     removeChallenges,
+    uploadEventImage,
+    uploadChallengeImage,
+    getEventImage,
+    getChallengeImage,
     // testing
     setEventModel,
     setChallengeModel,

@@ -255,8 +255,6 @@ const removeSubmissionUserSubmissionLinkId = async (submissionId, userSubmission
     }
 };
 
-
-
 const removeSubmissionUserAccoladeId = async (submissionId, accoladeId) => {
     let client = null;
     try {
@@ -293,13 +291,53 @@ const getAllSubmissionsByEventId = async (eventId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const docs = (await client.db(config.database.name)
-            .collection(config.database.collections.submissions).find({ eventId: eventId })).toArray();
+        const docs = await client.db(config.database.name)
+            .collection(config.database.collections.submissions).find({ eventId: eventId }).toArray();
         await mongoUtil.closeClient(client);
         return docs;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error getting all event submissions ${err.message}`);
+    }
+};
+
+const editSubmissionFile = async (submissionId, type, url) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        if (type === config.submission_constraints.submission_upload_types['icon']) {
+            await client.db(config.database.name)
+                .collection(config.database.collections.submissions)
+                .updateOne(
+                    { _id: await mongoUtil.ObjectId(submissionId) },
+                    { $set: { icon: url } },
+                );
+        } else if (type === config.submission_constraints.submission_upload_types['markdown']) {
+            await client.db(config.database.name)
+                .collection(config.database.collections.submissions)
+                .updateOne(
+                    { _id: await mongoUtil.ObjectId(submissionId) },
+                    { $set: { markdown: url } },
+                );
+        } else if (type === config.submission_constraints.submission_upload_types['sourceCode']) {
+            await client.db(config.database.name)
+                .collection(config.database.collections.submissions)
+                .updateOne(
+                    { _id: await mongoUtil.ObjectId(submissionId) },
+                    { $set: { sourceCode: url } },
+                );
+        } else if (type === config.submission_constraints.submission_upload_types['photos']) {
+            await client.db(config.database.name)
+                .collection(config.database.collections.submissions)
+                .updateOne(
+                    { _id: await mongoUtil.ObjectId(submissionId) },
+                    { $set: { photos: url } },
+                );
+        }
+        await mongoUtil.closeClient(client);
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting editing submission file ${err.message}`);
     }
 };
 
@@ -324,4 +362,5 @@ module.exports = {
     removeSubmissionUserAccoladeId,
     addSubmissionUserSubmissionLinkId,
     removeSubmissionUserSubmissionLinkId,
+    editSubmissionFile,
 };

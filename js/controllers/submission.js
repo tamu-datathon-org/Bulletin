@@ -1,5 +1,5 @@
 const path = require('path');
-const mimetypes = require('mime-types');
+// const mimetypes = require('mime-types');
 const submissionService = require('../services/submission');
 const config = require('../utils/config');
 const logger = require('../utils/logger');
@@ -7,6 +7,26 @@ const bouncer = require('./bouncer');
 const eventModel = require('../models/events');
 
 let IS_TESTING = process.env.IS_TESTING || false;
+
+const validateSubmissionFileUploads = (request) => {
+    const { buffer } = request.file;
+    const { submissionId } = request.params;
+    const { type } = request.params;
+    const { originalname } = request.file;
+    if (!buffer) throw new Error('📌no file provided');
+    if (!submissionId) throw new Error('📌submissionId is a required parameter');
+    if (!type) throw new Error('📌type is a required parameter');
+    if ((originalname?.length ?? 0) === 0) {
+        throw new Error('📌no filename provided');
+    }
+    const _type = config.submission_constraints.submission_upload_types[type];
+    if (!_type) {
+        throw new Error(`📌invalid type parameter provided, valid types are ${config.submission_constraints.submission_upload_types.toString()}`);
+    }
+    if (!config.submission_constraints[`${_type}_formats`].includes(path.extname(originalname))) {
+        throw new Error('📌invalid file type provided');
+    }
+};
 
 const addSubmission = async (req, res) => {
     // define a standard response
@@ -347,20 +367,8 @@ const submissionFileUpload = async (req, res) => {
     const { type } = req.params;
     const { originalname } = req.file;
     try {
-        if (!buffer) throw new Error('📌no file provided');
-        if (!submissionId) throw new Error('📌submissionId is a required parameter');
-        if (!type) throw new Error('📌type is a required parameter');
-        if ((originalname?.length ?? 0) === 0) {
-            throw new Error('📌no filename provided');
-        }
-        if (!config.submission_constraints.submission_upload_types.includes(type)) {
-            throw new Error(`📌invalid type parameter provided, valid types are ${config.submission_constraints.submission_upload_types.toString()}`);
-        }
-        const token = req.cookies.accessToken || '';
-        if (!token) throw new Error('📌you are not logged in!');
-        if (!IS_TESTING) await submissionService.validateSubmitterForUpdate(token, submissionId);
-        await submissionService.uploadSubmissionFile(buffer, submissionId, originalname, config.submission_constraints.submission_upload_types[type]);
-        response.filename = originalname;
+        await validateSubmissionFileUploads(req);
+        response.key = await submissionService.uploadSubmissionFile(buffer, submissionId, originalname, config.submission_constraints.submission_upload_types[type]);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -371,23 +379,11 @@ const submissionFileUpload = async (req, res) => {
 
 const submissionFileDownload = async (req, res) => {
     const response = {};
-    const { submissionId } = req.params;
-    const { type } = req.params;
+    const { key } = req.params;
     try {
-        if (!submissionId) throw new Error('📌submissionId is a required parameter');
-        if (!type) throw new Error('📌type is a requied parameter');
-        if (!config.submission_constraints.submission_upload_types.includes(type)) {
-            throw new Error(`📌invalid type parameter provided, valid types are ${config.submission_constraints.submission_upload_types.toString()}`);
-        }
-        const fileObj = await submissionService.downloadSubmissionFile(submissionId, config.submission_constraints.submission_upload_types.type);
-        res.set('Content-disposition', 'attachment; filename=' + fileObj.filename);
-        const contentType = mimetypes.contentType(fileObj.filename);
-        res.set('Content-Type', contentType);
-        fileObj.stream.pipe(response);
-        // res.status(200).download(fileObj.filepath, fileObj.filename, async (error) => {
-        //     if (error) throw new Error('📌unable to send markdown');
-        //     await submissionService.removeTmpFile(fileObj.filepath);
-        // });
+        if (!key) throw new Error('📌key is a required parameter');
+        const readable = await submissionService.downloadSubmissionFile(key);
+        readable.pipe(res);
     } catch (err) {
         logger.info(err);
         response.error = err.message;

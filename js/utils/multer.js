@@ -11,9 +11,6 @@ const submissionFileOptions = multer({
         fileSize: FILE_SIZE_LIMIT,
     },
     fileFilter(req, file, cb) {
-        if (!config.submission_constraints.compression_formats.includes(path.extname(file.originalname))) {
-            return cb(new Error(`Acceptable file types: ${config.submission_constraints.compression_formats.toString()}`));
-        }
         return cb(undefined, true);
     },
 });

@@ -41,7 +41,7 @@ app.post('/bulletin/api/submission/update/:submissionId/like/remove', submission
 app.post('/bulletin/api/submission/update/:submissionId/comment/remove', submissionController.removeComment);
 
 // request submission data/files
-app.get('/bulletin/api/submission/get/one/:submissionId/download/:type', submissionController.submissionFileDownload);
+app.get('/bulletin/api/submission/download/:key', submissionController.submissionFileDownload);
 app.get('/bulletin/api/submission/get/one/:submissionId', submissionController.getSingleSubmission);
 app.get('/bulletin/api/submission/get/all', submissionController.getAllSubmissions);
 app.get('/bulletin/api/:event/submission/get/all', submissionController.getAllSubmissionsByEvent);
@@ -63,6 +63,10 @@ app.post('/bulletin/api/:event/admin/remove/accolades', adminController.removeAc
 app.post('/bulletin/api/:event/admin/remove/challenges', adminController.removeChallenges);
 app.post('/bulletin/api/:event/admin/update/accolade', adminController.updateAccolade);
 app.post('/bulletin/api/:event/admin/update/event', adminController.updateEvent);
+app.post('/bulletin/api/:event/admin/upload/eventImage', multerUtil.submissionFileOptions.single('file'), adminController.uploadEventImage);
+app.post('/bulletin/api/:event/admin/upload/:challenge/challengeImage', multerUtil.submissionFileOptions.single('file'), adminController.uploadChallengeImage);
+app.get('/bulletin/api/:event/download/eventImage', adminController.getEventImage);
+app.get('/bulletin/api/:event/download/:challenge/challengeImage', adminController.getChallengeImage);
 
 // app.use('/*', (req, res) => res.redirect(`${process.env.REDIRECT_URL}`));
 
