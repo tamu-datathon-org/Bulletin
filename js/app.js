@@ -63,8 +63,8 @@ app.post('/bulletin/api/:event/admin/remove/accolades', adminController.removeAc
 app.post('/bulletin/api/:event/admin/remove/challenges', adminController.removeChallenges);
 app.post('/bulletin/api/:event/admin/update/accolade', adminController.updateAccolade);
 app.post('/bulletin/api/:event/admin/update/event', adminController.updateEvent);
-app.post('/bulletin/api/:event/admin/upload/eventImage', multerUtil.submissionFileOptions.single('file'), adminController.uploadEventImage);
-app.post('/bulletin/api/:event/admin/upload/:challenge/challengeImage', multerUtil.submissionFileOptions.single('file'), adminController.uploadChallengeImage);
+app.post('/bulletin/api/:event/admin/upload/eventImage', multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
+app.post('/bulletin/api/:event/admin/upload/:challenge/challengeImage', multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
 app.get('/bulletin/api/:event/download/eventImage', adminController.getEventImage);
 app.get('/bulletin/api/:event/download/:challenge/challengeImage', adminController.getChallengeImage);
 

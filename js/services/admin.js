@@ -168,7 +168,7 @@ const addChallenge = async (event, name, questions, places) => {
     const accoladeIds = [];
     let currPlace = 1;
     while (currPlace <= places) {
-        const emoji = config.challenges.place_emojis[currPlace] || config.challenges.place_emojis[1];
+        const emoji = config.challenges.place_emojis[currPlace] || config.challenges.place_emojis[3];
         accoladeIds.push(await addAccolade(event, `${ordinalSuffixOf(currPlace)} in ${name}`, null, emoji));
         currPlace += 1;
     }
@@ -200,6 +200,9 @@ const removeChallenges = async (event, challengeNames) => {
 const uploadEventImage = async (event, filename, buffer) => {
     const eventObj = await eventsModel.getEventByName(event);
     if (!eventObj) throw new Error(`📌event ${event} does not exist`);
+    if (eventObj.imageKey) {
+        await removeImageByKey(eventObj.imageKey);
+    }
     const data = await frontendS3.uploadFile(`${config.event.imagePrefix}${path.extname(filename)}`, buffer);
     const setOptions = {
         image: data.Location,
@@ -214,6 +217,9 @@ const uploadChallengeImage = async (event, challenge, filename, buffer) => {
     if (!eventObj) throw new Error(`📌event ${event} does not exist`);
     const challengeObj = await challengeModel.getChallengeByName(challenge);
     if (!challengeObj) throw new Error(`📌challenge ${challenge} does not exist`);
+    if (challengeObj.imageKey) {
+        await removeImageByKey(challengeObj.imageKey);
+    }
     const data = await frontendS3.uploadFile(`${config.challenges.imagePrefix}${path.extname(filename)}`, buffer);
     const setOptions = {
         image: data.Location,
@@ -239,6 +245,10 @@ const getChallengeImage = async (challenge) => {
 
 const getImageByKey = async (fileKey) => {
     return frontendS3.getFileStream(fileKey);
+};
+
+const removeImageByKey = async (fileKey) => {
+    return frontendS3.removeFile(fileKey);
 };
 
 /* for testing only */
