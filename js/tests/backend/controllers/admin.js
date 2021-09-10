@@ -29,6 +29,10 @@ describe('admin controller', () => {
         assert.isDefined(adminController.removeAccolades);
         assert.isDefined(adminController.removeChallenges);
         assert.isDefined(adminController.updateAccolade);
+        assert.isDefined(adminController.uploadChallengeImage);
+        assert.isDefined(adminController.uploadEventImage);
+        assert.isDefined(adminController.getChallengeImage);
+        assert.isDefined(adminController.getChallengeImage);
     });
 
     const mockServiceResponse = 'success';

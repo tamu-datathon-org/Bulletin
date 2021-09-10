@@ -7,7 +7,7 @@ const logger = require('./utils/logger');
 const submissionController = require('./controllers/submission');
 const adminController = require('./controllers/admin');
 const bouncerController = require('./controllers/bouncer');
-const eventsController = require('./controllers/events');
+const eventController = require('./controllers/event');
 const pageRouter = require('./controllers/router');
 const multerUtil = require('./utils/multer');
 const mongoUtil = require('./utils/mongoDb');
@@ -27,8 +27,12 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // basic useful endpoints
-app.get('/bulletin/api/events', eventsController.getAllEvents);
-app.get('/bulletin/:event/api', eventsController.getEvent);
+app.get('/bulletin/api/events', eventController.getAllEvents);
+app.get('/bulletin/api/:eventId', eventController.getEvent);
+app.get('/bulletin/api/:eventId/accolade/:accoladeId', eventController.getAccolade);
+app.get('/bulletin/api/:eventId/accolade', eventController.getAccolades);
+app.get('/bulletin/api/:eventId/challenge/:challengeId', eventController.getChallenge);
+app.get('/bulletin/api/:eventId/challenge', eventController.getChallenges);
 
 // add or update submission || add bouncerController.checkIfLoggedIn for production
 app.post('/bulletin/api/:event/submission/add', submissionController.addSubmission);

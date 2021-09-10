@@ -8,14 +8,16 @@ const challenge = {
     accoladeIds: [],
     questionsIds: [],
     sponsorsIds: [],
+    eventId: null,
 };
 
-const createChallenge = async (name, places, accoladeIds, questionIds) => {
+const createChallenge = async (eventId, name, places, accoladeIds, questionIds) => {
     const challengeObj = {
         name: name,
         places: places || 0,
         accoladeIds: accoladeIds || [],
         questionIds: questionIds || [],
+        eventId: eventId,
     };
     return challengeObj;
 };
@@ -62,12 +64,16 @@ const removeChallengeByName = async (title) => {
     }
 };
 
-const getChallenge = async (challengeId) => {
+const getChallenge = async (eventId, challengeId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
         const challenge = await client.db(config.database.name)
-            .collection(config.database.collections.challenges).findOne({ _id: await mongoUtil.ObjectId(challengeId) });
+            .collection(config.database.collections.challenges)
+            .findOne({
+                _id: await mongoUtil.ObjectId(challengeId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            });
         await mongoUtil.closeClient(client);
         return challenge;
     } catch (err) {
@@ -83,6 +89,21 @@ const getChallenges = async (challengeIds) => {
         const challenge = await client.db(config.database.name)
             .collection(config.database.collections.challenges)
             .find({ _id: { $in: challengeIds } }).toArray();
+        await mongoUtil.closeClient(client);
+        return challenge;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting challenges:: ${err.message}`);
+    }
+};
+
+const getChallengesByEvent = async (eventId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const challenge = await client.db(config.database.name)
+            .collection(config.database.collections.challenges)
+            .find({ eventId: await mongoUtil.ObjectId(eventId) }).toArray();
         await mongoUtil.closeClient(client);
         return challenge;
     } catch (err) {
@@ -251,6 +272,7 @@ module.exports = {
     getChallenges,
     getChallengeByName,
     getChallengesByNames,
+    getChallengesByEvent,
     updateChallenge,
     addChallengeAccoladeId,
     removeChallengeAccoladeId,
