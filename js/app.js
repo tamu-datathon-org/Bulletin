@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 // const proxy = require('express-http-proxy');
 const cookieParser = require('cookie-parser');
@@ -15,6 +16,8 @@ const mongoUtil = require('./utils/mongoDb');
 const PORT = process.env.PORT || 3000;
 
 const app = express();
+
+app.use(cors());
 
 app.set('views', path.join(__dirname, '..', 'views'));
 app.set('view engine', 'pug');
