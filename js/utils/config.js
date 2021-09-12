@@ -4,8 +4,8 @@ const defaultConfig = {
     siteName: 'bulletin',
     submission_constraints: {
         max_participants: 5,
-        source_code_formats: ['.tar', '.zip'],
-        photo_formats: ['.zip'],
+        sourceCode_formats: ['.tar', '.zip'],
+        photos_formats: ['.zip'],
         icon_formats: ['.jpg', '.png'],
         markdown_formats: ['.md'],
         submission_upload_types: {
@@ -94,14 +94,17 @@ const defaultConfig = {
             events: 'events',
             questions: 'questions',
             sponsors: 'sponsors',
+            submissionFileLinks: 'submissionFileLinks',
         },
         bucket_name: 'fs',
         entryID_length: 24,
     },
     event: {
         fields: ['name', 'description', 'start_time', 'end_time'],
+        imagePrefix: 'EVENT_IMAGE',
     },
     challenges: {
+        imagePrefix: 'CHALLENGE_IMAGE',
         max_places: 5,
         place_emojis: {
             1: '🥇',

@@ -233,6 +233,77 @@ const removeChallenges = async (req, res) => {
     }
 };
 
+// ======================================================== //
+// =========== 📌📌📌 Files Section 📌📌📌 ============= //
+// ======================================================== //
+
+const uploadEventImage = async (req, res) => {
+    const response = {};
+    const { event } = req.params;
+    const { buffer } = req.file;
+    const { originalname } = req.file;
+    try {
+        if (!event || typeof event !== 'string') throw new Error('📌event is a required parameter');
+        if (!originalname || typeof event !== 'string') throw new Error('📌originalname is a required field');
+        const _event = event.replace(' ', '_');
+        response.key = await adminService.uploadEventImage(_event, originalname, buffer);
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+const uploadChallengeImage = async (req, res) => {
+    const response = {};
+    const { event } = req.params;
+    const { challenge } = req.params;
+    const { buffer } = req.file;
+    const { originalname } = req.file;
+    try {
+        if (!event || typeof event !== 'string') throw new Error('📌event is a required parameter');
+        if (!challenge || typeof challenge !== 'string') throw new Error('📌challenge is a required parameter');
+        if (!originalname || typeof originalname !== 'string') throw new Error('📌originalname is a required field');
+        const _event = event.replace(' ', '_');
+        response.key = await adminService.uploadChallengeImage(_event, challenge, originalname, buffer);
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+const getEventImage = async (req, res) => {
+    const response = {};
+    const { event } = req.params;
+    try {
+        if (!event) throw new Error('📌event is a required parameter');
+        const _event = event.replace(' ', '_');
+        const readable = await adminService.getEventImage(_event);
+        readable.pipe(res);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+const getChallengeImage = async (req, res) => {
+    const response = {};
+    const { challenge } = req.params;
+    try {
+        if (!challenge) throw new Error('📌challenge is a required parameter');
+        const readable = await adminService.getChallengeImage(challenge);
+        readable.pipe(res);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
 /* for testing only */
 const setAdminService = (testAdminService) => {
     adminService = testAdminService;
@@ -247,6 +318,10 @@ module.exports = {
     updateEvent,
     addChallenge,
     removeChallenges,
+    uploadEventImage,
+    uploadChallengeImage,
+    getEventImage,
+    getChallengeImage,
     // testing
     setAdminService,
 };

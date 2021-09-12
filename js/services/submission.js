@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const { promisify } = require('util');
-const stream = require('stream');
 
 const dbUtil = require('../utils/mongoDb');
 const logger = require('../utils/logger');
@@ -15,6 +14,8 @@ const commentsModel = require('../models/comments');
 const userSubmissionLinksModel = require('../models/userSubmissionLinks');
 const challengesModel = require('../models/challenges');
 const eventsModel = require('../models/events');
+
+const submissionS3 = require('../utils/submissionsS3');
 
 const unlink = promisify(fs.unlink);
 // const writeFile = promisify(fs.writeFile);
@@ -170,22 +171,15 @@ const uploadSubmissionFile = async (buffer, submissionId, filename, type) => {
     if (!(await submissionModel.getSubmission(submissionId))) {
         throw new Error(`📌Error uploading file:: submission with submissionId ${submissionId} does not exist`);
     }
-    await dbUtil.uploadFile(buffer, submissionId, filename, type);
-    logger.info('📌uploaded to GridFS');
+    const data = await submissionS3.uploadFile(filename, buffer);
+    logger.info('📌uploaded to s3');
+    await submissionModel.editSubmissionFile(submissionId, type, data.Location);
+    logger.info('📌updated to GridFS');
+    return data.Key;
 };
 
-const downloadSubmissionFile = async (submissionId, type) => {
-    if (!(await submissionModel.getSubmission(submissionId))) {
-        throw new Error(`📌Error downloading file:: submission with submissionId ${submissionId} does not exist`);
-    }
-    const bufferObj = await dbUtil.downloadFileBuffer(submissionId, type);
-    logger.info('📌downloaded from GridFS');
-    const bufferStream = new stream.PassThrough();
-    bufferStream.end(bufferObj.buffer);
-    return { stream: bufferStream, filename: bufferObj.filename };
-    // const newFilePath = path.join(config.tmp_download_path, `${Date.now()}_${bufferObj.filename}`);
-    // await writeFile(newFilePath, bufferObj.buffer);
-    // return { filepath: newFilePath, filename: bufferObj.filename };
+const downloadSubmissionFile = async (fileKey) => {
+    return submissionS3.getFileStream(fileKey);
 };
 
 const getSubmissionInstructions = async () => {

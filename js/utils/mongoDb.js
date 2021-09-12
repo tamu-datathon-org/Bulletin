@@ -1,11 +1,11 @@
 const config = require('./config');
-const { Readable } = require('stream');
-const { MongoClient, GridFSBucket, ObjectId } = require('mongodb');
+// const { Readable } = require('stream');
+const { MongoClient, ObjectId } = require('mongodb');
 const logger = require('./logger');
 
 const url = process.env.MONGODB_URL;
 const bulletinDb = config.database.name;
-const { collections } = config.database;
+// const { collections } = config.database;
 
 exports.getClient = async () => (new MongoClient(url)).connect();
 
@@ -35,6 +35,7 @@ exports.dbInit = async () => {
     }
 };
 
+/*
 exports.uploadFile = async (buffer, submissionId, filename, type) => {
     let client = null;
     try {
@@ -156,3 +157,4 @@ exports.removeFile = async (submissionId, type) => {
         throw new Error(`📌Error downloading file:: ${err.message}`);
     }
 };
+*/
