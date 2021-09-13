@@ -14,7 +14,7 @@ const uploadFile = async (filename, buffer) => {
     const uploadParams = {
         Bucket: bucketName,
         Body: buffer,
-        Key: filename,
+        Key: `${filename}_${Date.now()}`,
     };
     return s3.upload(uploadParams).promise();
 };

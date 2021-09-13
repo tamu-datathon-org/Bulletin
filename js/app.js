@@ -33,6 +33,8 @@ app.get('/bulletin/api/:eventId/accolade/:accoladeId', eventController.getAccola
 app.get('/bulletin/api/:eventId/accolade', eventController.getAccolades);
 app.get('/bulletin/api/:eventId/challenge/:challengeId', eventController.getChallenge);
 app.get('/bulletin/api/:eventId/challenge', eventController.getChallenges);
+app.get('/bulletin/api/:eventId/download/eventImage', eventController.getEventImage);
+app.get('/bulletin/api/:eventId/download/challengeImage/:challengeId', eventController.getChallengeImage);
 
 // add or update submission || add bouncerController.checkIfLoggedIn for production
 app.post('/bulletin/api/:event/submission/add', submissionController.addSubmission);
@@ -59,18 +61,15 @@ app.get('/bulletin/api/submission/help/instructions', submissionController.getSu
 app.get('/bulletin/api/submission/help/instructions/file', submissionController.getSubmissionFileInstructions);
 
 // admin
+// note: for all the /add/ endpoints, put /?<object>Id=<objectId> to upsert
 app.post('/bulletin/api/admin/add/event', adminController.addEvent);
-app.post('/bulletin/api/:event/admin/add/accolade', adminController.addAccolade);
-app.post('/bulletin/api/:event/admin/add/challenge', adminController.addChallenge);
-app.post('/bulletin/api/:event/admin/remove/event', adminController.removeEvent);
-app.post('/bulletin/api/:event/admin/remove/accolades', adminController.removeAccolades);
-app.post('/bulletin/api/:event/admin/remove/challenges', adminController.removeChallenges);
-app.post('/bulletin/api/:event/admin/update/accolade', adminController.updateAccolade);
-app.post('/bulletin/api/:event/admin/update/event', adminController.updateEvent);
-app.post('/bulletin/api/:event/admin/upload/eventImage', multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
-app.post('/bulletin/api/:event/admin/upload/:challenge/challengeImage', multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
-app.get('/bulletin/api/:event/download/eventImage', adminController.getEventImage);
-app.get('/bulletin/api/:event/download/:challenge/challengeImage', adminController.getChallengeImage);
+app.post('/bulletin/api/:eventId/admin/add/accolade', adminController.addAccolade);
+app.post('/bulletin/api/:eventId/admin/add/challenge', adminController.addChallenge);
+app.post('/bulletin/api/:eventId/admin/remove/event', adminController.removeEvent);
+app.post('/bulletin/api/:eventId/admin/remove/accolade/:accoladeId', adminController.removeAccolade);
+app.post('/bulletin/api/:eventId/admin/remove/challenge/:challengeId', adminController.removeChallenge);
+app.post('/bulletin/api/:eventId/admin/upload/eventImage', multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
+app.post('/bulletin/api/:eventId/admin/upload/challengeImage/:challenge', multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
 
 // app.use('/*', (req, res) => res.redirect(`${process.env.REDIRECT_URL}`));
 

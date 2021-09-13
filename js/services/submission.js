@@ -117,16 +117,12 @@ const getSubmission = async (submissionId) => {
     return submissionModel.getSubmission(submissionId);
 };
 
-const deleteSubmission = async (submissionId) => {
-    const doc = await submissionModel.deleteSubmission(submissionId);
+const removeSubmission = async (submissionId) => {
+    const doc = await submissionModel.removeSubmission(submissionId);
     await eventsModel.removeEventSubmissionId(submissionId);
     await commentsModel.removeAllCommentsOfSubmissionId(submissionId);
     await likesModel.removeAllLikesOfSubmissionId(submissionId);
     if (doc.userSubmissionLinkIds) await userSubmissionLinksModel.removeUserSubmissionLinks(doc.userSubmissionLinkIds);
-    if (doc.sourceCodeId) await dbUtil.removeFile(doc.sourceCodeId);
-    if (doc.iconId) await dbUtil.removeFile(doc.iconId);
-    if (doc.photosId) await dbUtil.removeFile(doc.photosId);
-    if (doc.markdownId) await dbUtil.removeFile(doc.markdownId);
     if (doc.likeIds) await likesModel.removeLikes(doc.likeIds);
     if (doc.commentIds) await commentsModel.removeComments(doc.commentIds);
 };
@@ -218,7 +214,7 @@ const validateSubmitterForUpdate = async (token, submissionId) => {
 
 module.exports = {
     addSubmission,
-    deleteSubmission,
+    removeSubmission,
     updateSubmission,
     uploadSubmissionFile,
     downloadSubmissionFile,

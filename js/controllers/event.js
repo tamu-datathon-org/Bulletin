@@ -125,6 +125,45 @@ const getChallenges = async (req, res) => {
     }
 };
 
+/**
+ * @function getEventImage
+ * @param {Object} req 
+ * @param {Object} res 
+ */
+const getEventImage = async (req, res) => {
+    const response = {};
+    const { eventId } = req.params;
+    try {
+        if (!eventId) throw new Error('📌eventId is a required parameter');
+        const readable = await eventsService.getEventImage(eventId);
+        readable.pipe(res);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+/**
+ * @function getChallengeImage
+ * @param {Object} req 
+ * @param {Object} res 
+ */
+const getChallengeImage = async (req, res) => {
+    const response = {};
+    const { eventId } = req.params;
+    const { challengeId } = req.params;
+    try {
+        if (!challengeId) throw new Error('📌challengeId is a required parameter');
+        const readable = await eventsService.getChallengeImage(eventId, challengeId);
+        readable.pipe(res);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
 module.exports = {
     getEvent,
     getAllEvents,
@@ -132,4 +171,6 @@ module.exports = {
     getAccolades,
     getChallenge,
     getChallenges,
+    getEventImage,
+    getChallengeImage,
 };

@@ -92,9 +92,7 @@ const defaultConfig = {
             accolades: 'accolades',
             challenges: 'challenges',
             events: 'events',
-            questions: 'questions',
             sponsors: 'sponsors',
-            submissionFileLinks: 'submissionFileLinks',
         },
         bucket_name: 'fs',
         entryID_length: 24,
@@ -105,7 +103,7 @@ const defaultConfig = {
     },
     challenges: {
         imagePrefix: 'CHALLENGE_IMAGE',
-        max_places: 5,
+        max_places: 3,
         place_emojis: {
             1: '🥇',
             2: '🥈',

@@ -5,43 +5,78 @@ const logger = require('../utils/logger');
 const challenge = {
     name: null,
     places: null,
+    questions: [],
     accoladeIds: [],
-    questionsIds: [],
     sponsorsIds: [],
     eventId: null,
 };
 
-const createChallenge = async (eventId, name, places, accoladeIds, questionIds) => {
+/**
+ * @function createChallenge
+ * @param {String} name 
+ * @param {Number} places 
+ * @param {Array<String>} accoladeIds 
+ * @param {Array<String>} questions 
+ * @param {String} eventId
+ * @returns {Object} challenge obj
+ */
+const createChallenge = async (name, places, accoladeIds, questions, eventId) => {
     const challengeObj = {
         name: name,
         places: places || 0,
+        questions: questions || [],
         accoladeIds: accoladeIds || [],
-        questionIds: questionIds || [],
-        eventId: eventId,
+        eventId: await mongoUtil.ObjectId(eventId),
     };
     return challengeObj;
 };
 
-const addChallenge = async (challengeObj) => {
+/**
+ * @function addChallenge
+ * @param {Object} challengeObj 
+ * @param {String} challengeId 
+ * @returns {String} upserted id or null
+ */
+const addChallenge = async (challengeObj, challengeId = null) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { insertedId } = await client.db(config.database.name)
-            .collection(config.database.collections.challenges).insertOne(challengeObj);
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.challenges).updateOne(
+                { _id: await mongoUtil.ObjectId(challengeId) },
+                { $set: challengeObj },
+                { upsert: true },
+            );
         await mongoUtil.closeClient(client);
-        return insertedId;
+        return upsertedId;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error adding challenge:: ${err.message}`);
     }
 };
 
-const removeChallenge = async (challengeId) => {
+/**
+ * @function removeChallenge
+ * @param {String} eventId 
+ * @param {String} challengeId 
+ * @returns {Object} removed challenge
+ */
+const removeChallenge = async (eventId, challengeId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
         const challenge = await client.db(config.database.name)
-            .collection(config.database.collections.challenges).findOneAndDelete({ _id: await mongoUtil.ObjectId(challengeId) });
+            .collection(config.database.collections.challenges)
+            .findOne({
+                _id: await mongoUtil.ObjectId(challengeId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            });
+        await client.db(config.database.name)
+            .collection(config.database.collections.challenges)
+            .deleteOne({
+                _id: await mongoUtil.ObjectId(challengeId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            });
         await mongoUtil.closeClient(client);
         return challenge;
     } catch (err) {
@@ -142,23 +177,6 @@ const getChallengesByNames = async (names) => {
     }
 };
 
-const updateChallenge = async (challengeId, setOptions) => {
-    let client = null;
-    try {
-        client = await mongoUtil.getClient();
-        const { modifiedCount } = await client.db(config.database.name)
-            .collection(config.database.collections.challenges).updateOne(
-                { _id: await mongoUtil.ObjectId(challengeId) },
-                { $set: setOptions },
-            );
-        await mongoUtil.closeClient(client);
-        return modifiedCount;
-    } catch (err) {
-        await mongoUtil.closeClient(client);
-        throw new Error(`📌Error updating challenge ${err.message}`);
-    }
-};
-
 const addChallengeAccoladeId = async (challengeId, accoladeId) => {
     let client = null;
     try {
@@ -194,74 +212,6 @@ const removeChallengeAccoladeId = async (challengeId, accoladeId) => {
     }
 };
 
-const addChallengeQuestionId = async (challengeId, questionId) => {
-    let client = null;
-    try {
-        client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name)
-            .collection(config.database.collections.challenges).updateOne(
-                { _id: await mongoUtil.ObjectId(challengeId) },
-                { $addToSet: { questionIds: questionId } },
-            );
-        await mongoUtil.closeClient(client);
-        return upsertedId;
-    } catch (err) {
-        await mongoUtil.closeClient(client);
-        throw new Error(`📌Error updating challenge ${err.message}`);
-    }
-};
-
-const removeChallengeQuestionId = async (challengeId, questionId) => {
-    let client = null;
-    try {
-        client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name)
-            .collection(config.database.collections.challenges).updateOne(
-                { _id: await mongoUtil.ObjectId(challengeId) },
-                { $pull: { questionIds: questionId } },
-            );
-        await mongoUtil.closeClient(client);
-        return upsertedId;
-    } catch (err) {
-        await mongoUtil.closeClient(client);
-        throw new Error(`📌Error updating challenge ${err.message}`);
-    }
-};
-
-const addChallengeSponsorId = async (challengeId, sponsorId) => {
-    let client = null;
-    try {
-        client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name)
-            .collection(config.database.collections.challenges).updateOne(
-                { _id: await mongoUtil.ObjectId(challengeId) },
-                { $addToSet: { sponsorIds: sponsorId } },
-            );
-        await mongoUtil.closeClient(client);
-        return upsertedId;
-    } catch (err) {
-        await mongoUtil.closeClient(client);
-        throw new Error(`📌Error updating challenge ${err.message}`);
-    }
-};
-
-const removeChallengeSponsorId = async (challengeId, sponsorId) => {
-    let client = null;
-    try {
-        client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name)
-            .collection(config.database.collections.challenges).updateOne(
-                { _id: await mongoUtil.ObjectId(challengeId) },
-                { $pull: { sponsorIds: sponsorId } },
-            );
-        await mongoUtil.closeClient(client);
-        return upsertedId;
-    } catch (err) {
-        await mongoUtil.closeClient(client);
-        throw new Error(`📌Error updating challenge ${err.message}`);
-    }
-};
-
 module.exports = {
     challenge,
     createChallenge,
@@ -273,11 +223,6 @@ module.exports = {
     getChallengeByName,
     getChallengesByNames,
     getChallengesByEvent,
-    updateChallenge,
     addChallengeAccoladeId,
     removeChallengeAccoladeId,
-    addChallengeQuestionId,
-    removeChallengeQuestionId,
-    addChallengeSponsorId,
-    removeChallengeSponsorId,
 };
