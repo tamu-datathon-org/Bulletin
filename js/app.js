@@ -26,20 +26,36 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// basic useful endpoints
+/**
+ * basic useful endpoints
+ */
+// ==================== events ===========================
 app.get('/bulletin/api/events', eventController.getAllEvents);
 app.get('/bulletin/api/:eventId', eventController.getEvent);
+// =================== accolades ==========================
 app.get('/bulletin/api/:eventId/accolade/:accoladeId', eventController.getAccolade);
 app.get('/bulletin/api/:eventId/accolade', eventController.getAccolades);
+// =================== challenges =========================
 app.get('/bulletin/api/:eventId/challenge/:challengeId', eventController.getChallenge);
 app.get('/bulletin/api/:eventId/challenge', eventController.getChallenges);
+// ============== download frontend images ================
 app.get('/bulletin/api/:eventId/download/eventImage', eventController.getEventImage);
 app.get('/bulletin/api/:eventId/download/challengeImage/:challengeId', eventController.getChallengeImage);
+// ================== submissions =========================
+app.get('/bulletin/api/:eventId/submission/:submissionId', eventController.getSubmission);
+app.get('/bulletin/api/:eventId/submission', eventController.getSubmissions);
+// ============ download submission files ================
+app.get('/bulletin/api/:eventId/submission/:submissionId/download/photos', eventController.getSubmissionIcon);
+app.get('/bulletin/api/:eventId/submission/:submissionId/download/icon', eventController.getSubmissionPhotos);
+app.get('/bulletin/api/:eventId/submission/:submissionId/download/markdown', eventController.getSubmissionMarkdown);
+app.get('/bulletin/api/:eventId/submission/:submissionId/download/sourcecode', eventController.getSubmissionSourceCode);
 
-// add or update submission || add bouncerController.checkIfLoggedIn for production
+/**
+ * submission endpoints
+ * note: for all the "add" endpoints, append /?submissionId=submissionId to upsert
+ */
 app.post('/bulletin/api/:event/submission/add', submissionController.addSubmission);
-app.post('/bulletin/api/submission/update/:submissionId/delete', submissionController.deleteSubmission);
-app.post('/bulletin/api/submission/update/:submissionId/update', submissionController.updateSubmission);
+app.post('/bulletin/api/submission/update/:submissionId/delete', submissionController.removeSubmission);
 app.post('/bulletin/api/submission/update/:submissionId/upload/:type', multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
 app.post('/bulletin/api/submission/update/:submissionId/like/add', submissionController.addLike);
 app.post('/bulletin/api/submission/update/:submissionId/comment/add', submissionController.addComment);
@@ -53,15 +69,10 @@ app.get('/bulletin/api/submission/get/all', submissionController.getAllSubmissio
 app.get('/bulletin/api/:event/submission/get/all', submissionController.getAllSubmissionsByEvent);
 app.post('/bulletin/api/submission/get/query', submissionController.getMultipleSubmissions);
 
-// get help
-app.get('/bulletin/api/submission/help', submissionController.sendHelpLinks);
-app.get('/bulletin/api/submission/help/submissionFields', submissionController.getSubmissionUploadFields);
-app.get('/bulletin/api/submission/help/queryFields', submissionController.getSubmissionQueryFields);
-app.get('/bulletin/api/submission/help/instructions', submissionController.getSubmissionInstructions);
-app.get('/bulletin/api/submission/help/instructions/file', submissionController.getSubmissionFileInstructions);
-
-// admin
-// note: for all the /add/ endpoints, put /?<object>Id=<objectId> to upsert
+/**
+ * admin enpoints
+ * note: for all the "add" endpoints, append /?<object>Id=<objectId> to upsert
+ */
 app.post('/bulletin/api/admin/add/event', adminController.addEvent);
 app.post('/bulletin/api/:eventId/admin/add/accolade', adminController.addAccolade);
 app.post('/bulletin/api/:eventId/admin/add/challenge', adminController.addChallenge);
@@ -71,8 +82,7 @@ app.post('/bulletin/api/:eventId/admin/remove/challenge/:challengeId', adminCont
 app.post('/bulletin/api/:eventId/admin/upload/eventImage', multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
 app.post('/bulletin/api/:eventId/admin/upload/challengeImage/:challenge', multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
 
-// app.use('/*', (req, res) => res.redirect(`${process.env.REDIRECT_URL}`));
-
+// initialize mongodb
 mongoUtil.dbInit();
 
 app.listen(PORT, () => {

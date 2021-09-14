@@ -14,107 +14,52 @@ const commentsModel = require('../models/comments');
 const userSubmissionLinksModel = require('../models/userSubmissionLinks');
 const challengesModel = require('../models/challenges');
 const eventsModel = require('../models/events');
-
 const submissionS3 = require('../utils/submissionsS3');
 
-const unlink = promisify(fs.unlink);
-// const writeFile = promisify(fs.writeFile);
+// ======================================================== //
+// ========= 📌📌📌 Submission Section 📌📌📌 ========== //
+// ======================================================== //
 
-// uploads submission to database
-const addSubmission = async (requestBody, eventId, discordObjs) => {
-    const challengeIds = await Promise.all((await challengesModel.getChallengesByTitles(requestBody.challenges))
-        .map(c => c._id));
-    const userSubmissionLinkIds = await Promise.all(discordObjs.map(async (discordObj) => {
-        const userSubmissionLinkObj = await userSubmissionLinksModel
-            .createUserSubmissionLink(discordObj.userAuthId, '', discordObj.discordTag); // no submissionId yet
-        return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj);
-    }));
-    const submissionObj = await submissionModel
-        .createSubmission(eventId, requestBody.title, userSubmissionLinkIds, challengeIds, requestBody.links, requestBody.tags, requestBody.videoLink);
-    const submissionId = await submissionModel.addSubmission(submissionObj);
-    await userSubmissionLinksModel.updateUserSubmissionLinkIds(userSubmissionLinkIds, submissionId);
-    await Promise.all((await eventsModel.addEventSubmissionId(eventId, submissionId)));
-    logger.info(`📌submitted with id ${submissionId}`);
-    return submissionId;
-};
-
-const removeTmpFile = async (filepath) => {
-    try {
-        if (!filepath) {
-            throw new Error('📌Error deleting temp file:: no file path provided');
-        }
-        if (path.dirname(filepath) === config.tmp_download_path) await unlink(filepath);
-    } catch (err) {
-        if (err.code !== 'ENOENT') logger.info(err.message);
-    }
-};
-
-const getSubmissionsDataWithFilters = async (filters) => {
-    const { entryID } = filters;
-    const { names } = filters;
-    const { titles } = filters;
-    const { timespan } = filters;
-    const { links } = filters;
-    const { challenges } = filters;
-    const { tags } = filters;
-    const { numLikes } = filters;
-    const { numComments } = filters;
-
-    const finalFilters = {};
-    if (entryID) {
-        if ((entryID?.length ?? 0) !== config.database.entryID_length) throw new Error('Error invalid entryID');
-        return dbUtil.getSubmissionByEntryID(entryID);
-    }
-    if (names) {
-        if (!Array.isArray(names)) throw new Error('names must be a list');
-        finalFilters.names = names;
-    }
-    if (titles) {
-        if (!Array.isArray(titles)) throw new Error('titles must be a list');
-        finalFilters.titles = titles;
-    }
-    if (timespan) {
-        if (!Array.isArray(timespan)) throw new Error('timespan must be a list eg. [time1, time2]');
-        if (timespan.length !== 2) throw new Error('timespan must have two elements eg. [time1, time2]');
-        finalFilters.timespan = [(new Date(timespan[0])).toISOString(), (new Date(timespan[1])).toISOString()];
-    }
-    if (links) {
-        if (!Array.isArray(links)) throw new Error('links must be a list eg. [link1, link2]');
-        finalFilters.links = links;
-    }
-    if (challenges) {
-        if (!Array.isArray(challenges)) throw new Error('challenges must be a list eg. [challenge1, challeng2]');
-        finalFilters.challenges = challenges;
-    }
-    if (tags) {
-        if (!Array.isArray(tags)) throw new Error('tags must be a list eg. [tag1, tag2]');
-        finalFilters.tags = tags;
-    }
-    if (numLikes) {
-        let likesNum = numLikes;
-        if (typeof numLikes === 'string') likesNum = parseInt(numLikes);
-        if (!Number.isInteger(likesNum)) throw new Error('likes must be an integer eg. 5 or "5"');
-        finalFilters.numLikes = likesNum;
-    }
-    if (numComments) {
-        let commentsNum = numComments;
-        if (typeof numComments === 'string') commentsNum = parseInt(numComments);
-        if (!Number.isInteger(commentsNum)) throw new Error('numComments must be an integer eg. 5 or "5"');
-        finalFilters.numComments = commentsNum;
-    }
-    return dbUtil.getSubmissionsByFilters(finalFilters);
-};
-
-const getAllSubmissionsData = async () => {
-    return submissionModel.getSubmissionsDump();
-};
-
-const getAllSubmissionsByEventId = async (eventId) => {
+/**
+ * @function getSubmissions
+ * @param {String} eventId 
+ * @returns {Array<Object>} array of submission docs
+ */
+const getSubmissions = async (eventId) => {
     return submissionModel.getAllSubmissionsByEventId(eventId);
 };
 
-const getSubmission = async (submissionId) => {
-    return submissionModel.getSubmission(submissionId);
+/**
+ * @function getSubmission
+ * @param {String} eventId 
+ * @param {String} submissionId 
+ * @returns {Object} submission object
+ */
+const getSubmission = async (eventId, submissionId) => {
+    return submissionModel.getSubmission(eventId, submissionId);
+};
+
+const addSubmission = async (requestBody, eventId, submissionId = null) => {
+    const challengeIds = [];
+    await Promise.all(requestBody.challenges.map(async (challengeId) => {
+        const challengeObj = await challengesModel.getChallenge(eventId, challengeId);
+        challengeObj ? challengeIds.push(challengeObj._id) : logger.info(`📌challenge ${challengeId} does not exist`);
+
+    }));
+    const userSubmissionLinkIds = [];
+    // get discordObjs from harmonia
+    await Promise.all(requestBody.discordTags.map(async (discordTag) => {
+        const userSubmissionLinkObj = await userSubmissionLinksModel
+            .addUserSubmissionLink(discordObj.userAuthId, '', discordObj.discordTag); // no submissionId yet
+        return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj);
+    }));
+    const submissionObj = await submissionModel
+        .createSubmission(eventId, requestBody.name, userSubmissionLinkIds, challengeIds, requestBody.links, requestBody.tags, requestBody.videoLink);
+    const submissionId = await submissionModel.addSubmission(submissionObj);
+    await userSubmissionLinksModel.updateUserSubmissionLinkIds(userSubmissionLinkIds, submissionId);
+    await eventsModel.addEventSubmissionId(eventId, submissionId);
+    logger.info(`📌submitted with id ${submissionId}`);
+    return submissionId;
 };
 
 const removeSubmission = async (submissionId) => {
@@ -139,11 +84,19 @@ const updateSubmission = async (submissionId, requestBody) => {
     await userSubmissionLinksModel.updateUserSubmissionLink(submissionId, userAuthLinksSetOptions);
 };
 
+// ======================================================== //
+// =========== 📌📌📌 Likes Section 📌📌📌 ============= //
+// ======================================================== //
+
 const addLike = async (userAuthId, submissionId) => {
     const likeObj = await likesModel.createLike(userAuthId, submissionId);
     const likeId = await likesModel.addLike(likeObj);
     return submissionModel.addLike(submissionId, likeId);
 };
+
+// ======================================================== //
+// ========== 📌📌📌 Comments Section 📌📌📌 =========== //
+// ======================================================== //
 
 const addComment = async (userAuthId, submissionId, message) => {
     const commentObj = await commentsModel.createComment(userAuthId, submissionId, message);
@@ -163,28 +116,50 @@ const removeComment = async (userAuthId, submissionId, commentTime) => {
     return submissionModel.removeComment(submissionId, _id);
 };
 
-const uploadSubmissionFile = async (buffer, submissionId, filename, type) => {
-    if (!(await submissionModel.getSubmission(submissionId))) {
-        throw new Error(`📌Error uploading file:: submission with submissionId ${submissionId} does not exist`);
+// ======================================================== //
+// ====== 📌📌📌 Submission Files Section 📌📌📌 ======= //
+// ======================================================== //
+
+const uploadSubmissionFile = async (eventId, submissionId, filename, type, buffer) => {
+    const submissionObj = await submissionModel.getChallenge(eventId, submissionId);
+    if (!submissionObj) throw new Error(`📌submission ${submissionId} does not exist`);
+    if (!config.submission_constraints.submission_upload_types[type]) {
+        throw new Error(`📌type ${type} is invalid`);
     }
-    const data = await submissionS3.uploadFile(filename, buffer);
-    logger.info('📌uploaded to s3');
-    await submissionModel.editSubmissionFile(submissionId, type, data.Location);
-    logger.info('📌updated to GridFS');
-    return data.Key;
+    if (submissionObj[`${type}Key`]) {
+        await removeFileByKey(submissionObj[`${type}Key`]);
+    }
+    const data = await submissionS3.uploadFile(`${submissionObj[`${type}Key`]}${path.extname(filename)}`, buffer);
+    await submissionModel.editSubmissionFile(eventId, submissionId, type, data.Location, data.Key);
+    return data.Location;
 };
 
-const downloadSubmissionFile = async (fileKey) => {
+/**
+ * @function getSubmissionFile
+ * @param {String} eventId 
+ * @param {String} submissionId 
+ * @param {String} type [markdown, icon, photos, sourceCode]
+ * @returns {Buffer} file buffer
+ */
+const getSubmissionFile = async (eventId, submissionId, type) => {
+    const submissionObj = await submissionModel.getSubmission(eventId, submissionId);
+    if (!submissionObj) throw new Error(`📌submission ${submissionId} does not exist`);
+    if (!config.submission_constraints.submission_upload_types[type]) {
+        throw new Error(`📌type ${type} is invalid`);
+    }
+    if (submissionObj[`${type}Key`]) return getFileByKey(challengeObj[`${type}Key`]);
+    throw new Error(`📌submissionId ${submissionId} does not have an assigned ${type}`);
+};
+
+const getFileByKey = async (fileKey) => {
     return submissionS3.getFileStream(fileKey);
 };
 
-const getSubmissionInstructions = async () => {
-    return submissionModel.submissionInstructions || { error: 'instructions not available' };
+const removeFileByKey = async (fileKey) => {
+    return submissionS3.removeFile(fileKey);
 };
 
-const getSubmissionFileInstructions = async () => {
-    return submissionModel.submissionFileInstructions || { error: 'instructions not available' };
-};
+// *** move the below to the bouncer ****
 
 const validateSubmitterAndGetDiscordTags = async (token, userTags) => {
     const submittedUserAuthId = await getAuthId(token);
@@ -195,11 +170,6 @@ const validateSubmitterAndGetDiscordTags = async (token, userTags) => {
     });
     if (includesSubmitter) return discordObjs;
     throw new Error('📌you cannot submit a project that does not include yourself');
-};
-
-const getEventTimeSpan = async (eventId) => {
-    const event = await eventsModel.getEventById(eventId);
-    return [event.start_time, event.end_time];
 };
 
 const validateSubmitterForUpdate = async (token, submissionId) => {
@@ -216,20 +186,16 @@ module.exports = {
     addSubmission,
     removeSubmission,
     updateSubmission,
-    uploadSubmissionFile,
-    downloadSubmissionFile,
     addLike,
     removeLike,
     addComment,
     removeComment,
-    removeTmpFile,
-    getAllSubmissionsData,
     getSubmission,
-    getSubmissionsDataWithFilters,
-    getSubmissionInstructions,
-    getSubmissionFileInstructions,
+    getSubmissions,
+    //getSubmissionByUser,
+    //getSubmissionByTags,
     validateSubmitterAndGetDiscordTags,
     validateSubmitterForUpdate,
-    getAllSubmissionsByEventId,
-    getEventTimeSpan,
+    getSubmissionFile,
+    uploadSubmissionFile,
 };
