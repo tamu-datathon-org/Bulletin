@@ -1,7 +1,7 @@
 const config = require('../utils/config');
 const mongoUtil = require('../utils/mongoDb');
 
-const user_submission_link = {
+const userSubmissionLink = {
     userAuthId: null,
     submissionId: null,
     discordTag: null,
@@ -18,13 +18,25 @@ const createUserSubmissionLink = async (userAuthId, submissionId, discordTag) =>
     return submission_link;
 };
 
-const addUserSubmissionLink = async (userSubmissionLinkObj) => {
+/**
+ * @function addUserSubmissionLink
+ * @param {Object} userSubmissionLinkObj 
+ * @param {String} userSubmissionLinkId 
+ * @returns {String} upserted id or null
+ */
+const addUserSubmissionLink = async (userSubmissionLinkObj, userSubmissionLinkId = null) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { insertedId } = await client.db(config.database.name)
-            .collection(config.database.collections.userSubmissionLinks).insertOne(userSubmissionLinkObj);
-        return insertedId;
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.userSubmissionLinks)
+            .updateOne(
+                { _id: await mongoUtil.ObjectId(userSubmissionLinkId)  },
+                { $set: userSubmissionLinkObj },
+                { upsert: true },
+            );
+        await mongoUtil.closeClient(client);
+        return upsertedId;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error adding userSubmissionLink:: ${err.message}`);
@@ -35,9 +47,14 @@ const removeUserSubmissionLink = async (userSubmissionLinkId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const link = await client.db(config.database.name)
-            .collection(config.database.collections.userSubmissionLinks).findOneAndDelete({ _id: await mongoUtil.ObjectId(userSubmissionLinkId) });
-        return link;
+        const doc = await client.db(config.database.name)
+            .collection(config.database.collections.userSubmissionLinks)
+            .findOne({ _id: await mongoUtil.ObjectId(userSubmissionLinkId) });
+        await client.db(config.database.name)
+            .collection(config.database.collections.userSubmissionLinks)
+            .deleteOne({ _id: await mongoUtil.ObjectId(userSubmissionLinkId) });
+        await mongoUtil.closeClient(client);
+        return doc;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error removing userSubmissionLink:: ${err.message}`);
@@ -48,9 +65,10 @@ const removeUserSubmissionLinks = async (userSubmissionLinkIds) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const link = await client.db(config.database.name)
+        const doc = await client.db(config.database.name)
             .collection(config.database.collections.userSubmissionLinks).deleteMany({ _id: userSubmissionLinkIds });
-        return link;
+        await mongoUtil.closeClient(client);
+        return doc;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error removing userSubmissionLink:: ${err.message}`);
@@ -62,7 +80,9 @@ const getUserSubmissionLink = async (userSubmissionLinkId) => {
     try {
         client = await mongoUtil.getClient();
         const doc = await client.db(config.database.name)
-            .collection(config.database.collections.userSubmissionLinks).findOne({ _id: await mongoUtil.ObjectId(userSubmissionLinkId) });
+            .collection(config.database.collections.userSubmissionLinks)
+            .findOne({ _id: await mongoUtil.ObjectId(userSubmissionLinkId) });
+        await mongoUtil.closeClient(client);
         return doc;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -70,6 +90,12 @@ const getUserSubmissionLink = async (userSubmissionLinkId) => {
     }
 };
 
+/**
+ * @function getUserSubmissionLinkBySubmissionIdAndUserAuthId
+ * @param {String} userAuthId 
+ * @param {String} submissionId 
+ * @returns {Object}
+ */
 const getUserSubmissionLinkBySubmissionIdAndUserAuthId = async (userAuthId, submissionId) => {
     let client = null;
     try {
@@ -77,8 +103,9 @@ const getUserSubmissionLinkBySubmissionIdAndUserAuthId = async (userAuthId, subm
         const doc = await client.db(config.database.name)
             .collection(config.database.collections.userSubmissionLinks).findOne({
                 userAuthId: userAuthId,
-                submissionId: submissionId,
+                submissionId: await mongoUtil.ObjectId(submissionId),
             });
+        await mongoUtil.closeClient(client);
         return doc;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -86,14 +113,22 @@ const getUserSubmissionLinkBySubmissionIdAndUserAuthId = async (userAuthId, subm
     }
 };
 
-const updateUserSubmissionLinkIds = async (linkIds, submissionId) => {
+/**
+ * @function addSubmissionIdToLinks
+ * @description adds single submissionId to many submissionLinks
+ *  great for adding or updating a submission
+ * @param {String} linkIds 
+ * @param {String} submissionId 
+ * @returns {Object}
+ */
+const addSubmissionIdToLinks = async (linkIds, submissionId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
         const { upsertedId } = await client.db(config.database.name)
             .collection(config.database.collections.userSubmissionLinks).updateMany(
                 { _id: { $in: linkIds } },
-                { $set: { submissionId: submissionId.toString() } },
+                { $set: { submissionId: await mongoUtil.ObjectId(submissionId) } },
             );
         await mongoUtil.closeClient(client);
         return upsertedId;
@@ -120,7 +155,7 @@ const updateUserSubmissionLink = async (submissionId, setOptions) => {
 };
 
 module.exports = {
-    user_submission_link,
+    userSubmissionLink,
     createUserSubmissionLink,
     addUserSubmissionLink,
     removeUserSubmissionLink,
@@ -128,5 +163,5 @@ module.exports = {
     getUserSubmissionLink,
     getUserSubmissionLinkBySubmissionIdAndUserAuthId,
     updateUserSubmissionLink,
-    updateUserSubmissionLinkIds,
+    addSubmissionIdToLinks,
 };

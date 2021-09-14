@@ -43,14 +43,19 @@ const createSubmission = async (eventId, name, discordTags, userSubmissionLinkId
     return submissionObj;
 };
 
-const addSubmission = async (submissionObj) => {
+const addSubmission = async (submissionObj, submissionId = null) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { insertedId } = await client.db(config.database.name)
-            .collection(config.database.collections.submissions).insertOne(submissionObj);
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .updateOne(
+                { _id: await mongoUtil.ObjectId(submissionId) },
+                { $set: submissionObj },
+                { upsert: true },
+            );
         await mongoUtil.closeClient(client);
-        return insertedId;
+        return upsertedId;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error inserting submission:: ${err.message}`);

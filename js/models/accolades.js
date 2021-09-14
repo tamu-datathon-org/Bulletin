@@ -25,7 +25,7 @@ const createAccolade = async (name, description, emoji, eventId, challengeId) =>
  * @function addAccolade
  * @param {Object} accoladeObj 
  * @param {String} accoladeId 
- * @returns {String} accolade id
+ * @returns {String} upserted accolade id
  */
 const addAccolade = async (accoladeObj, accoladeId = null) => {
     let client = null;

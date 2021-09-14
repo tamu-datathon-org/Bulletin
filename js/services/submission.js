@@ -1,11 +1,8 @@
-const fs = require('fs');
 const path = require('path');
 const { promisify } = require('util');
 
-const dbUtil = require('../utils/mongoDb');
 const logger = require('../utils/logger');
 const config = require('../utils/config');
-const discord = require('./discordDriver');
 const { getAuthId } = require('../controllers/bouncer');
 
 const submissionModel = require('../models/submission');
@@ -15,9 +12,10 @@ const userSubmissionLinksModel = require('../models/userSubmissionLinks');
 const challengesModel = require('../models/challenges');
 const eventsModel = require('../models/events');
 const submissionS3 = require('../utils/submissionsS3');
+const bouncerController = require('../controllers/bouncer');
 
 // ======================================================== //
-// ========= 📌📌📌 Submission Section 📌📌📌 ========== //
+// ========= 📌📌📌 Submission Getters 📌📌📌 ========== //
 // ======================================================== //
 
 /**
@@ -39,27 +37,69 @@ const getSubmission = async (eventId, submissionId) => {
     return submissionModel.getSubmission(eventId, submissionId);
 };
 
+// ======================================================== //
+// ======== 📌📌📌 Submission Modifiers 📌📌📌 ========= //
+// ======================================================== //
+
+const validateAddSubmission = async (token, submissionId) => {
+    if (!token) throw new Error('📌you are not logged in to TD');
+    if (submissionId) {
+        const userAuthId = await getAuthId(token);
+        const doc = await userSubmissionLinksModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(
+            userAuthId,
+            submissionId,
+        );
+        if (!doc) throw new Error('📌you are not authorized to update this project');
+        return doc.userAuthId;
+    } // else this is a new submission
+};
+
+/**
+ * @function addSubmission
+ * @description wholistic adding or updating a submission
+ * @param {Object} requestBody 
+ * @param {String} eventId 
+ * @param {String} submissionId 
+ * @returns {String} submission id
+ */
 const addSubmission = async (requestBody, eventId, submissionId = null) => {
+    // get valid challenge ids
     const challengeIds = [];
     await Promise.all(requestBody.challenges.map(async (challengeId) => {
         const challengeObj = await challengesModel.getChallenge(eventId, challengeId);
-        challengeObj ? challengeIds.push(challengeObj._id) : logger.info(`📌challenge ${challengeId} does not exist`);
+        if(challengeObj) challengeIds.push(challengeObj._id);
+        throw new Error(`📌challenge ${challengeId} does not exist`);
+    }));
 
-    }));
-    const userSubmissionLinkIds = [];
-    // get discordObjs from harmonia
+    // get discord Objects from harmonia
+    const discordObjs = [];
     await Promise.all(requestBody.discordTags.map(async (discordTag) => {
-        const userSubmissionLinkObj = await userSubmissionLinksModel
-            .addUserSubmissionLink(discordObj.userAuthId, '', discordObj.discordTag); // no submissionId yet
-        return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj);
+        const discordUser = await bouncerController.getDiscordUser(discordTag, null);
+        if (discordUser) discordObjs.push(discordUser);
+        throw new Error(`📌discordTag ${discordTag} does not exist`);
     }));
+
+    // get/create the user submission links
+    const userSubmissionLinkIds = await Promise.all(discordObjs.map(async (discordObj) => {
+        const userSubmissionLinkId = await userSubmissionLinksModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(
+            discordObj.userAuthId,
+            submissionId, 
+        );
+        const userSubmissionLinkObj = await userSubmissionLinksModel
+            .createUserSubmissionLink(discordObj.userAuthId, null, discordObj.discordTag); // no submissionId yet
+        return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj, userSubmissionLinkId) || userSubmissionLinkId;
+    }));
+
+    // create the submission
+    const discordTags = discordObjs.map((d) => d.discordTag);
     const submissionObj = await submissionModel
-        .createSubmission(eventId, requestBody.name, userSubmissionLinkIds, challengeIds, requestBody.links, requestBody.tags, requestBody.videoLink);
-    const submissionId = await submissionModel.addSubmission(submissionObj);
-    await userSubmissionLinksModel.updateUserSubmissionLinkIds(userSubmissionLinkIds, submissionId);
-    await eventsModel.addEventSubmissionId(eventId, submissionId);
-    logger.info(`📌submitted with id ${submissionId}`);
-    return submissionId;
+        .createSubmission(eventId, requestBody.name, discordTags, userSubmissionLinkIds, challengeIds,
+            requestBody.links, requestBody.tags, requestBody.videoLink);
+    const id = await submissionModel.addSubmission(submissionObj, submissionId) || submissionId;
+    await userSubmissionLinksModel.addSubmissionIdToLinks(userSubmissionLinkIds, id);
+    await eventsModel.addEventSubmissionId(eventId, id);
+    logger.info(`📌submitted with submissionId ${id}`);
+    return id;
 };
 
 const removeSubmission = async (submissionId) => {
@@ -159,29 +199,6 @@ const removeFileByKey = async (fileKey) => {
     return submissionS3.removeFile(fileKey);
 };
 
-// *** move the below to the bouncer ****
-
-const validateSubmitterAndGetDiscordTags = async (token, userTags) => {
-    const submittedUserAuthId = await getAuthId(token);
-    const discordObjs = await discord.getUserAuthIdsFromTags(userTags);
-    let includesSubmitter = false;
-    discordObjs.forEach((discordObj) => {
-        if (discordObj.userAuthId === submittedUserAuthId) includesSubmitter = true;
-    });
-    if (includesSubmitter) return discordObjs;
-    throw new Error('📌you cannot submit a project that does not include yourself');
-};
-
-const validateSubmitterForUpdate = async (token, submissionId) => {
-    const submittedUserAuthId = await getAuthId(token);
-    const doc = await userSubmissionLinksModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(
-        submittedUserAuthId,
-        submissionId,
-    );
-    if (!doc) throw new Error('you are not authorized to update this project');
-    return doc.userAuthId;
-};
-
 module.exports = {
     addSubmission,
     removeSubmission,
@@ -194,8 +211,7 @@ module.exports = {
     getSubmissions,
     //getSubmissionByUser,
     //getSubmissionByTags,
-    validateSubmitterAndGetDiscordTags,
-    validateSubmitterForUpdate,
+    validateAddSubmission,
     getSubmissionFile,
     uploadSubmissionFile,
 };

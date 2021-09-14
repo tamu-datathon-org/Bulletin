@@ -2,6 +2,7 @@ const fetch = require('node-fetch');
 const { StatusCodes } = require('http-status-codes');
 
 const gatekeeperUrl = process.env.GATEKEEPER_URL || 'https://tamudatathon.com/auth';
+const harmoniaUrl = process.env.HARMONIA_URL || 'https://tamudatathon.com/discord';
 
 /**
  * Gatekeeper Authentication middleware generator
@@ -58,7 +59,18 @@ const getAuthId = async (token) => {
     return authId;
 };
 
+const getDiscordUser = async (discordTag, userAuthId) => {
+    let response = null;
+    if (discordTag) {
+        response = await fetch(`${harmoniaUrl}/api/users/?discordTag=${discordTag}`);
+    } else if (userAuthId) {
+        response = await fetch(`${harmoniaUrl}/api/users/?userAuthId=${userAuthId}`);
+    }
+    return response.json();
+};
+
 module.exports = {
     checkIfLoggedIn,
     getAuthId,
+    getDiscordUser,
 };

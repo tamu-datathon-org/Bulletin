@@ -66,7 +66,10 @@ const addSubmission = async (req, res) => {
         const { eventId } = req.params;
         const { submissionId } = req.query;
 
-        // submission time
+        // check if the user is authorized to update this submission
+        await submissionService.validateAddSubmission(req.cookies.accessToken, submissionId);
+
+        // check submission time
         const submission_time = !IS_TESTING ? (new Date()).toISOString() : (new Date(eventObj.start_time)).toISOString();
         const submissionDate = (new Date(submission_time)).getTime();
         if (submissionDate < (new Date(eventObj.start_time).toISOString() || submissionDate > (new Date(eventObj.end_time).toISOString()))) {
@@ -225,7 +228,6 @@ const submissionFileUpload = async (req, res) => {
 module.exports = {
     addSubmission,
     removeSubmission,
-    updateSubmission,
     submissionFileUpload,
     addLike,
     removeLike,
