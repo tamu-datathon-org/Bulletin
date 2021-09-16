@@ -151,10 +151,10 @@ const addEvent = async (req, res) => {
 const removeEvent = async (req, res) => {
     const response = {};
     try {
-        const { event } = req.params;
-        if ((event?.length ?? 0) === 0 || typeof event !== 'string') throw new Error('📌event is a required parameter');
-        const _event = event.replace(' ', '_');
-        response.eventId = await adminService.removeEvent(_event);
+        const { eventId } = req.params;
+        if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌event is a required parameter');
+        const _eventId = eventId.replace(' ', '_');
+        response.eventId = await adminService.removeEvent(_eventId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -166,14 +166,14 @@ const removeEvent = async (req, res) => {
 const updateEvent = async (req, res) => {
     const response = {};
     try {
-        const { event } = req.params;
-        if ((event?.length ?? 0) === 0 || typeof event !== 'string') throw new Error('📌event is a required parameter');
+        const { eventId } = req.params;
+        if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌event is a required parameter');
         await validateUpdateEventInput(req.body);
-        const _event = event.replace(' ', '_');
+        const _eventId = eventId.replace(' ', '_');
         let _name = null;
         if (req.body.name) _name = req.body.name.replace(' ', '_');
         response.modifiedCount = await adminService
-            .updateEvent(_event, _name, req.body.description, req.body.start_time, req.body.end_time);
+            .updateEvent(_eventId, _name, req.body.description, req.body.start_time, req.body.end_time);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);

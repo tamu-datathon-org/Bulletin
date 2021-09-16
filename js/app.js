@@ -65,11 +65,11 @@ app.get('/bulletin/api/submission/help/instructions/file', submissionController.
 app.post('/bulletin/api/admin/add/event', adminController.addEvent);
 app.post('/bulletin/api/:event/admin/add/accolade', adminController.addAccolade);
 app.post('/bulletin/api/:event/admin/add/challenge', adminController.addChallenge);
-app.post('/bulletin/api/:event/admin/remove/event', adminController.removeEvent);
+app.post('/bulletin/api/:eventId/admin/remove/event', adminController.removeEvent);
 app.post('/bulletin/api/:event/admin/remove/accolades', adminController.removeAccolades);
 app.post('/bulletin/api/:event/admin/remove/challenges', adminController.removeChallenges);
 app.post('/bulletin/api/:event/admin/update/accolade', adminController.updateAccolade);
-app.post('/bulletin/api/:event/admin/update/event', adminController.updateEvent);
+app.post('/bulletin/api/:eventId/admin/update/event', adminController.updateEvent);
 app.post('/bulletin/api/:event/admin/upload/eventImage', multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
 app.post('/bulletin/api/:event/admin/upload/:challenge/challengeImage', multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
 app.get('/bulletin/api/:event/download/eventImage', adminController.getEventImage);

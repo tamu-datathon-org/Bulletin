@@ -109,27 +109,27 @@ const addEvent = async (name, description, start_time, end_time) => {
 
 /**
  * @function removeEvent
- * @param {String} name name of the event
+ * @param {String} eventId id of the event
  * @returns {String} event id of the removed
  */
-const removeEvent = async (name) => {
-    const eventObj = await eventsModel.getEventByName(name);
-    if (!eventObj) throw new Error(`📌event ${name} does not exist`);
+const removeEvent = async (eventId) => {
+    const eventObj = await eventsModel.getEventById(eventId);
+    if (!eventObj) throw new Error(`📌event ${eventId} does not exist`);
     return eventsModel.removeEventById(eventObj._id);
 };
 
 /**
  * @function updateEvent
- * @param {String} event name (if newName must be the old name) of the event
+ * @param {String} eventId mongodb ID of the event
  * @param {String} newName (optional)
  * @param {String} description (optional)
  * @param {String} start_time (optional)
  * @param {String} end_time (optional)
  * @returns {String} event id of the modified
  */
-const updateEvent = async (event, newName, description, start_time, end_time) => {
-    const eventObj = await eventsModel.getEventByName(event);
-    if (!eventObj) throw new Error(`📌event ${event} does not exist`);
+const updateEvent = async (eventId, newName, description, start_time, end_time) => {
+    const eventObj = await eventsModel.getEventById(eventId);
+    if (!eventObj) throw new Error(`📌event ${eventId} does not exist`);
     const setOptions = {};
     if (newName) setOptions.name = newName;
     if (description) setOptions.description = description;
