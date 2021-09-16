@@ -13,7 +13,7 @@ exports.closeClient = async (client) => {
     if (client) await client.close();
 };
 
-exports.ObjectId = async (id) => id ? new ObjectId(id) : '';
+exports.ObjectId = async (id) => id ? new ObjectId(id) : ObjectId();
 
 exports.dbInit = async () => {
     let client = null;

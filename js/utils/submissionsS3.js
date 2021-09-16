@@ -14,7 +14,7 @@ const uploadFile = async (filename, buffer) => {
     const uploadParams = {
         Bucket: bucketName,
         Body: buffer,
-        Key: filename,
+        Key: `${filename}_${Date.now()}`,
     };
     return s3.upload(uploadParams).promise();
 };
@@ -27,7 +27,16 @@ const getFileStream = async (fileKey) => {
     return s3.getObject(downloadParams).createReadStream();
 };
 
+const removeFile = async (fileKey) => {
+    const deleteParams = {
+        Key: fileKey,
+        Bucket: bucketName,
+    };
+    return s3.deleteObject(deleteParams).promise();
+};
+
 module.exports = {
     uploadFile,
     getFileStream,
+    removeFile,
 };

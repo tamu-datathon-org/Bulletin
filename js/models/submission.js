@@ -1,37 +1,6 @@
 const config = require('../utils/config');
 const mongoUtil = require('../utils/mongoDb');
 
-const sampleSubmission = {
-    event: 'TD2021',
-    title: 'Hello World!',
-    users: ['Woody', 'Buzz', 'Bo-Peep', 'Ham'],
-    links: ['https://www.google.com/', 'https://github.com/'],
-    tags: ['pixar', 'film making'],
-    videoLink: 'https://www.youtube.com/watch?v=pcbNb9pPNLw',
-};
-
-const submissionInstructions = {
-    URL: '[domain]/bulletin/[event]/api/submission/add',
-    'Content-Type': 'application/json',
-    params: {
-        event: 'name of the event you are submitting to',
-    },
-    body: sampleSubmission,
-};
-
-const submissionFileInstructions = {
-    URL: '[domain]/bulletin/api/submission/:submissionId/upload/:type',
-    params: {
-        submissionId: `${config.database.entryID_length} character string corresponding to the submission`,
-        type: `upload type string. one of the following: ${config.submission_constraints.submission_upload_types}`,
-    },
-    'Content-Type': 'multipart/form-data',
-    body: {
-        key: 'file',
-        value: '<your-file-name>'
-    },
-};
-
 const submission = {
     eventId: null,
     title: null,
@@ -43,19 +12,24 @@ const submission = {
     videoLink: null,
     likeIds: [],
     commentIds: [],
-    sourceCodeId: null,
-    iconId: null,
-    photosId: null,
-    markdownId: null,
+    sourceCode: null,
+    sourceCodeKey: null,
+    icon: null,
+    iconKey: null,
+    photos: null,
+    photosKey: null,
+    markdown: null,
+    markdownKey: null,
     submission_time: null,
 };
 
-const createSubmission = async (eventId, title, userSubmissionLinkIds, challengeIds, links, tags, videoLink) => {
+const createSubmission = async (eventId, name, discordTags, userSubmissionLinkIds, challengeIds, links, tags, videoLink) => {
     if (!eventId) throw new Error('submission eventId is required');
     if (!title) throw new Error('submission title is required');
     const submissionObj = {
         eventId: eventId,
-        title: title,
+        name: name,
+        discordTags: discordTags || [],
         userSubmissionLinkids: userSubmissionLinkIds || [],
         accoladeIds: [],
         challengeIds: challengeIds || [],
@@ -64,23 +38,24 @@ const createSubmission = async (eventId, title, userSubmissionLinkIds, challenge
         videoLink: videoLink || '',
         likeIds: [],
         commentIds: [],
-        sourceCodeId: '',
-        iconId: '',
-        photosId: '',
-        markdownId: '',
         submission_time: (new Date()).toISOString(),
     };
     return submissionObj;
 };
 
-const addSubmission = async (submissionObj) => {
+const addSubmission = async (submissionObj, submissionId = null) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { insertedId } = await client.db(config.database.name)
-            .collection(config.database.collections.submissions).insertOne(submissionObj);
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .updateOne(
+                { _id: await mongoUtil.ObjectId(submissionId) },
+                { $set: submissionObj },
+                { upsert: true },
+            );
         await mongoUtil.closeClient(client);
-        return insertedId;
+        return upsertedId;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error inserting submission:: ${err.message}`);
@@ -165,12 +140,23 @@ const removeComment = async (submissionId, commentId) => {
     }
 };
 
-const getSubmission = async (submissionId) => {
+/**
+ * @function getSubmission
+ * @param {String} eventId 
+ * @param {String} submissionId 
+ * @returns {Object} submission object
+ */
+const getSubmission = async (eventId, submissionId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
         const doc = await client.db(config.database.name)
-            .collection(config.database.collections.submissions).findOne({ _id: await mongoUtil.ObjectId(submissionId) });
+            .collection(config.database.collections.submissions)
+            .findOne({
+                _id: await mongoUtil.ObjectId(submissionId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            });
+        await mongoUtil.closeClient(client);
         return doc;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -255,22 +241,6 @@ const removeSubmissionUserSubmissionLinkId = async (submissionId, userSubmission
     }
 };
 
-const removeSubmissionUserAccoladeId = async (submissionId, accoladeId) => {
-    let client = null;
-    try {
-        client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.submissions).updateOne(
-            { _id: await mongoUtil.ObjectId(submissionId) },
-            { $pull: { accoladeIds: accoladeId } },
-        );
-        await mongoUtil.closeClient(client);
-        return upsertedId;
-    } catch (err) {
-        await mongoUtil.closeClient(client);
-        throw new Error(`📌Error updating submission:: ${err.message}`);
-    }
-};
-
 const addSubmissionUserAccoladeId = async (submissionId, accoladeId) => {
     let client = null;
     try {
@@ -287,12 +257,34 @@ const addSubmissionUserAccoladeId = async (submissionId, accoladeId) => {
     }
 };
 
+const removeSubmissionUserAccoladeId = async (submissionId, accoladeId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.submissions).updateOne(
+            { _id: await mongoUtil.ObjectId(submissionId) },
+            { $pull: { accoladeIds: accoladeId } },
+        );
+        await mongoUtil.closeClient(client);
+        return upsertedId;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error updating submission:: ${err.message}`);
+    }
+};
+
+/**
+ * @function getAllSubmissionsByEventId
+ * @param {String} eventId 
+ * @returns {Array<Object>} array of submission docs 
+ */
 const getAllSubmissionsByEventId = async (eventId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
         const docs = await client.db(config.database.name)
-            .collection(config.database.collections.submissions).find({ eventId: eventId }).toArray();
+            .collection(config.database.collections.submissions)
+            .find({ eventId: await mongoUtil.ObjectId(eventId) }).toArray();
         await mongoUtil.closeClient(client);
         return docs;
     } catch (err) {
@@ -301,37 +293,78 @@ const getAllSubmissionsByEventId = async (eventId) => {
     }
 };
 
-const editSubmissionFile = async (submissionId, type, url) => {
+/**
+ * @function editSubmissionFile
+ * @description add a file url & key after s3 bucket upload
+ * @param {String} eventId
+ * @param {String} submissionId 
+ * @param {String} type 
+ * @param {String} url 
+ * @param {String} key 
+ */
+const editSubmissionFile = async (eventId, submissionId, type, url, key) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        if (type === config.submission_constraints.submission_upload_types['icon']) {
+        if (type === config.submission_constraints.submission_upload_types.icon) {
             await client.db(config.database.name)
                 .collection(config.database.collections.submissions)
                 .updateOne(
-                    { _id: await mongoUtil.ObjectId(submissionId) },
-                    { $set: { icon: url } },
+                    {
+                        _id: await mongoUtil.ObjectId(submissionId),
+                        eventId: await mongoUtil.ObjectId(eventId),
+                    },
+                    { $set: 
+                        {
+                            icon: url,
+                            iconKey: key,
+                        }
+                    },
                 );
-        } else if (type === config.submission_constraints.submission_upload_types['markdown']) {
+        } else if (type === config.submission_constraints.submission_upload_types.markdown) {
             await client.db(config.database.name)
                 .collection(config.database.collections.submissions)
                 .updateOne(
-                    { _id: await mongoUtil.ObjectId(submissionId) },
-                    { $set: { markdown: url } },
+                    {
+                        _id: await mongoUtil.ObjectId(submissionId),
+                        eventId: await mongoUtil.ObjectId(eventId),
+                    },
+                    { $set: 
+                        {
+                            markdown: url,
+                            markdownKey: key,
+                        }
+                    },
                 );
-        } else if (type === config.submission_constraints.submission_upload_types['sourceCode']) {
+        } else if (type === config.submission_constraints.submission_upload_types.sourceCode) {
             await client.db(config.database.name)
                 .collection(config.database.collections.submissions)
                 .updateOne(
-                    { _id: await mongoUtil.ObjectId(submissionId) },
-                    { $set: { sourceCode: url } },
+                    {
+                        _id: await mongoUtil.ObjectId(submissionId),
+                        eventId: await mongoUtil.ObjectId(eventId),
+                    },
+                    { $set: 
+                        {
+                            sourceCode: url,
+                            sourceCodeKey: key,
+                        }
+                    },
                 );
-        } else if (type === config.submission_constraints.submission_upload_types['photos']) {
+        } else if (type === config.submission_constraints.submission_upload_types.photos) {
             await client.db(config.database.name)
                 .collection(config.database.collections.submissions)
                 .updateOne(
-                    { _id: await mongoUtil.ObjectId(submissionId) },
-                    { $set: { photos: url } },
+                    {
+                        _id: await mongoUtil.ObjectId(submissionId),
+                        eventId: await mongoUtil.ObjectId(eventId),
+                    },
+                    { $set: 
+                        {
+                            photos: url,
+                            photosKey: key,
+                        }
+                    },
                 );
         }
         await mongoUtil.closeClient(client);
@@ -342,9 +375,6 @@ const editSubmissionFile = async (submissionId, type, url) => {
 };
 
 module.exports = {
-    sampleSubmission,
-    submissionFileInstructions,
-    submissionInstructions,
     submission,
     createSubmission,
     addSubmission,

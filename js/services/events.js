@@ -2,7 +2,7 @@ const eventsModel = require('../models/events');
 const submissionModel = require('../models/submission');
 const accoladeModel = require('../models/accolades');
 const challengeModel = require('../models/challenges');
-// const logger = require('../utils/logger');
+const frontendS3 = require('../utils/frontendS3');
 
 const getEventFull = async (eventObj) => {
     const eventCopy = eventObj;
@@ -89,6 +89,35 @@ const getChallenges = async (eventId) => {
     return challengeModel.getChallengesByEvent(eventId);
 };
 
+/**
+ * @function getEventImage
+ * @param {String} eventId 
+ * @returns {Buffer} image buffer
+ */
+const getEventImage = async (eventId) => {
+    const eventObj = await eventsModel.getEventById(eventId);
+    if (!eventObj) throw new Error(`📌event ${eventId} does not exist`);
+    if (eventObj.imageKey) return getImageByKey(eventObj.imageKey);
+    throw new Error(`📌event ${eventId} does not have an assigned image`);
+};
+
+/**
+ * @function getChallengeImage
+ * @param {String} eventId 
+ * @param {String} challengeId 
+ * @returns {Buffer} image buffer
+ */
+const getChallengeImage = async (eventId, challengeId) => {
+    const challengeObj = await challengeModel.getChallenge(eventId, challengeId);
+    if (!challengeObj) throw new Error(`📌challenge ${challengeId} does not exist`);
+    if (challengeObj.imageKey) return getImageByKey(challengeObj.imageKey);
+    throw new Error(`📌challenge ${challengeId} does not have an assigned image`);
+};
+
+const getImageByKey = async (fileKey) => {
+    return frontendS3.getFileStream(fileKey);
+};
+
 module.exports = {
     getEventByName,
     getAllEvents,
@@ -97,4 +126,6 @@ module.exports = {
     getAccoladesByEvent,
     getChallenge,
     getChallenges,
+    getEventImage,
+    getChallengeImage,
 };
