@@ -1,6 +1,5 @@
 const express = require('express');
 const path = require('path');
-// const proxy = require('express-http-proxy');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const logger = require('./utils/logger');
