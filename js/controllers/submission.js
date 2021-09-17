@@ -5,14 +5,16 @@ const config = require('../utils/config');
 const logger = require('../utils/logger');
 const bouncer = require('./bouncer');
 const eventModel = require('../models/events');
+const bouncerController = require('../controllers/bouncer');
 
 let IS_TESTING = true;
 
-const validateAddSubmission = async (requestBody) => {
+const validateAddSubmission = async (eventId, requestBody) => {
     const { name } = requestBody;
     const { tags } = requestBody;
     const { links } = requestBody;
     const { discordTags } = requestBody;
+    if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
     if ((name?.length ?? 0) === 0) throw new Error('📌name is a required field');
     if (tags && !Array.isArray(tags)) throw new Error('📌tags must be an array');
     if (!discordTags || !Array.isArray(discordTags)) throw new Error('📌discordTags is a required field');
@@ -57,17 +59,16 @@ const validateSubmissionFileUploads = async (request) => {
 // ======================================================== //
 
 const addSubmission = async (req, res) => {
-    const response = {
-        submissionId: null,
-        submission_time: null,
-    };
+    const response = {};
     try {
         logger.info(JSON.stringify(req.body));
         const { eventId } = req.params;
         const { submissionId } = req.query;
 
-        // check if the user is authorized to update this submission
-        await submissionService.validateAddSubmission(req.cookies.accessToken, submissionId);
+        await validateAddSubmission(eventId, req.body);
+
+        const eventObj = await eventModel.getEventById(eventId);
+        if (!eventObj) throw new Error(`📌event ${eventId} does not exist`);
 
         // check submission time
         const submission_time = !IS_TESTING ? (new Date()).toISOString() : (new Date(eventObj.start_time)).toISOString();
@@ -75,7 +76,11 @@ const addSubmission = async (req, res) => {
         if (submissionDate < (new Date(eventObj.start_time).toISOString() || submissionDate > (new Date(eventObj.end_time).toISOString()))) {
             throw new Error('📌submissions are not allowed at this time');
         }
-        response.submissionId = await submissionService.addSubmission(req.body, eventId, submissionId);
+
+        // get userAuthId
+        const userAuthId = await bouncerController.getAuthId(req.cookies.accessToken);
+
+        response.submissionId = await submissionService.addSubmission(req.body, eventId, userAuthId, submissionId);
         response.submission_time = submission_time;
         logger.info('📌submission successful');
         res.status(200).json(response);

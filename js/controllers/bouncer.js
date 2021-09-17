@@ -62,7 +62,7 @@ const getAuthId = async (token) => {
 const getDiscordUser = async (discordTag, userAuthId) => {
     let response = null;
     if (discordTag) {
-        response = await fetch(`${harmoniaUrl}/api/users/?discordTag=${discordTag}`);
+        response = await fetch(`${harmoniaUrl}/api/users/?discordInfo=${discordTag}`);
     } else if (userAuthId) {
         response = await fetch(`${harmoniaUrl}/api/users/?userAuthId=${userAuthId}`);
     }
