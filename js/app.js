@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-// const proxy = require('express-http-proxy');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const logger = require('./utils/logger');
@@ -57,13 +56,13 @@ app.get('/bulletin/api/:eventId/submission/:submissionId/download/sourcecode', e
  * submission endpoints
  * note: for the "add" endpoint, append /?submissionId=submissionId to upsert
  */
-app.post('/bulletin/api/:event/submission/add', submissionController.addSubmission);
-app.post('/bulletin/api/submission/update/:submissionId/delete', submissionController.removeSubmission);
-app.post('/bulletin/api/submission/update/:submissionId/upload/:type', multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
-app.post('/bulletin/api/submission/update/:submissionId/like/add', submissionController.addLike);
-app.post('/bulletin/api/submission/update/:submissionId/comment/add', submissionController.addComment);
-app.post('/bulletin/api/submission/update/:submissionId/like/remove', submissionController.removeLike);
-app.post('/bulletin/api/submission/update/:submissionId/comment/remove', submissionController.removeComment);
+app.post('/bulletin/api/:eventId/submission/add', bouncerController.checkIfLoggedIn(), submissionController.addSubmission);
+app.post('/bulletin/api/:eventId/submission/:submissionId/remove', submissionController.removeSubmission);
+app.post('/bulletin/api/:eventId/submission/:submissionId/upload/:type', multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
+app.post('/bulletin/api/:eventId/submission/:submissionId/like/add', submissionController.addLike);
+app.post('/bulletin/api/:eventId/submission/:submissionId/comment/add', submissionController.addComment);
+app.post('/bulletin/api/:eventId/submission/:submissionId/like/remove', submissionController.removeLike);
+app.post('/bulletin/api/:eventId/submission/:submissionId/comment/remove', submissionController.removeComment);
 
 /**
  * admin enpoints

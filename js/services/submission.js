@@ -41,42 +41,40 @@ const getSubmission = async (eventId, submissionId) => {
 // ======== 📌📌📌 Submission Modifiers 📌📌📌 ========= //
 // ======================================================== //
 
-const validateAddSubmission = async (token, submissionId) => {
-    if (!token) throw new Error('📌you are not logged in to TD');
-    if (submissionId) {
-        const userAuthId = await getAuthId(token);
-        const doc = await userSubmissionLinksModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(
-            userAuthId,
-            submissionId,
-        );
-        if (!doc) throw new Error('📌you are not authorized to update this project');
-        return doc.userAuthId;
-    } // else this is a new submission
-};
-
 /**
  * @function addSubmission
  * @description wholistic adding or updating a submission
  * @param {Object} requestBody 
  * @param {String} eventId 
+ * @param {String} userAuthId
  * @param {String} submissionId 
  * @returns {String} submission id
  */
-const addSubmission = async (requestBody, eventId, submissionId = null) => {
+const addSubmission = async (requestBody, eventId, userAuthId, submissionId = null) => {
+    // check if allowed to edit
+    const userSubmissionLinkId = await userSubmissionLinksModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(
+        userAuthId,
+        submissionId, 
+    );
+    if (submissionId && !userSubmissionLinkId) throw new Error('📌you are not authorized to edit this project');
+
+    // get discord Objects from harmonia
+    const discordObjs = [];
+    await Promise.all(requestBody.discordTags.map(async (discordTag) => {
+        const discordUser = await bouncerController.getDiscordUser(discordTag, null);
+        if (discordUser) {
+            discordObjs.push(discordUser);
+            return;
+        }
+        throw new Error(`📌discordTag ${discordTag} does not exist`);
+    }));
+
     // get valid challenge ids
     const challengeIds = [];
     await Promise.all(requestBody.challenges.map(async (challengeId) => {
         const challengeObj = await challengesModel.getChallenge(eventId, challengeId);
         if(challengeObj) challengeIds.push(challengeObj._id);
         throw new Error(`📌challenge ${challengeId} does not exist`);
-    }));
-
-    // get discord Objects from harmonia
-    const discordObjs = [];
-    await Promise.all(requestBody.discordTags.map(async (discordTag) => {
-        const discordUser = await bouncerController.getDiscordUser(discordTag, null);
-        if (discordUser) discordObjs.push(discordUser);
-        throw new Error(`📌discordTag ${discordTag} does not exist`);
     }));
 
     // get/create the user submission links
@@ -91,7 +89,7 @@ const addSubmission = async (requestBody, eventId, submissionId = null) => {
     }));
 
     // create the submission
-    const discordTags = discordObjs.map((d) => d.discordTag);
+    const discordTags = discordObjs.map((d) => d.discordInfo);
     const submissionObj = await submissionModel
         .createSubmission(eventId, requestBody.name, discordTags, userSubmissionLinkIds, challengeIds,
             requestBody.links, requestBody.tags, requestBody.videoLink);
@@ -211,7 +209,6 @@ module.exports = {
     getSubmissions,
     //getSubmissionByUser,
     //getSubmissionByTags,
-    validateAddSubmission,
     getSubmissionFile,
     uploadSubmissionFile,
 };
