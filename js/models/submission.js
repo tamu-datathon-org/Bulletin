@@ -3,7 +3,7 @@ const mongoUtil = require('../utils/mongoDb');
 
 const submission = {
     eventId: null,
-    title: null,
+    name: null,
     userSubmissionLinks: [],
     accoladeIds: [],
     challengeIds: [],
@@ -31,13 +31,10 @@ const createSubmission = async (eventId, name, discordTags, userSubmissionLinkId
         name: name,
         discordTags: discordTags || [],
         userSubmissionLinkids: userSubmissionLinkIds || [],
-        accoladeIds: [],
         challengeIds: challengeIds || [],
         links: links || [],
         tags: tags || [],
         videoLink: videoLink || '',
-        likeIds: [],
-        commentIds: [],
         submission_time: (new Date()).toISOString(),
     };
     return submissionObj;
@@ -62,12 +59,22 @@ const addSubmission = async (submissionObj, submissionId = null) => {
     }
 };
 
-const removeSubmission = async (submissionId) => {
+const removeSubmission = async (eventId, submissionId) => {
     let client = null;
     try {
         client = mongoUtil.getClient();
         const doc = await client.db(config.database.name)
-            .collection(config.database.collections.submissions).findOneAndDelete({ _id: await mongoUtil.ObjectId(submissionId) });
+            .collection(config.database.collections.submissions)
+            .findOne({
+                _id: await mongoUtil.ObjectId(submissionId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            });
+        await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .deleteOne({
+                _id: await mongoUtil.ObjectId(submissionId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            });
         await mongoUtil.closeClient(client);
         return doc;
     } catch (err) {
