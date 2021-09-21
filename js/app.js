@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const { createProxyMiddleware } = require('http-proxy-middleware');
@@ -16,6 +17,8 @@ const PORT = process.env.PORT || 3000;
 const BASE_PATH = process.env.BASE_PATH || '/bulletin';
 
 const app = express();
+
+app.use(cors());
 
 app.set('views', path.join(__dirname, '..', 'views'));
 app.set('view engine', 'pug');
@@ -65,7 +68,6 @@ app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/remove`, su
 
 /**
  * admin enpoints
- * note: for all the "add" endpoints, append /?<object>Id=<objectId> to upsert
  */
 app.post(`${BASE_PATH}/api/admin/add/event`, adminController.addEvent);
 app.post(`${BASE_PATH}/api/:eventId/admin/add/accolade`, adminController.addAccolade);

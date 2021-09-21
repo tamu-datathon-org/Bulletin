@@ -20,9 +20,12 @@ const event = {
  * @param {Date} start_time 
  * @param {Date} end_time 
  * @param {Boolean} show 
+ * @param {Array<String>} challengeIds
+ * @param {Array<String>} accoladeIds
+ * @param {Array<String>} submissionIds
  * @returns {Object} event object
  */
-const createEvent = async (name, description, start_time, end_time, show) => {
+const createEvent = async (name, description, start_time, end_time, show, challengeIds, accoladeIds, submissionIds) => {
     if (!name) throw new Error('event name is required');
     if (!description) throw new Error('event description is required');
     if (!start_time) throw new Error('event start_time is required');
@@ -33,6 +36,9 @@ const createEvent = async (name, description, start_time, end_time, show) => {
         start_time: (new Date(start_time)).toISOString(),
         end_time: (new Date(end_time)).toISOString(),
         show: show || true,
+        ...(!challengeIds && {challengeIds: []}),
+        ...(!accoladeIds && {accoladeIds: []}),
+        ...(!submissionIds && {submissionIds: []}),
     };
     return event;
 };

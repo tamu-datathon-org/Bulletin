@@ -46,7 +46,7 @@ const addAccolade = async (req, res) => {
     const response = {};
     try {
         const { eventId } = req.params;
-        const { accoladeId } = req.query;
+        const { accoladeId } = req.body;
         const { name } = req.body;
         const { description } = req.body;
         const { emoji } = req.body;
@@ -84,14 +84,17 @@ const removeAccolade = async (req, res) => {
 const addEvent = async (req, res) => {
     const response = {};
     try {
-        const { eventId } = req.query;
+        const { eventId } = req.body;
         const { name } = req.body;
         const { description } = req.body;
         const { start_time } = req.body;
         const { end_time } = req.body;
         const { show } = req.body;
+        const { challengeIds } = req.body;
+        const { accoladeIds } = req.body;
+        const { submissionIds } = req.body;
         await validateAddEvent(req.body);
-        response.eventId = await adminService.addEvent(name, description, start_time, end_time, show, eventId);
+        response.eventId = await adminService.addEvent(name, description, start_time, end_time, show, challengeIds, accoladeIds, submissionIds, eventId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -122,7 +125,7 @@ const addChallenge = async (req, res) => {
     const response = {};
     try {
         const { eventId } = req.params;
-        const { challengeId } = req.query;
+        const { challengeId } = req.body;
         const { name } = req.body;
         const { questions } = req.body;
         const { places } = req.body;

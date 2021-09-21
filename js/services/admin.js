@@ -65,11 +65,14 @@ const removeAccolade = async (eventId, accoladeId) => {
  * @param {String} start_time Try to use ISO format
  * @param {String} end_time same
  * @param {Boolean} show show the event
+ * @param {Array<String>} challengeIds if empty/null, creates empty array in DB 
+ * @param {Array<String>} accoladeIds if empty/null, creates empty array in DB
+ * @param {Array<String>} submissionIds if empty/null, creates empty array in DB
  * @param {String} eventId event id if upserting
  * @returns {String} event id upserted or modified
  */
-const addEvent = async (name, description, start_time, end_time, show, eventId = null) => {
-    const eventObj = await eventsModel.createEvent(name, description, start_time, end_time, show);
+const addEvent = async (name, description, start_time, end_time, show, challengeIds, accoladeIds, submissionIds, eventId = null) => {
+    const eventObj = await eventsModel.createEvent(name, description, start_time, end_time, show, challengeIds, accoladeIds, submissionIds);
     const id = eventsModel.addEvent(eventObj, eventId);
     return id || eventId;
 };
