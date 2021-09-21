@@ -93,7 +93,7 @@ interface Response {
 
     setEditable(prev => {
       if (prev) {
-        axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/update/event`, curEvent)
+        axios.post(`http://localhost:3000/bulletin/api/admin/add/event/?eventId=${curEventId}`, curEvent)
         .then(() => sendNotification("Updated event!", "success"))
         .catch(res => {
           sendNotification(String(res.response.data.error), "error");
@@ -105,7 +105,7 @@ interface Response {
 
   const deleteEvent = () => {
     if (window.confirm(`Are you sure you want to delete ${curEvent?.name}`)) {
-      if (window.prompt("To delete this event, enter the full event name","") == curEvent?.name) {
+      if (window.prompt("To delete this event, enter the full event name","") === curEvent?.name) {
         axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/remove/event`)
         .then(() => sendNotification("Deleted event!", "success"))
         .catch(res => {
@@ -172,13 +172,10 @@ interface Response {
           </Card>
           <Spacer h={0.5}/>
           {curEvent?.accolades.map(accolade => (
-            <>
-            <Card>
+            <Card key={accolade._id}>
               <Text>{accolade.name}</Text>
               <Button auto scale={0.5} value={accolade._id} onClick={() => handleEditAccolade(accolade._id)}>Edit</Button>
             </Card>
-            <Spacer h={0.5}/>
-            </>
             )
           )}
         </Fieldset>
