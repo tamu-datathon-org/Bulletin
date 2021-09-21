@@ -68,7 +68,6 @@ app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/remove`, su
 
 /**
  * admin enpoints
- * note: for all the "add" endpoints, append /?<object>Id=<objectId> to upsert
  */
 app.post(`${BASE_PATH}/api/admin/add/event`, adminController.addEvent);
 app.post(`${BASE_PATH}/api/:eventId/admin/add/accolade`, adminController.addAccolade);
