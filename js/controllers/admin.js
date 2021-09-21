@@ -90,8 +90,11 @@ const addEvent = async (req, res) => {
         const { start_time } = req.body;
         const { end_time } = req.body;
         const { show } = req.body;
+        const { challengeIds } = req.body;
+        const { accoladeIds } = req.body;
+        const { submissionIds } = req.body;
         await validateAddEvent(req.body);
-        response.eventId = await adminService.addEvent(name, description, start_time, end_time, show, eventId);
+        response.eventId = await adminService.addEvent(name, description, start_time, end_time, show, challengeIds, accoladeIds, submissionIds, eventId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
