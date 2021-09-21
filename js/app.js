@@ -13,7 +13,7 @@ const multerUtil = require('./utils/multer');
 const mongoUtil = require('./utils/mongoDb');
 
 const PORT = process.env.PORT || 3000;
-const BASE_PATH = process.env.BASE_PATH || "/bulletin";
+const BASE_PATH = process.env.BASE_PATH || '/bulletin';
 
 const app = express();
 
@@ -76,7 +76,7 @@ app.post(`${BASE_PATH}/api/:eventId/admin/remove/challenge/:challengeId`, adminC
 app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
 app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
 
-if (process.env.NODE_ENV !== "production")
+if (process.env.NODE_ENV !== 'production')
     app.use('/auth', createProxyMiddleware({ target: 'http://gk.tamudatathon.com', changeOrigin: true, hostRewrite: true }));
 
 // initialize mongodb

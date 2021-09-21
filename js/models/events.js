@@ -1,5 +1,5 @@
 const config = require('../utils/config');
-const logger = require('../utils/logger');
+// const logger = require('../utils/logger');
 const mongoUtil = require('../utils/mongoDb');
 
 const event = {
