@@ -78,9 +78,6 @@ app.post(`${BASE_PATH}/api/:eventId/admin/remove/challenge/:challengeId`, bounce
 app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, bouncerController.checkIfLoggedIn(true), multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
 app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, bouncerController.checkIfLoggedIn(true), multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
 
-// if (process.env.NODE_ENV !== 'production')
-//     app.use('/auth', createProxyMiddleware({ target: 'http://gk.tamudatathon.com', changeOrigin: true, hostRewrite: true }));
-
 if (process.env.NODE_ENV !== 'production')
     app.use('/', createProxyMiddleware({ target: 'https://tamudatathon.com', changeOrigin: true, hostRewrite: true }));
 
