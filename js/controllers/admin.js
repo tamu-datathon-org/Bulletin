@@ -46,13 +46,13 @@ const addAccolade = async (req, res) => {
     const response = {};
     try {
         const { eventId } = req.params;
-        const { accoladeId } = req.body;
+        const { _id } = req.body;
         const { name } = req.body;
         const { description } = req.body;
         const { emoji } = req.body;
         const { challengeId } = req.body;
         await validateAddAccolade(eventId, req.body);
-        response.accoladeId = await adminService.addAccolade(eventId, name, description, emoji, challengeId, accoladeId);
+        response.accoladeId = await adminService.addAccolade(eventId, name, description, emoji, challengeId, _id);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -84,7 +84,7 @@ const removeAccolade = async (req, res) => {
 const addEvent = async (req, res) => {
     const response = {};
     try {
-        const { eventId } = req.body;
+        const { _id } = req.body;
         const { name } = req.body;
         const { description } = req.body;
         const { start_time } = req.body;
@@ -94,7 +94,7 @@ const addEvent = async (req, res) => {
         const { accoladeIds } = req.body;
         const { submissionIds } = req.body;
         await validateAddEvent(req.body);
-        response.eventId = await adminService.addEvent(name, description, start_time, end_time, show, challengeIds, accoladeIds, submissionIds, eventId);
+        response.eventId = await adminService.addEvent(name, description, start_time, end_time, show, challengeIds, accoladeIds, submissionIds, _id);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -125,7 +125,7 @@ const addChallenge = async (req, res) => {
     const response = {};
     try {
         const { eventId } = req.params;
-        const { challengeId } = req.body;
+        const { _id } = req.body;
         const { name } = req.body;
         const { questions } = req.body;
         const { places } = req.body;
@@ -139,7 +139,7 @@ const addChallenge = async (req, res) => {
             }
         }
         response.challengeId = await adminService
-            .addChallenge(eventId, name, questions, numPlaces, challengeId);
+            .addChallenge(eventId, name, questions, numPlaces, _id);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);

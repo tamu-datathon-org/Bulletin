@@ -31,16 +31,16 @@ const ordinalSuffixOf = (i) => {
  * @param {String} emoji maybe? its easy (optional)
  * @param {String} challengeId name of the challenge to assign
  *              the accolade to (optional)
- * @param {String} accoladeId id of the accolade (if upserting)
+ * @param {String} _id id of the accolade (if upserting)
  * @returns {String} id of the accolade that was upserted or modified
  */
-const addAccolade = async (eventId, name, description, emoji, challengeId, accoladeId = null) => {
+const addAccolade = async (eventId, name, description, emoji, challengeId, _id = null) => {
     const eventObj = await eventsModel.getEventById(eventId);
     if (!eventObj) throw new Error(`📌event ${eventId} does not exist`);
     const accoladeObj = await accoladeModel.createAccolade(name, description, emoji, eventId, challengeId);
-    const id = await accoladeModel.addAccolade(accoladeObj, accoladeId);
-    await eventsModel.addEventAccoladeId(eventId, id || accoladeId);
-    return id || accoladeId;
+    const id = await accoladeModel.addAccolade(accoladeObj, _id);
+    await eventsModel.addEventAccoladeId(eventId, id || _id);
+    return id || _id;
 };
 
 /**
@@ -68,13 +68,13 @@ const removeAccolade = async (eventId, accoladeId) => {
  * @param {Array<String>} challengeIds if empty/null, creates empty array in DB 
  * @param {Array<String>} accoladeIds if empty/null, creates empty array in DB
  * @param {Array<String>} submissionIds if empty/null, creates empty array in DB
- * @param {String} eventId event id if upserting
+ * @param {String} _id event id if upserting
  * @returns {String} event id upserted or modified
  */
-const addEvent = async (name, description, start_time, end_time, show, challengeIds, accoladeIds, submissionIds, eventId = null) => {
+const addEvent = async (name, description, start_time, end_time, show, challengeIds, accoladeIds, submissionIds, _id = null) => {
     const eventObj = await eventsModel.createEvent(name, description, start_time, end_time, show, challengeIds, accoladeIds, submissionIds);
-    const id = eventsModel.addEvent(eventObj, eventId);
-    return id || eventId;
+    const id = eventsModel.addEvent(eventObj, _id);
+    return id || _id;
 };
 
 /**
@@ -114,12 +114,12 @@ const removeEvent = async (eventId) => {
  * @param {String} name
  * @param {String} questions 
  * @param {Number} places 
- * @param {String} challengeId
+ * @param {String} _id
  * @returns {String} challenge id
  */
-const addChallenge = async (eventId, name, questions, places, challengeId = null) => {
+const addChallenge = async (eventId, name, questions, places, _id = null) => {
     const accoladeIds = [];
-    const existingChallengeObj = await challengeModel.getChallenge(eventId, challengeId);
+    const existingChallengeObj = await challengeModel.getChallenge(eventId, _id);
     let startingPlace = 1;
     if (existingChallengeObj) startingPlace = (existingChallengeObj.places || 0) + 1;
     while (startingPlace <= places) {
@@ -128,12 +128,12 @@ const addChallenge = async (eventId, name, questions, places, challengeId = null
         startingPlace += 1;
     }
     const challengeObj = await challengeModel.createChallenge(name, places, accoladeIds, questions, eventId);
-    const id = await challengeModel.addChallenge(challengeObj, challengeId);
+    const id = await challengeModel.addChallenge(challengeObj, _id);
     await Promise.all(accoladeIds.map(async (accoladeId) => {
-        await accoladeModel.addAccoladeChallengeId(accoladeId, id || challengeId);
+        await accoladeModel.addAccoladeChallengeId(accoladeId, id || _id);
     }));
-    await eventsModel.addEventChallengeId(eventId, id || challengeId);
-    return id || challengeId;
+    await eventsModel.addEventChallengeId(eventId, id || _id);
+    return id || _id;
 };
 
 /**
