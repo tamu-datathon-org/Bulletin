@@ -59,27 +59,30 @@ app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/sourcecode`
  * note: for the "add" endpoint, append /?submissionId=submissionId to upsert
  */
 app.post(`${BASE_PATH}/api/:eventId/submission/add`, bouncerController.checkIfLoggedIn(), submissionController.addSubmission);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove`, submissionController.removeSubmission);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/:type`, multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/add`, submissionController.addLike);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add`, submissionController.addComment);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/remove`, submissionController.removeLike);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/remove`, submissionController.removeComment);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove`, bouncerController.checkIfLoggedIn(), submissionController.removeSubmission);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/:type`, bouncerController.checkIfLoggedIn(), multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/add`, bouncerController.checkIfLoggedIn(), submissionController.addLike);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add`, bouncerController.checkIfLoggedIn(), submissionController.addComment);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/remove`, bouncerController.checkIfLoggedIn(), submissionController.removeLike);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/remove`, bouncerController.checkIfLoggedIn(), submissionController.removeComment);
 
 /**
  * admin enpoints
  */
-app.post(`${BASE_PATH}/api/admin/add/event`, adminController.addEvent);
-app.post(`${BASE_PATH}/api/:eventId/admin/add/accolade`, adminController.addAccolade);
-app.post(`${BASE_PATH}/api/:eventId/admin/add/challenge`, adminController.addChallenge);
-app.post(`${BASE_PATH}/api/:eventId/admin/remove/event`, adminController.removeEvent);
-app.post(`${BASE_PATH}/api/:eventId/admin/remove/accolade/:accoladeId`, adminController.removeAccolade);
-app.post(`${BASE_PATH}/api/:eventId/admin/remove/challenge/:challengeId`, adminController.removeChallenge);
-app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
-app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
+app.post(`${BASE_PATH}/api/admin/add/event`, bouncerController.checkIfLoggedIn(true), adminController.addEvent);
+app.post(`${BASE_PATH}/api/:eventId/admin/add/accolade`, bouncerController.checkIfLoggedIn(true), adminController.addAccolade);
+app.post(`${BASE_PATH}/api/:eventId/admin/add/challenge`, bouncerController.checkIfLoggedIn(true), adminController.addChallenge);
+app.post(`${BASE_PATH}/api/:eventId/admin/remove/event`, bouncerController.checkIfLoggedIn(true), adminController.removeEvent);
+app.post(`${BASE_PATH}/api/:eventId/admin/remove/accolade/:accoladeId`, bouncerController.checkIfLoggedIn(true), adminController.removeAccolade);
+app.post(`${BASE_PATH}/api/:eventId/admin/remove/challenge/:challengeId`, bouncerController.checkIfLoggedIn(true), adminController.removeChallenge);
+app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, bouncerController.checkIfLoggedIn(true), multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
+app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, bouncerController.checkIfLoggedIn(true), multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
+
+// if (process.env.NODE_ENV !== 'production')
+//     app.use('/auth', createProxyMiddleware({ target: 'http://gk.tamudatathon.com', changeOrigin: true, hostRewrite: true }));
 
 if (process.env.NODE_ENV !== 'production')
-    app.use('/auth', createProxyMiddleware({ target: 'http://gk.tamudatathon.com', changeOrigin: true, hostRewrite: true }));
+    app.use('/', createProxyMiddleware({ target: 'https://tamudatathon.com', changeOrigin: true, hostRewrite: true }));
 
 // initialize mongodb
 mongoUtil.dbInit();

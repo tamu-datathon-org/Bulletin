@@ -22,7 +22,7 @@ const checkIfLoggedIn = (onlyAllowIfAdminstrator) => async (req, res, next) => {
         return next();
     }
 
-    // if there is now auth token cookie then they are definetely not logged in
+    // if there is no auth token cookie then they are definetely not logged in
     if (!token) 
         return res.redirect(`/auth/login?r=${redirectUrl}`); 
 
