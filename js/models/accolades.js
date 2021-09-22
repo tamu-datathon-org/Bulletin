@@ -60,7 +60,7 @@ const removeAccolade = async (eventId, accoladeId) => {
             .collection(config.database.collections.accolades)
             .deleteOne({
                 _id: await mongoUtil.ObjectId(accoladeId),
-                eventId: eventId,
+                eventId: await mongoUtil.ObjectId(eventId),
             });
         await mongoUtil.closeClient(client);
         return accolade;

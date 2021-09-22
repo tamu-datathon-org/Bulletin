@@ -117,17 +117,38 @@ interface Response {
     }
   }
 
-  const nameHandler = (e:any) => setCurEvent((prev:any) => ({...prev, name: e.target.value}));
-  const descriptionHandler = (e:any) => setCurEvent((prev:any) => ({...prev, description: e.target.value}));
+  const eventDataHandler = (e:any) => setCurEvent((prev:any) => ({...prev, [e.target.id]: e.target.value}));
 
   const [curAccolade, setCurAccolade] = useState<Accolade>();
   const handleEditAccolade = (id:string) => {
     axios.get<AccoladeResp>(`http://localhost:3000/bulletin/api/${curEventId}/accolade/${id}`)
     .then(res => setCurAccolade(res.data.result));
   }
+  const emptyCurAccolade = () => setCurAccolade({
+    _id: "",
+    challengeId: "",
+    description: "",
+    emoji: "",
+    eventId: "",
+    name: ""})
+  const accoladeDataHandler = (e:any) => setCurAccolade((prev:any) => ({...prev, [e.target.id]: e.target.value}));
+
   const handleUpdateAccolade = () => {
-    axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/update/event`, curEvent)
-    .then(() => sendNotification("Updated event!", "success"))
+    axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/add/accolade`, curAccolade)
+    .then(() => {
+      sendNotification("Updated accolade!", "success")
+      emptyCurAccolade();
+    })
+    .catch(res => {
+      sendNotification(String(res.response.data.error), "error");
+    })
+  }
+  const deleteAccolade = () => {
+    axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/remove/accolade/${curAccolade?._id}`)
+    .then(() => {
+      sendNotification("Deleted accolade!", "success")
+      emptyCurAccolade();
+    })
     .catch(res => {
       sendNotification(String(res.response.data.error), "error");
     })
@@ -149,9 +170,9 @@ interface Response {
       {eventLoaded &&
       <>
       <Spacer h={1}/>
-      <Input width="100%" label="Name" disabled={!editable} value={curEvent?.name} onChange={nameHandler}/>
+      <Input width="100%" label="Name" disabled={!editable} value={curEvent?.name} id="name" onChange={eventDataHandler}/>
       <Spacer h={1}/>
-      <Input width="100%" label="Description" disabled={!editable} value={curEvent?.description} onChange={descriptionHandler}/>
+      <Input width="100%" label="Description" disabled={!editable} value={curEvent?.description} id="description" onChange={eventDataHandler}/>
       <Spacer h={1}/>
       <Button onClick={handleEditButton}>{editable ? "Update" : "Edit"}</Button>
       <Spacer h={0.5}/>
@@ -165,15 +186,19 @@ interface Response {
             </Card.Content>
             <Divider />
             <Card.Content>
-              <Input value={curAccolade?.name}/>
+              <Input label="Name" value={curAccolade?.name} id="name" onChange={accoladeDataHandler}/>
+              <Input label="Description" value={curAccolade?.description} id="description" onChange={accoladeDataHandler}/>
               <Spacer h={0.5}/>
-              <Button onClick={handleUpdateAccolade}>{curAccolade ? "Update" : "Add"}</Button>
+              <Button onClick={handleUpdateAccolade}>{curAccolade?._id ? "Update" : "Add"}</Button>
+              <Spacer h={0.5}/>
+              <Button onClick={deleteAccolade}>Delete</Button>
             </Card.Content>
           </Card>
           <Spacer h={0.5}/>
           {curEvent?.accolades.map(accolade => (
             <Card key={accolade._id}>
               <Text>{accolade.name}</Text>
+              <Text>{accolade.description}</Text>
               <Button auto scale={0.5} value={accolade._id} onClick={() => handleEditAccolade(accolade._id)}>Edit</Button>
             </Card>
             )
