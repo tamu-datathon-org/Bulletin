@@ -52,9 +52,12 @@ app.get(`${BASE_PATH}/api/:eventId/challenge`, eventController.getChallenges);
 // ============== download frontend images ================
 app.get(`${BASE_PATH}/api/:eventId/download/eventImage`, eventController.getEventImage);
 app.get(`${BASE_PATH}/api/:eventId/download/challengeImage/:challengeId`, eventController.getChallengeImage);
-// ================== submissions =========================
-app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId`, eventController.getSubmission);
+// ================== all submissions by event =========================
 app.get(`${BASE_PATH}/api/:eventId/submission`, eventController.getSubmissions);
+// ================== user submissions by userAuth id ========================
+app.get(`${BASE_PATH}/api/:eventId/submission/user/:userAuthId`, eventController.getSubmissionsByUserAuthId);
+// ================== submission by submission id ======================
+app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId`, eventController.getSubmission);
 // ============ download submission files ================
 app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/photos`, eventController.getSubmissionIcon);
 app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/icon`, eventController.getSubmissionPhotos);

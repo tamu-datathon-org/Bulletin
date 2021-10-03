@@ -207,6 +207,29 @@ const getSubmissions = async (req, res) => {
 };
 
 /**
+ * @function getSubmissionsByUserAuthId
+ * @param {Object} req 
+ * @param {Object} res 
+ */
+const getSubmissionsByUserAuthId = async (req, res) => {
+    const response = {};
+    const { eventId } = req.params;
+    const { userAuthId } = req.params;
+    try {
+        if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
+        if ((userAuthId?.length ?? 0) === 0) throw new Error('📌userAuthId is a required parameter');
+        logger.info(eventId);
+        logger.info(userAuthId);
+        response.result = await submissionService.getSubmissionsByUserAuthId(eventId, userAuthId);
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+/**
  * @function getSubmissionIcon
  * @param {Object} req 
  * @param {Object} res 
@@ -301,6 +324,7 @@ module.exports = {
     getChallengeImage,
     getSubmission,
     getSubmissions,
+    getSubmissionsByUserAuthId,
     getSubmissionIcon,
     getSubmissionPhotos,
     getSubmissionMarkdown,

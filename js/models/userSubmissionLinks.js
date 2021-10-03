@@ -90,6 +90,22 @@ const getUserSubmissionLink = async (userSubmissionLinkId) => {
     }
 };
 
+const getUserSubmissionLinksByUserAuthId = async (userAuthId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const docs = await client.db(config.database.name)
+            .collection(config.database.collections.userSubmissionLinks).find({
+                userAuthId: userAuthId,
+            }).toArray();
+        await mongoUtil.closeClient(client);
+        return docs;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting userSubmissionLink:: ${err.message}`);
+    }
+};
+
 /**
  * @function getUserSubmissionLinkBySubmissionIdAndUserAuthId
  * @param {String} userAuthId 
@@ -162,6 +178,7 @@ module.exports = {
     removeUserSubmissionLinks,
     getUserSubmissionLink,
     getUserSubmissionLinkBySubmissionIdAndUserAuthId,
+    getUserSubmissionLinksByUserAuthId,
     updateUserSubmissionLink,
     addSubmissionIdToLinks,
 };

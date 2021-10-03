@@ -34,6 +34,16 @@ const getSubmission = async (eventId, submissionId) => {
     return submissionModel.getSubmission(eventId, submissionId);
 };
 
+const getSubmissionsByUserAuthId = async (eventId, userAuthId) => {
+    logger.info(userAuthId);
+    const res = await userSubmissionLinksModel.getUserSubmissionLinksByUserAuthId(userAuthId);
+    const result = await Promise.all(res.map(async (link) => {
+        logger.info(link.submissionId);
+        return submissionModel.getSubmission(eventId, link.submissionId);
+    }));
+    return result;
+};
+
 // ======================================================== //
 // ======== 📌📌📌 Submission Modifiers 📌📌📌 ========= //
 // ======================================================== //
@@ -204,7 +214,7 @@ module.exports = {
     removeComment,
     getSubmission,
     getSubmissions,
-    //getSubmissionByUser,
+    getSubmissionsByUserAuthId,
     //getSubmissionByTags,
     getSubmissionFile,
     uploadSubmissionFile,
