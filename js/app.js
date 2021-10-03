@@ -65,25 +65,25 @@ app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/sourcecode`
  * submission endpoints
  * note: for the "add" endpoint, append /?submissionId=submissionId to upsert
  */
-app.post(`${BASE_PATH}/api/:eventId/submission/add`, bouncerMiddleware.checkIfLoggedIn(), submissionController.addSubmission);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove`, bouncerMiddleware.checkIfLoggedIn(), submissionController.removeSubmission);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/:type`, bouncerMiddleware.checkIfLoggedIn(), multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/add`, bouncerMiddleware.checkIfLoggedIn(), submissionController.addLike);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add`, bouncerMiddleware.checkIfLoggedIn(), submissionController.addComment);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/remove`, bouncerMiddleware.checkIfLoggedIn(), submissionController.removeLike);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/remove`, bouncerMiddleware.checkIfLoggedIn(), submissionController.removeComment);
+app.post(`${BASE_PATH}/api/:eventId/submission/add`, submissionController.addSubmission);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove`, submissionController.removeSubmission);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/:type`, multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/add`, submissionController.addLike);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add`, submissionController.addComment);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/remove`, submissionController.removeLike);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/remove`, submissionController.removeComment);
 
 /**
  * admin enpoints
  */
-app.post(`${BASE_PATH}/api/admin/add/event`, bouncerMiddleware.checkIfLoggedIn(true), adminController.addEvent);
-app.post(`${BASE_PATH}/api/:eventId/admin/add/accolade`, bouncerMiddleware.checkIfLoggedIn(true), adminController.addAccolade);
-app.post(`${BASE_PATH}/api/:eventId/admin/add/challenge`, bouncerMiddleware.checkIfLoggedIn(true), adminController.addChallenge);
-app.post(`${BASE_PATH}/api/:eventId/admin/remove/event`, bouncerMiddleware.checkIfLoggedIn(true), adminController.removeEvent);
-app.post(`${BASE_PATH}/api/:eventId/admin/remove/accolade/:accoladeId`, bouncerMiddleware.checkIfLoggedIn(true), adminController.removeAccolade);
-app.post(`${BASE_PATH}/api/:eventId/admin/remove/challenge/:challengeId`, bouncerMiddleware.checkIfLoggedIn(true), adminController.removeChallenge);
-app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, bouncerMiddleware.checkIfLoggedIn(true), multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
-app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, bouncerMiddleware.checkIfLoggedIn(true), multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
+app.post(`${BASE_PATH}/api/admin/add/event`, adminController.addEvent);
+app.post(`${BASE_PATH}/api/:eventId/admin/add/accolade`, adminController.addAccolade);
+app.post(`${BASE_PATH}/api/:eventId/admin/add/challenge`, adminController.addChallenge);
+app.post(`${BASE_PATH}/api/:eventId/admin/remove/event`, adminController.removeEvent);
+app.post(`${BASE_PATH}/api/:eventId/admin/remove/accolade/:accoladeId`, adminController.removeAccolade);
+app.post(`${BASE_PATH}/api/:eventId/admin/remove/challenge/:challengeId`, adminController.removeChallenge);
+app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
+app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
 
 if (process.env.NODE_ENV !== 'production')
     app.use('/', createProxyMiddleware({ target: 'https://tamudatathon.com', changeOrigin: true, hostRewrite: true }));
