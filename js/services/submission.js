@@ -1,9 +1,6 @@
 const path = require('path');
-const { promisify } = require('util');
-
 const logger = require('../utils/logger');
 const config = require('../utils/config');
-const { getAuthId } = require('../controllers/bouncer');
 
 const submissionModel = require('../models/submission');
 const likesModel = require('../models/likes');
@@ -12,7 +9,7 @@ const userSubmissionLinksModel = require('../models/userSubmissionLinks');
 const challengesModel = require('../models/challenges');
 const eventsModel = require('../models/events');
 const submissionS3 = require('../utils/submissionsS3');
-const bouncerController = require('../controllers/bouncer');
+const bouncerController = require('../middleware/bouncer');
 
 // ======================================================== //
 // ========= 📌📌📌 Submission Getters 📌📌📌 ========== //
@@ -185,7 +182,7 @@ const getSubmissionFile = async (eventId, submissionId, type) => {
     if (!config.submission_constraints.submission_upload_types[type]) {
         throw new Error(`📌type ${type} is invalid`);
     }
-    if (submissionObj[`${type}Key`]) return getFileByKey(challengeObj[`${type}Key`]);
+    if (submissionObj[`${type}Key`]) return getFileByKey(submissionObj[`${type}Key`]);
     throw new Error(`📌submissionId ${submissionId} does not have an assigned ${type}`);
 };
 

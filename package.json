@@ -19,8 +19,8 @@
   },
   "homepage": "https://github.com/tamu-datathon-org/Bulletin#readme",
   "dependencies": {
-    "axios": "^0.21.4",
     "aws-sdk": "^2.985.0",
+    "axios": "^0.21.4",
     "chai": "^4.3.4",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
@@ -37,6 +37,7 @@
     "node-sass": "^6.0.1",
     "pug": "^3.0.2",
     "sinon": "^11.1.2",
+    "slugify": "^1.6.0",
     "swr": "^1.0.0",
     "winston": "^3.3.3"
   },
