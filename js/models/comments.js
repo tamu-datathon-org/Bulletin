@@ -14,7 +14,7 @@ const createComment = async (userAuthId, submissionId, message) => {
     if ((message?.length ?? 0) === 0) throw new Error('comment message cannot be null or empty');
     const commentObj = {
         userAuthId: userAuthId,
-        submissionId: submissionId,
+        submissionId: await mongoUtil.ObjectId(submissionId),
         message: message,
         time: (new Date()).toISOString(),
     };
@@ -34,13 +34,24 @@ const addComment = async (commentObj) => {
     }
 };
 
-const removeComment = async (commentId) => {
+const removeComment = async (userAuthId, commentId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const comment = await client.db(config.database.name)
-            .collection(config.database.collections.comments).findOneAndDelete({ _id: await mongoUtil.ObjectId(commentId) });
-        return comment;
+        const doc = await client.db(config.database.name)
+            .collection(config.database.collections.comments)
+            .findOne({
+                _id: await mongoUtil.ObjectId(commentId),
+                userAuthId: userAuthId,
+            });
+        if (!doc) throw new Error('no comment found');
+        await client.db(config.database.name)
+            .collection(config.database.collections.comments).deleteOne({
+                _id: await mongoUtil.ObjectId(commentId),
+                userAuthId: userAuthId,
+            });
+        await mongoUtil.closeClient(client);
+        return doc;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error removing comment:: ${err.message}`);
@@ -72,23 +83,6 @@ const getComment = async (commentId) => {
     }
 };
 
-const getCommentBySubmissionIdAndUserAuthIdAndTime = async (submissionId, userAuthId, commentTime) => {
-    let client = null;
-    try {
-        client = await mongoUtil.getClient();
-        const comment = await client.db(config.database.name)
-            .collection(config.database.collections.comments).findOne({
-                submissionId: submissionId,
-                userAuthId: userAuthId,
-                comment_time: commentTime,
-            });
-        return comment;
-    } catch (err) {
-        await mongoUtil.closeClient(client);
-        throw new Error(`📌Error getting comment:: ${err.message}`);
-    }
-};
-
 const removeAllCommentsOfSubmissionId = async (submissionId) => {
     let client = null;
     try {
@@ -108,6 +102,5 @@ module.exports = {
     removeComment,
     removeComments,
     getComment,
-    getCommentBySubmissionIdAndUserAuthIdAndTime,
     removeAllCommentsOfSubmissionId,
 };

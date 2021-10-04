@@ -86,10 +86,11 @@ const removeSubmission = async (eventId, submissionId) => {
 const addLike = async (submissionId, likeId) => {
     let client = null;
     try {
+        client = await mongoUtil.getClient();
         const { upsertedId } = await client.db(config.database.name)
-            .collection(config.collections.submissions).updateOne(
+            .collection(config.database.collections.submissions).updateOne(
                 { _id: await mongoUtil.ObjectId(submissionId) },
-                { $addToSet: { likeIds: likeId } },
+                { $addToSet: { likeIds: await mongoUtil.ObjectId(likeId) } },
             );
         await mongoUtil.closeClient(client);
         return upsertedId;
@@ -102,8 +103,9 @@ const addLike = async (submissionId, likeId) => {
 const removeLike = async (submissionId, likeId) => {
     let client = null;
     try {
+        client = await mongoUtil.getClient();
         const { upsertedId } = await client.db(config.database.name)
-            .collection(config.collections.submissions).updateOne(
+            .collection(config.database.collections.submissions).updateOne(
                 { _id: await mongoUtil.ObjectId(submissionId) },
                 { $pull: { likeIds: likeId } },
             );
@@ -118,8 +120,9 @@ const removeLike = async (submissionId, likeId) => {
 const addComment = async (submissionId, commentId) => {
     let client = null;
     try {
+        client = await mongoUtil.getClient();
         const { upsertedId } = await client.db(config.database.name)
-            .collection(config.collections.comments).updateOne(
+            .collection(config.database.collections.comments).updateOne(
                 { _id: await mongoUtil.ObjectId(submissionId) },
                 { $pull: { commentIds: commentId } },
             );
@@ -134,6 +137,7 @@ const addComment = async (submissionId, commentId) => {
 const removeComment = async (submissionId, commentId) => {
     let client = null;
     try {
+        client = await mongoUtil.getClient();
         const { upsertedId } = await client.db(config.database.name)
             .collection(config.database.collections.submissions).updateOne(
                 { _id: await mongoUtil.ObjectId(submissionId) },

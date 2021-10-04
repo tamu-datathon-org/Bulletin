@@ -16,7 +16,7 @@ const createAccolade = async (name, description, emoji, eventId, challengeId) =>
         description: description || '',
         emoji: emoji || '🥇',
         eventId: await mongoUtil.ObjectId(eventId),
-        challengeId: challengeId || '',
+        challengeId: await mongoUtil.ObjectId(challengeId) || '',
     };
     return accoladeObj;
 };
