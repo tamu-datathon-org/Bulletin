@@ -1,0 +1,3 @@
+{
+    "rewrites": [{ "source": "/bulletin(.*)", "destination": "api/bulletin$1" }]
+}
