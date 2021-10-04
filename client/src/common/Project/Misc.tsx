@@ -1,7 +1,7 @@
-import React, {useEffect, useState} from 'react';
-import {Spacer, Button, useToasts, Input} from "@geist-ui/react";
-import * as UI from './style';
+import { Button, Input, Spacer, useToasts } from "@geist-ui/react";
 import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { BASE_URL } from "../../constants";
 
 export interface Submission {
   _id: string,
@@ -27,16 +27,16 @@ export const ProjectPage: React.FC = () => {
     const curChallengeId = ["615274800bcfdcac019b1a5a"]
 
     // TODO: submissionId = getSubmissionId(curEventId, userAuthId)
-    const [submissionId, setSubmissionId] = useState<string>("615a0751cfcb12b04de40c7f");
+    const [submissionId, ] = useState<string>("615a0751cfcb12b04de40c7f");
     
     const [submission, setSubmission] = useState<Submission>();
     useEffect(() => {
-        axios.get<Response>(`http://localhost:3000/bulletin/api/${curEventId}/submission/${submissionId}`)
+        axios.get<Response>(`${BASE_URL}/api/${curEventId}/submission/${submissionId}`)
         .then(res => {
           console.log(res.data.result)
           setSubmission(res.data.result)
         });
-    }, [])
+    }, [submissionId])
     const submissionDataHandler = (e:any) => setSubmission((prev:any) => ({...prev, [e.target.id]: (e.target.id === "name" ? e.target.value : e.target.value.split(','))}));
 
     const [editable, setEditable] = useState(false);
@@ -44,7 +44,7 @@ export const ProjectPage: React.FC = () => {
       setSubmission((prev:any) => ({...prev, "challenges": curChallengeId}))
       setEditable(prev => {
         if (prev) {
-          axios.post(`http://localhost:3000/bulletin/api/${curEventId}/submission/add`, submission)
+          axios.post(`${BASE_URL}/api/${curEventId}/submission/add`, submission)
           .then(() => sendNotification("Updated submission!", "success"))
           .catch(res => {
             sendNotification(String(res.response.data.error), "error");

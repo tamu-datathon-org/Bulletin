@@ -1,10 +1,9 @@
-import React, {useEffect, useState} from 'react';
-import * as UI from './style';
+import { Button, Card, Divider, Fieldset, Image, Input, Select, Spacer, Spinner, Text, useToasts } from "@geist-ui/react";
+import { Upload } from '@geist-ui/react-icons';
 import axios from "axios";
-import useSWR from "swr";
-import { Upload } from '@geist-ui/react-icons'
-import {Button, Input, Select, Text, useToasts, Spacer, Spinner, Fieldset, Card, Divider, Image} from "@geist-ui/react";
-import {Submission} from '../Project/Misc';
+import React, { useEffect, useState } from 'react';
+import { BASE_URL } from "../../constants";
+import { Submission } from '../Project/Misc';
 
 interface Accolade {
   _id: string,
@@ -60,7 +59,7 @@ interface Response {
  export const AdminPage: React.FC = () => {
   const [eventList, setEventList] = useState<Events[]>([]);
   useEffect(() => {
-    axios.get<Response>(`http://localhost:3000/bulletin/api/events`)
+    axios.get<Response>(`${BASE_URL}/api/events`)
     .then(res => setEventList(res.data.result));
   },[]);
 
@@ -76,7 +75,7 @@ interface Response {
   useEffect(() => {
     if (curEventId && curEventId !== "create_new_event") {
       setEventLoaded(false);
-      axios.get<Resp>(`http://localhost:3000/bulletin/api/${curEventId}?full=true`)
+      axios.get<Resp>(`${BASE_URL}/api/${curEventId}?full=true`)
       .then(res => {
         setCurEvent(res.data.result);
         setEventLoaded(true);
@@ -87,7 +86,7 @@ interface Response {
   const setEventHandler = (val:any) => {
     if (val === "create_new_event") {
       const date_string = new Date().toISOString();
-      axios.post('http://localhost:3000/bulletin/api/admin/add/event', {
+      axios.post(`${BASE_URL}/api/admin/add/event`, {
         name: `New Event created at ${date_string}`,
         description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit....",
         start_time: date_string,
@@ -108,7 +107,7 @@ interface Response {
 
     setEditable(prev => {
       if (prev) {
-        axios.post(`http://localhost:3000/bulletin/api/admin/add/event`, curEvent)
+        axios.post(`${BASE_URL}/api/admin/add/event`, curEvent)
         .then(() => sendNotification("Updated event!", "success"))
         .catch(res => {
           sendNotification(String(res.response.data.error), "error");
@@ -121,7 +120,7 @@ interface Response {
   const deleteEvent = () => {
     if (window.confirm(`Are you sure you want to delete ${curEvent?.name}`)) {
       if (window.prompt("To delete this event, enter the full event name","") === curEvent?.name) {
-        axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/remove/event`)
+        axios.post(`${BASE_URL}/api/${curEventId}/admin/remove/event`)
         .then(() => sendNotification("Deleted event!", "success"))
         .catch(res => {
           sendNotification(String(res.response.data.error), "error");
@@ -136,7 +135,7 @@ interface Response {
 
   const [curAccolade, setCurAccolade] = useState<Accolade>();
   const handleEditAccolade = (id:string) => {
-    axios.get<AccoladeResp>(`http://localhost:3000/bulletin/api/${curEventId}/accolade/${id}`)
+    axios.get<AccoladeResp>(`${BASE_URL}/api/${curEventId}/accolade/${id}`)
     .then(res => setCurAccolade(res.data.result));
   }
   const emptyCurAccolade = () => setCurAccolade({
@@ -148,7 +147,7 @@ interface Response {
     name: ""})
   const accoladeDataHandler = (e:any) => setCurAccolade((prev:any) => ({...prev, [e.target.id]: e.target.value}));
   const handleUpdateAccolade = () => {
-    axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/add/accolade`, curAccolade)
+    axios.post(`${BASE_URL}/api/${curEventId}/admin/add/accolade`, curAccolade)
     .then(() => {
       sendNotification("Updated accolade!", "success")
       emptyCurAccolade();
@@ -158,7 +157,7 @@ interface Response {
     })
   }
   const deleteAccolade = () => {
-    axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/remove/accolade/${curAccolade?._id}`)
+    axios.post(`${BASE_URL}/api/${curEventId}/admin/remove/accolade/${curAccolade?._id}`)
     .then(() => {
       sendNotification("Deleted accolade!", "success")
       emptyCurAccolade();
@@ -192,7 +191,7 @@ interface Response {
     places: 0,
    })
    const handleUpdateChallenge = () => {
-     axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/add/challenge`, curChallenge)
+     axios.post(`${BASE_URL}/api/${curEventId}/admin/add/challenge`, curChallenge)
      .then(() => {
        sendNotification("Updated challenge!", "success")
        emptyCurChallenge();
@@ -202,7 +201,7 @@ interface Response {
      })
    }
    const deleteChallenge = () => {
-    axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/remove/challenge/${curChallenge?._id}`)
+    axios.post(`${BASE_URL}/api/${curEventId}/admin/remove/challenge/${curChallenge?._id}`)
     .then(() => {
       sendNotification("Deleted challenge!", "success")
       emptyCurChallenge();
@@ -212,7 +211,7 @@ interface Response {
     })
    }
    const handleEditChallenge = (id:string) => {
-    axios.get<ChallengeResp>(`http://localhost:3000/bulletin/api/${curEventId}/challenge/${id}`)
+    axios.get<ChallengeResp>(`${BASE_URL}/api/${curEventId}/challenge/${id}`)
     .then(res => setCurChallenge(res.data.result));
    }
 
@@ -223,7 +222,7 @@ interface Response {
    const uploadFile = () => {
      const data = new FormData();
      data.append('file', file);
-     axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/upload/eventImage`, data)
+     axios.post(`${BASE_URL}/api/${curEventId}/admin/upload/eventImage`, data)
      .then(res => {
        console.log(res)
       sendNotification("Uploaded image!", "success")

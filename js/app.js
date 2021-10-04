@@ -1,23 +1,6 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const cookieParser = require('cookie-parser');
-const { createProxyMiddleware } = require('http-proxy-middleware');
 require('dotenv').config();
-
-// controllers
-const submissionController = require('./controllers/submission');
-const adminController = require('./controllers/admin');
-const eventController = require('./controllers/event');
-const pageRouter = require('./controllers/router');
-
-// middlewares
-const bouncerMiddleware = require('./middleware/bouncer');
-// const slugMiddleware = require('./middleware/slugs');
-
+const app = require("./routes"); 
 // utilities
-const multerUtil = require('./utils/multer');
-const mongoUtil = require('./utils/mongoDb');
 const logger = require('./utils/logger');
 
 const PORT = process.env.PORT || 3000;
