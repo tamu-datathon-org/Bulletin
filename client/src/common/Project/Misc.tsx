@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {Spacer, Button, useToasts, Input} from "@geist-ui/react";
 import * as UI from './style';
+import { BASE_URL } from "../../constants";
 import axios from 'axios';
 
 export interface Submission {
@@ -31,7 +32,7 @@ export const ProjectPage: React.FC = () => {
     
     const [submission, setSubmission] = useState<Submission>();
     useEffect(() => {
-        axios.get<Response>(`http://localhost:3000/bulletin/api/${curEventId}/submission/${submissionId}`)
+        axios.get<Response>(`${BASE_URL}/api/${curEventId}/submission/${submissionId}`)
         .then(res => {
           console.log(res.data.result)
           setSubmission(res.data.result)
@@ -44,7 +45,7 @@ export const ProjectPage: React.FC = () => {
       setSubmission((prev:any) => ({...prev, "challenges": curChallengeId}))
       setEditable(prev => {
         if (prev) {
-          axios.post(`http://localhost:3000/bulletin/api/${curEventId}/submission/add`, submission)
+          axios.post(`${BASE_URL}/api/${curEventId}/submission/add`, submission)
           .then(() => sendNotification("Updated submission!", "success"))
           .catch(res => {
             sendNotification(String(res.response.data.error), "error");
