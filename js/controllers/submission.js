@@ -63,7 +63,7 @@ const addSubmission = async (req, res) => {
     try {
         logger.info(JSON.stringify(req.body));
         const { eventId } = req.params;
-        const { submissionId } = req.query;
+        const { submissionId } = req.body;
 
         await validateAddSubmission(eventId, req.body);
 

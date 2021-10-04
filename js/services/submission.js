@@ -80,8 +80,11 @@ const addSubmission = async (requestBody, eventId, userAuthId, submissionId = nu
     const challengeIds = [];
     await Promise.all(requestBody.challenges.map(async (challengeId) => {
         const challengeObj = await challengesModel.getChallenge(eventId, challengeId);
-        if(challengeObj) challengeIds.push(challengeObj._id);
-        throw new Error(`📌challenge ${challengeId} does not exist`);
+        if (challengeObj) {
+            challengeIds.push(challengeObj._id);
+        } else {
+            throw new Error(`📌challenge ${challengeId} does not exist`);
+        }
     }));
 
     // get/create the user submission links

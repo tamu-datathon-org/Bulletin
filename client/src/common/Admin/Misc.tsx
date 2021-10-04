@@ -2,7 +2,9 @@ import React, {useEffect, useState} from 'react';
 import * as UI from './style';
 import axios from "axios";
 import useSWR from "swr";
-import {Button, Input, Select, Text, useToasts, Spacer, Spinner, Fieldset, Card, Divider} from "@geist-ui/react";
+import { Upload } from '@geist-ui/react-icons'
+import {Button, Input, Select, Text, useToasts, Spacer, Spinner, Fieldset, Card, Divider, Image} from "@geist-ui/react";
+import {Submission} from '../Project/Misc';
 
 interface Accolade {
   _id: string,
@@ -11,6 +13,17 @@ interface Accolade {
   emoji: string,
   eventId: string,
   name: string
+}
+
+interface Challenge {
+  _id: string,
+  name: string,
+  questions: Array<string>
+  places: number
+}
+
+interface ChallengeResp {
+  result: Challenge
 }
 
 interface AccoladeResp {
@@ -29,6 +42,8 @@ interface Events {
   image: string;
   imageKey: string;
   accolades: Accolade[];
+  challenges: Challenge[];
+  submissions: Submission[];
 }
 
 interface Resp {
@@ -93,7 +108,7 @@ interface Response {
 
     setEditable(prev => {
       if (prev) {
-        axios.post(`http://localhost:3000/bulletin/api/admin/add/event/?eventId=${curEventId}`, curEvent)
+        axios.post(`http://localhost:3000/bulletin/api/admin/add/event`, curEvent)
         .then(() => sendNotification("Updated event!", "success"))
         .catch(res => {
           sendNotification(String(res.response.data.error), "error");
@@ -132,7 +147,6 @@ interface Response {
     eventId: "",
     name: ""})
   const accoladeDataHandler = (e:any) => setCurAccolade((prev:any) => ({...prev, [e.target.id]: e.target.value}));
-
   const handleUpdateAccolade = () => {
     axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/add/accolade`, curAccolade)
     .then(() => {
@@ -154,6 +168,71 @@ interface Response {
     })
   }
 
+   const [curChallenge, setCurChallenge]=useState<Challenge>();
+   const challengeDataHandler = (e:any) => setCurChallenge((prev:any) => ({...prev,  [e.target.id]: e.target.value}));
+   const handleQuestionChange = (i:number, e:any) => {
+     const values:Array<string> = curChallenge ? curChallenge.questions : [];
+     values[i]=(e.target.value as string)
+     setCurChallenge((prev:any) => ({...prev, "questions":values})) 
+   }
+   const handleQuestionDelete = (i:number) => {
+     const values = [...curChallenge!.questions]
+     values.splice(i,1)
+     setCurChallenge((prev:any) => ({...prev, "questions":values}))
+   }
+   const handleQuestionAdd = () => {
+     const values:Array<string> = curChallenge?.questions ? curChallenge.questions : [];
+     values.push("");
+     setCurChallenge((prev:any)=>({...prev,"questions":values}))
+   }
+   const emptyCurChallenge = () => setCurChallenge({
+    _id: "",
+    name: "",
+    questions: [],
+    places: 0,
+   })
+   const handleUpdateChallenge = () => {
+     axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/add/challenge`, curChallenge)
+     .then(() => {
+       sendNotification("Updated challenge!", "success")
+       emptyCurChallenge();
+     })
+     .catch(res => {
+       sendNotification(String(res.response.data.error), "error");
+     })
+   }
+   const deleteChallenge = () => {
+    axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/remove/challenge/${curChallenge?._id}`)
+    .then(() => {
+      sendNotification("Deleted challenge!", "success")
+      emptyCurChallenge();
+    })
+    .catch(res => {
+      sendNotification(String(res.response.data.error), "error");
+    })
+   }
+   const handleEditChallenge = (id:string) => {
+    axios.get<ChallengeResp>(`http://localhost:3000/bulletin/api/${curEventId}/challenge/${id}`)
+    .then(res => setCurChallenge(res.data.result));
+   }
+
+   const [file, setFile] = useState<any>();
+   const fileHandler = (e:any) => {
+     setFile(e.target.files[0])
+   }
+   const uploadFile = () => {
+     const data = new FormData();
+     data.append('file', file);
+     axios.post(`http://localhost:3000/bulletin/api/${curEventId}/admin/upload/eventImage`, data)
+     .then(res => {
+       console.log(res)
+      sendNotification("Uploaded image!", "success")
+    })
+    .catch(res => {
+      sendNotification(String(res.response.data.error), "error");
+    })
+   }
+
   if (eventList.length === 0) {
     return (<Spinner />)
   } else {
@@ -170,6 +249,8 @@ interface Response {
       {eventLoaded &&
       <>
       <Spacer h={1}/>
+      <Input width="100%" label="id" disabled value={curEvent?._id} id="_id"/>
+      <Spacer h={1}/>
       <Input width="100%" label="Name" disabled={!editable} value={curEvent?.name} id="name" onChange={eventDataHandler}/>
       <Spacer h={1}/>
       <Input width="100%" label="Description" disabled={!editable} value={curEvent?.description} id="description" onChange={eventDataHandler}/>
@@ -177,6 +258,10 @@ interface Response {
       <Button onClick={handleEditButton}>{editable ? "Update" : "Edit"}</Button>
       <Spacer h={0.5}/>
       <Button onClick={deleteEvent}>Delete</Button>
+      <Spacer h={1}/>
+      <Image height="160px" src={curEvent ? curEvent.image : ""} />
+      <Spacer h={1}/>
+      <Input htmlType="file" name="file" onChange={fileHandler} iconClickable iconRight={<Upload />} onIconClick={uploadFile}/>
       <Spacer h={1}/>
       <Fieldset.Group value="accolades">
         <Fieldset label="accolades">
@@ -205,10 +290,43 @@ interface Response {
           )}
         </Fieldset>
         <Fieldset label="challenges">
-          
+        <Card>
+            <Card.Content>
+              <Text b>Add/Update a Challenge</Text>
+            </Card.Content>
+            <Divider />
+            <Card.Content>
+              <Input label="Name" value={curChallenge?.name} id="name" onChange={challengeDataHandler}/>
+              {
+                curChallenge?.questions?.map((question,i) =>
+                <>
+                <Input value={question} onChange={e => handleQuestionChange(i,e)}></Input>
+                <Button value={i} onClick={()=>handleQuestionDelete(i)}>Remove</Button>
+                </>)
+              }
+              <Button onClick={handleQuestionAdd}>Add Question</Button>
+              <Spacer h={0.5}/>
+              <Button onClick={handleUpdateChallenge}>{curChallenge?._id ? "Update" : "Add"}</Button>
+              <Spacer h={0.5}/>
+              <Button onClick={deleteChallenge}>Delete</Button>
+            </Card.Content>
+          </Card>
+          <Spacer h={0.5}/>
+          {curEvent && curEvent.challenges.map(challenge => (
+            <Card key={challenge._id}>
+              <Text>{challenge.name}</Text>
+              {challenge.questions.map(question=><Text>{question}</Text>)}
+              <Button auto scale={0.5} value={challenge._id} onClick={() => handleEditChallenge(challenge._id)}>Edit</Button>
+            </Card>
+            )
+          )}
         </Fieldset>
         <Fieldset label="submissions">
-          
+        {curEvent && curEvent.submissions.map(submission => 
+        (<Card key={submission._id}>
+            <Text>{submission.name}</Text>
+          </Card>)
+        )}
         </Fieldset>
       </Fieldset.Group>
       </>

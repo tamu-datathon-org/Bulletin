@@ -3,6 +3,7 @@ import {Page, Tabs, Spacer} from '@geist-ui/react';
 import {Navbar} from './common/Navbar';
 import './common/globals.css';
 import {AdminPage} from './common/Admin'
+import {ProjectPage} from './common/Project'
 
 import { config } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
@@ -19,7 +20,7 @@ function App() {
             View all projects submitted to this event.
           </Tabs.Item>
           <Tabs.Item label="My Projects" value="2">
-            Form to submit/edit your team's project for this event.
+            <ProjectPage />
           </Tabs.Item>
           <Tabs.Item label="Admin" value="3">
             <AdminPage />
