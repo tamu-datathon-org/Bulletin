@@ -1,4 +1,4 @@
-const app = require("./js/routes");
+const app = require("../js/routes");
 
 /**
  * Expose vercel to the express js app (router)
