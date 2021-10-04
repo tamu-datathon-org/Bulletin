@@ -178,8 +178,7 @@ const uploadEventImage = async (eventId, filename, buffer) => {
     const data = await frontendS3.uploadFile(`${config.event.imagePrefix}${path.extname(filename)}`, buffer);
     eventObj.image = data.Location;
     eventObj.imageKey = data.Key;
-    delete eventObj._id;
-    await eventsModel.addEvent(eventObj._id, eventObj);
+    await eventsModel.addEvent(eventObj, eventObj._id);
     return data.Location;
 };
 
