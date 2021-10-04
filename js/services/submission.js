@@ -34,6 +34,16 @@ const getSubmission = async (eventId, submissionId) => {
     return submissionModel.getSubmission(eventId, submissionId);
 };
 
+const getSubmissionsByUserAuthId = async (eventId, userAuthId) => {
+    logger.info(userAuthId);
+    const res = await userSubmissionLinksModel.getUserSubmissionLinksByUserAuthId(userAuthId);
+    const result = await Promise.all(res.map(async (link) => {
+        logger.info(link.submissionId);
+        return submissionModel.getSubmission(eventId, link.submissionId);
+    }));
+    return result;
+};
+
 // ======================================================== //
 // ======== 📌📌📌 Submission Modifiers 📌📌📌 ========= //
 // ======================================================== //
@@ -100,14 +110,20 @@ const addSubmission = async (requestBody, eventId, userAuthId, submissionId = nu
     return id;
 };
 
-const removeSubmission = async (submissionId) => {
-    const doc = await submissionModel.removeSubmission(submissionId);
-    await eventsModel.removeEventSubmissionId(submissionId);
+const removeSubmission = async (eventId, submissionId) => {
+    const doc = await submissionModel.removeSubmission(eventId, submissionId);
+    logger.info(JSON.stringify(doc));
+    await eventsModel.removeEventSubmissionId(eventId, submissionId);
     await commentsModel.removeAllCommentsOfSubmissionId(submissionId);
     await likesModel.removeAllLikesOfSubmissionId(submissionId);
     if (doc.userSubmissionLinkIds) await userSubmissionLinksModel.removeUserSubmissionLinks(doc.userSubmissionLinkIds);
     if (doc.likeIds) await likesModel.removeLikes(doc.likeIds);
     if (doc.commentIds) await commentsModel.removeComments(doc.commentIds);
+    if (doc.iconKey) await removeFileByKey(doc.iconKey);
+    if (doc.photosKey) await removeFileByKey(doc.photosKey);
+    if (doc.markdownKey) await removeFileByKey(doc.markdownKey);
+    if (doc.sourceCodeKey) await removeFileByKey(doc.sourceCodeKey);
+    return doc;
 };
 
 const updateSubmission = async (submissionId, requestBody) => {
@@ -207,7 +223,7 @@ module.exports = {
     removeComment,
     getSubmission,
     getSubmissions,
-    //getSubmissionByUser,
+    getSubmissionsByUserAuthId,
     //getSubmissionByTags,
     getSubmissionFile,
     uploadSubmissionFile,

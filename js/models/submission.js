@@ -27,7 +27,7 @@ const createSubmission = async (eventId, name, discordTags, userSubmissionLinkId
     if (!eventId) throw new Error('submission eventId is required');
     if (!name) throw new Error('submission name is required');
     const submissionObj = {
-        eventId: eventId,
+        eventId: await mongoUtil.ObjectId(eventId),
         name: name,
         discordTags: discordTags || [],
         userSubmissionLinkids: userSubmissionLinkIds || [],
@@ -62,7 +62,7 @@ const addSubmission = async (submissionObj, submissionId = null) => {
 const removeSubmission = async (eventId, submissionId) => {
     let client = null;
     try {
-        client = mongoUtil.getClient();
+        client = await mongoUtil.getClient();
         const doc = await client.db(config.database.name)
             .collection(config.database.collections.submissions)
             .findOne({
