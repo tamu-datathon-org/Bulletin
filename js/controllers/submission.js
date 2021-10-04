@@ -3,9 +3,9 @@ const path = require('path');
 const submissionService = require('../services/submission');
 const config = require('../utils/config');
 const logger = require('../utils/logger');
-const bouncer = require('./bouncer');
+const bouncer = require('../middleware/bouncer');
 const eventModel = require('../models/events');
-const bouncerController = require('../controllers/bouncer');
+const bouncerController = require('../middleware/bouncer');
 
 let IS_TESTING = true;
 
@@ -33,7 +33,7 @@ const validateAddSubmission = async (eventId, requestBody) => {
 };
 
 const validateSubmissionFileUploads = async (request) => {
-    const { eventId } = req.params;
+    const { eventId } = request.params;
     const { buffer } = request.file;
     const { submissionId } = request.params;
     const { type } = request.params;
