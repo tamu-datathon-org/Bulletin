@@ -23,7 +23,7 @@
     "typescript": "^4.4.3",
     "web-vitals": "^1.1.2"
   },
-  "homepage": "https://tamudatathon.com/projects",
+  "homepage": "https://tamudatathon.com/bulletin",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",

@@ -1,11 +1,9 @@
-import React, {useEffect, useState} from 'react';
-import * as UI from './style';
+import { Button, Card, Divider, Fieldset, Image, Input, Select, Spacer, Spinner, Text, useToasts } from "@geist-ui/react";
+import { Upload } from '@geist-ui/react-icons';
 import axios from "axios";
-import useSWR from "swr";
+import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../../constants";
-import { Upload } from '@geist-ui/react-icons'
-import {Button, Input, Select, Text, useToasts, Spacer, Spinner, Fieldset, Card, Divider, Image} from "@geist-ui/react";
-import {Submission} from '../Project/Misc';
+import { Submission } from '../Project/Misc';
 
 interface Accolade {
   _id: string,
@@ -88,7 +86,7 @@ interface Response {
   const setEventHandler = (val:any) => {
     if (val === "create_new_event") {
       const date_string = new Date().toISOString();
-      axios.post('${BASE_URL}/api/admin/add/event', {
+      axios.post(`${BASE_URL}/api/admin/add/event`, {
         name: `New Event created at ${date_string}`,
         description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit....",
         start_time: date_string,
