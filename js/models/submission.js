@@ -25,7 +25,7 @@ const submission = {
 
 const createSubmission = async (eventId, name, discordTags, userSubmissionLinkIds, challengeIds, links, tags, videoLink) => {
     if (!eventId) throw new Error('submission eventId is required');
-    if (!title) throw new Error('submission title is required');
+    if (!name) throw new Error('submission name is required');
     const submissionObj = {
         eventId: eventId,
         name: name,

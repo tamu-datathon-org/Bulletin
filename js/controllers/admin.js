@@ -175,7 +175,7 @@ const uploadEventImage = async (req, res) => {
         const { buffer } = req.file;
         const { originalname } = req.file;
         if (!eventId || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
-        if (!originalname || typeof event !== 'string') throw new Error('📌originalname is a required field');
+        if (!originalname || typeof originalname !== 'string') throw new Error('📌originalname is a required field');
         response.location = await adminService.uploadEventImage(eventId, originalname, buffer);
         res.status(200).json(response);
     } catch (err) {
