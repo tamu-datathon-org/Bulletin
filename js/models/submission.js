@@ -62,7 +62,7 @@ const addSubmission = async (submissionObj, submissionId = null) => {
 const removeSubmission = async (eventId, submissionId) => {
     let client = null;
     try {
-        client = mongoUtil.getClient();
+        client = await mongoUtil.getClient();
         const doc = await client.db(config.database.name)
             .collection(config.database.collections.submissions)
             .findOne({

@@ -21,7 +21,8 @@ const addLike = async (likeObj) => {
     try {
         client = await mongoUtil.getClient();
         const { insertedId } = await client.db(config.database.name)
-            .collection(config.database.collections.like).insertOne(likeObj);
+            .collection(config.database.collections.likes).insertOne(likeObj);
+        await mongoUtil.closeClient(client);
         return insertedId;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -34,7 +35,8 @@ const removeLike = async (likeId) => {
     try {
         client = await mongoUtil.getClient();
         const like = await client.db(config.database.name)
-            .collection(config.database.collections.like).findOneAndDelete({ _id: await mongoUtil.ObjectId(likeId) });
+            .collection(config.database.collections.likes).findOneAndDelete({ _id: await mongoUtil.ObjectId(likeId) });
+        await mongoUtil.closeClient(client);
         return like;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -47,7 +49,8 @@ const removeLikes = async (likeIds) => {
     try {
         client = await mongoUtil.getClient();
         await client.db(config.database.name)
-            .collection(config.database.collections.like).deleteMany({ _id: likeIds });
+            .collection(config.database.collections.likes).deleteMany({ _id: likeIds });
+        await mongoUtil.closeClient(client);
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error removing likes:: ${err.message}`);
@@ -59,7 +62,8 @@ const getLike = async (likeId) => {
     try {
         client = await mongoUtil.getClient();
         const doc = await client.db(config.database.name)
-            .collection(config.database.collections.like).findOne({ _id: await mongoUtil.ObjectId(likeId) });
+            .collection(config.database.collections.likes).findOne({ _id: await mongoUtil.ObjectId(likeId) });
+        await mongoUtil.closeClient(client);
         return doc;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -72,7 +76,11 @@ const getLikeBySubmissionIdAndUserAuthId = async (submissionId, userAuthId) => {
     try {
         client = await mongoUtil.getClient();
         const doc = await client.db(config.database.name)
-            .collection(config.database.collections.like).findOne({ submissionId: submissionId, userAuthId: userAuthId });
+            .collection(config.database.collections.likes).findOne({ 
+                submissionId: await mongoUtil.ObjectId(submissionId),
+                userAuthId: userAuthId
+            });
+        await mongoUtil.closeClient(client);
         return doc;
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -85,7 +93,8 @@ const removeAllLikesOfSubmissionId = async (submissionId) => {
     try {
         client = await mongoUtil.getClient();
         await client.db(config.database.name)
-            .collection(config.database.collections.like).deleteMany({ submissionId: submissionId });
+            .collection(config.database.collections.likes).deleteMany({ submissionId: await mongoUtil.ObjectId(submissionId) });
+        await mongoUtil.closeClient(client);
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error removing likes:: ${err.message}`);

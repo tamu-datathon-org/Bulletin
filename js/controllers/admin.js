@@ -204,6 +204,22 @@ const uploadChallengeImage = async (req, res) => {
     }
 };
 
+const removeSubmission = async (req, res) => {
+    const response = {};
+    try {
+        const { eventId } = req.params;
+        const { submissionId } = req.params;
+        if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
+        if ((submissionId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌submissionId is a required parameter');
+        response.result = await adminService.removeSubmission(eventId, submissionId);
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
 /* for testing only */
 
 const setAdminService = (testAdminService) => {
@@ -219,6 +235,7 @@ module.exports = {
     removeChallenge,
     uploadEventImage,
     uploadChallengeImage,
+    removeSubmission,
     // testing
     setAdminService,
 };

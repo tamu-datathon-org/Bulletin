@@ -22,6 +22,13 @@ const ordinalSuffixOf = (i) => {
     return i + 'th';
 };
 
+const removeSubmission = async (eventId, submissionId) => {
+    const eventObj = await eventsModel.getEventById(eventId);
+    logger.info(JSON.stringify(eventObj));
+    if (!eventObj) throw new Error(`📌event ${eventId} does not exist`);
+    return submissionService.removeSubmission(eventId, submissionId);
+};
+
 /**
  * @function addAccolade
  * @param {String} eventId id of the event
@@ -152,7 +159,7 @@ const removeChallenge = async (eventId, challengeId) => {
         await eventsModel.removeEventChallengeId(eventId, challengeId);
         return challengeId;
     }
-    throw new Error(`📌challenge ${challengeId} does not exist`)
+    throw new Error(`📌challenge ${challengeId} does not exist`);
 };
 
 /**
@@ -222,6 +229,7 @@ module.exports = {
     removeChallenge,
     uploadEventImage,
     uploadChallengeImage,
+    removeSubmission,
     // testing
     setEventModel,
     setChallengeModel,

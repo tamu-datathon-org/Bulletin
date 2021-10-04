@@ -87,6 +87,7 @@ app.post(`${BASE_PATH}/api/:eventId/admin/remove/accolade/:accoladeId`, adminCon
 app.post(`${BASE_PATH}/api/:eventId/admin/remove/challenge/:challengeId`, adminController.removeChallenge);
 app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
 app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
+app.post(`${BASE_PATH}/api/:eventId/admin/submission/:submissionId/remove`, adminController.removeSubmission);
 
 if (process.env.NODE_ENV !== 'production')
     app.use('/', createProxyMiddleware({ target: 'https://tamudatathon.com', changeOrigin: true, hostRewrite: true }));
