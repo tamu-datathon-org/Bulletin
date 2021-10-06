@@ -57,13 +57,7 @@ const getSubmissionsByUserAuthId = async (eventId, userAuthId) => {
  * @param {String} submissionId 
  * @returns {String} submission id
  */
-const addSubmission = async (requestBody, eventId, userAuthId, submissionId = null) => {
-    // check if allowed to edit
-    const userSubmissionLinkId = await userSubmissionLinksModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(
-        userAuthId,
-        submissionId, 
-    );
-    if (submissionId && !userSubmissionLinkId) throw new Error('📌you are not authorized to edit this project');
+const addSubmission = async (requestBody, eventId, submissionId = null) => {
 
     // get discord Objects from harmonia
     const discordObjs = [];
@@ -113,6 +107,7 @@ const addSubmission = async (requestBody, eventId, userAuthId, submissionId = nu
 const removeSubmission = async (eventId, submissionId) => {
     const doc = await submissionModel.removeSubmission(eventId, submissionId);
     logger.info(JSON.stringify(doc));
+    if (!doc) throw new Error(`📌no submission with submissionId ${submissionId}`);
     await eventsModel.removeEventSubmissionId(eventId, submissionId);
     await commentsModel.removeAllCommentsOfSubmissionId(submissionId);
     await likesModel.removeAllLikesOfSubmissionId(submissionId);
@@ -126,26 +121,21 @@ const removeSubmission = async (eventId, submissionId) => {
     return doc;
 };
 
-const updateSubmission = async (submissionId, requestBody) => {
-    const submissionSetOptions = {};
-    const userAuthLinksSetOptions = {};
-    if (requestBody.title) submissionSetOptions.title = requestBody.title;
-    if (requestBody.userAuthIds) userAuthLinksSetOptions.userAuthIds = requestBody.userAuthIds;
-    if (requestBody.links) submissionSetOptions.links = requestBody.links;
-    if (requestBody.tags) submissionSetOptions.tags = requestBody.tags;
-    if (requestBody.challenges) submissionSetOptions.challenges = requestBody.challenges;
-    await submissionModel.updateSubmission(submissionId, submissionSetOptions);
-    await userSubmissionLinksModel.updateUserSubmissionLink(submissionId, userAuthLinksSetOptions);
-};
-
 // ======================================================== //
 // =========== 📌📌📌 Likes Section 📌📌📌 ============= //
 // ======================================================== //
 
-const addLike = async (userAuthId, submissionId) => {
+const toggleLike = async (userAuthId, submissionId) => {
+    const dupLikeObj = await likesModel.getLikeBySubmissionIdAndUserAuthId(submissionId, userAuthId);
+    if (dupLikeObj) {
+        const removedLikeObj = likesModel.removeLike(dupLikeObj._id);
+        await submissionModel.removeLike(submissionId, dupLikeObj._id);
+        return removedLikeObj;
+    }
     const likeObj = await likesModel.createLike(userAuthId, submissionId);
     const likeId = await likesModel.addLike(likeObj);
-    return submissionModel.addLike(submissionId, likeId);
+    await submissionModel.addLike(submissionId, likeId);
+    return likeObj;
 };
 
 // ======================================================== //
@@ -155,19 +145,15 @@ const addLike = async (userAuthId, submissionId) => {
 const addComment = async (userAuthId, submissionId, message) => {
     const commentObj = await commentsModel.createComment(userAuthId, submissionId, message);
     const commentId = await commentsModel.addComment(commentObj);
-    return submissionModel.addComment(submissionId, commentId);
+    await submissionModel.addComment(submissionId, commentId);
+    return commentObj;
 };
 
-const removeLike = async (userAuthId, submissionId) => {
-    const { _id } = await likesModel.getLikeBySubmissionIdAndUserAuthId(submissionId, userAuthId);
-    await likesModel.removeLike(_id);
-    return submissionModel.removeLike(submissionId, _id);
-};
-
-const removeComment = async (userAuthId, submissionId, commentTime) => {
-    const { _id } = await commentsModel.getCommentBySubmissionIdAndUserAuthIdAndTime(submissionId, userAuthId, commentTime);
-    await commentsModel.removeComment(_id);
-    return submissionModel.removeComment(submissionId, _id);
+const removeComment = async (userAuthId, submissionId, commentId) => {
+    const comment = await commentsModel.removeComment(userAuthId, commentId);
+    if (comment)
+        await submissionModel.removeComment(submissionId, commentId);
+    return comment;
 };
 
 // ======================================================== //
@@ -175,10 +161,10 @@ const removeComment = async (userAuthId, submissionId, commentTime) => {
 // ======================================================== //
 
 const uploadSubmissionFile = async (eventId, submissionId, filename, type, buffer) => {
-    const submissionObj = await submissionModel.getChallenge(eventId, submissionId);
+    const submissionObj = await submissionModel.getSubmission(eventId, submissionId);
     if (!submissionObj) throw new Error(`📌submission ${submissionId} does not exist`);
     if (!config.submission_constraints.submission_upload_types[type]) {
-        throw new Error(`📌type ${type} is invalid`);
+        throw new Error(`📌upload type ${type} is invalid`);
     }
     if (submissionObj[`${type}Key`]) {
         await removeFileByKey(submissionObj[`${type}Key`]);
@@ -202,7 +188,7 @@ const getSubmissionFile = async (eventId, submissionId, type) => {
         throw new Error(`📌type ${type} is invalid`);
     }
     if (submissionObj[`${type}Key`]) return getFileByKey(submissionObj[`${type}Key`]);
-    throw new Error(`📌submissionId ${submissionId} does not have an assigned ${type}`);
+    throw new Error(`📌submissionId ${submissionId} does not have uploaded file(s) of ${type}`);
 };
 
 const getFileByKey = async (fileKey) => {
@@ -216,15 +202,12 @@ const removeFileByKey = async (fileKey) => {
 module.exports = {
     addSubmission,
     removeSubmission,
-    updateSubmission,
-    addLike,
-    removeLike,
+    toggleLike,
     addComment,
     removeComment,
     getSubmission,
     getSubmissions,
     getSubmissionsByUserAuthId,
-    //getSubmissionByTags,
     getSubmissionFile,
     uploadSubmissionFile,
 };

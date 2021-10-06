@@ -1,7 +1,8 @@
-import { Button, Input, Spacer, useToasts } from "@geist-ui/react";
+import { Button, Input, Textarea, Spacer, Select, useToasts, Checkbox, Text } from "@geist-ui/react";
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../../constants";
+import { Event, ChallengesResponse, Challenge, EventsResponse } from '../Admin/Misc';
 
 export interface Submission {
   _id: string,
@@ -12,8 +13,12 @@ export interface Submission {
   challenges: Array<string>,
 }
 
-interface Response {
+interface SubmissionResponse {
     result: Submission;
+}
+
+interface SubmissionsResponse {
+  result: Submission[];
 }
 
 export const ProjectPage: React.FC = () => {
@@ -22,26 +27,36 @@ export const ProjectPage: React.FC = () => {
         setToast({ text: msg, type: intent, delay: 8000 });
       };
 
-    // TODO: Get this from URL
-    const curEventId = "614937d1ed5af243851bb789"
-    const curChallengeId = ["615274800bcfdcac019b1a5a"]
-
-    // TODO: submissionId = getSubmissionId(curEventId, userAuthId)
-    const [submissionId, ] = useState<string>("615a0751cfcb12b04de40c7f");
+    // TODO: Get this from UserAuthProvider
+    const userAuthId = "5efc0b99a37c4300032acbce"
     
+    const [curEventId, setCurEventId] = useState<string>("");
+    const [submissionId, setSubmissionId] = useState<string>("");
+
+    const [allChalleges, setAllChallenges] = useState<Challenge[]>([])
+    useEffect(() => {
+      if (curEventId) {
+        axios.get<ChallengesResponse>(`${BASE_URL}/api/${curEventId}/challenge`)
+        .then(res => setAllChallenges(res.data.result))
+      }
+    },[curEventId])
+    const [selectedChallengeIds, setSelectedChallengeIds] = useState<string[]>([]);
+
     const [submission, setSubmission] = useState<Submission>();
     useEffect(() => {
-        axios.get<Response>(`${BASE_URL}/api/${curEventId}/submission/${submissionId}`)
+      if (curEventId) {
+        axios.get<SubmissionResponse>(`${BASE_URL}/api/${curEventId}/submission/${submissionId}`)
         .then(res => {
-          console.log(res.data.result)
+          // console.log(res.data)
           setSubmission(res.data.result)
         });
-    }, [submissionId])
+      }
+    }, [curEventId, submissionId])
     const submissionDataHandler = (e:any) => setSubmission((prev:any) => ({...prev, [e.target.id]: (e.target.id === "name" ? e.target.value : e.target.value.split(','))}));
 
     const [editable, setEditable] = useState(false);
     const handleEditButton = () => {
-      setSubmission((prev:any) => ({...prev, "challenges": curChallengeId}))
+      setSubmission((prev:any) => ({...prev, "challenges": selectedChallengeIds}))
       setEditable(prev => {
         if (prev) {
           axios.post(`${BASE_URL}/api/${curEventId}/submission/add`, submission)
@@ -54,14 +69,80 @@ export const ProjectPage: React.FC = () => {
       });
     }
 
+    const [eventList, setEventList] = useState<Event[]>([]);
+    useEffect(() => {
+      axios.get<EventsResponse>(`${BASE_URL}/api/events`)
+      .then(res => setEventList(res.data.result));
+    },[]);
+
+    const [submissions, setSubmissions] = useState<Submission[]>([])
+    useEffect(() => {
+      axios.get<SubmissionsResponse>(`${BASE_URL}/api/${curEventId}/submission/user/${userAuthId}`)
+      .then(res => setSubmissions(res.data.result))
+    },[curEventId])
+
+    const setSubmissionHandler = (val:any) => {
+      if (val === "create_new_submission") {
+        const date_string = new Date().toISOString();
+        axios.post(`${BASE_URL}/api/${curEventId}/submission/add/${userAuthId}`, {
+          name: `New Submission created at ${date_string}`,
+          discordTags: ['default']
+        })
+        .then(res => {
+          sendNotification("Added new submission!", "success");
+        })
+        .catch(res => {
+          sendNotification(String(res.response.data.error), "error");
+        })
+      }
+      setSubmissionId((val as string));
+    };
+
     return (
     <>
+      <Select placeholder="Select an Event" onChange={val => setCurEventId((val as string))}>
+        {eventList.map(event => {
+          return <Select.Option key={event._id} value={event._id}>{event.name}</Select.Option>
+        })}
+      </Select>
       <Spacer h={1}/>
-      <Input width="100%" label="Name" disabled={!editable} value={submission?.name} id="name" onChange={submissionDataHandler}/>
-      <Spacer h={1}/>
-      <Input width="100%" label="Discord Tags" disabled={!editable} value={submission?.discordTags?.join()} id="discordTags" onChange={submissionDataHandler}/>
-      <Spacer h={1}/>
-      <Button onClick={handleEditButton}>{editable ? "Update" : "Edit"}</Button>
+      <Select placeholder="Add/Select a Submission" onChange={setSubmissionHandler}>
+        <Select.Option value="create_new_submission">Create a new submission</Select.Option>
+        <Select.Option divider />
+        {submissions.filter(submission => (submission && submission._id))
+        .map(submission => (
+          <Select.Option key={submission._id} value={submission._id}>{submission.name}</Select.Option>
+        ))}
+      </Select>
+      {curEventId && submissionId &&
+      <>
+        <Spacer h={1}/>
+        <Input width="100%" label="Name" disabled={!editable} value={submission?.name} id="name" onChange={submissionDataHandler}/>
+        <Spacer h={1}/>
+        <Input width="100%" label="Discord Tags" disabled={!editable} value={submission?.discordTags?.join()} id="discordTags" onChange={submissionDataHandler}/>
+        <Spacer h={1}/>
+        <Text>Select challenge(s) to submit this project to:</Text>
+        <Checkbox.Group value={[]} onChange={val => setSelectedChallengeIds(val)}>
+          {allChalleges.map(challenge => <Checkbox value={challenge._id}>{challenge.name}</Checkbox>)}
+        </Checkbox.Group>
+        <Spacer h={1}/>
+        {selectedChallengeIds.length > 0 &&
+          <>
+          <Text>Challenge Specific Questions</Text>
+          {
+            allChalleges.reduce((acc: string[], cur) => {
+              if (selectedChallengeIds.indexOf(cur._id) > -1) acc.push(...cur.questions)
+              return acc
+            }, []).map(id => <li>{id}</li>)
+          }
+        <Spacer h={1}/>
+        <Textarea placeholder="Answer all of the questions above." />
+        <Spacer h={1}/>
+        <Button onClick={handleEditButton}>{editable ? "Update" : "Edit"}</Button>
+          </>
+        }
+        </>
+      }
     </>
     );
 };

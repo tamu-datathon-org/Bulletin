@@ -11,7 +11,7 @@ const createLike = async (userAuthId, submissionId) => {
     if (!submissionId) throw new Error('like submissionId is required');
     const likeObj = {
         userAuthId: userAuthId,
-        submissionId: submissionId,
+        submissionId: await mongoUtil.ObjectId(submissionId),
     };
     return likeObj;
 };
@@ -34,10 +34,12 @@ const removeLike = async (likeId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const like = await client.db(config.database.name)
-            .collection(config.database.collections.likes).findOneAndDelete({ _id: await mongoUtil.ObjectId(likeId) });
+        const doc = await client.db(config.database.name)
+            .collection(config.database.collections.likes).findOne({ _id: await mongoUtil.ObjectId(likeId) });
+        await client.db(config.database.name)
+            .collection(config.database.collections.likes).deleteOne({ _id: await mongoUtil.ObjectId(likeId) });
         await mongoUtil.closeClient(client);
-        return like;
+        return doc;
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error removing like:: ${err.message}`);

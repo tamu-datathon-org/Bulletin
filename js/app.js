@@ -1,6 +1,23 @@
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 require('dotenv').config();
-const app = require("./routes"); 
+
+// controllers
+const submissionController = require('./controllers/submission');
+const adminController = require('./controllers/admin');
+const eventController = require('./controllers/event');
+const pageRouter = require('./controllers/router');
+
+// middlewares
+const bouncerMiddleware = require('./middleware/bouncer');
+// const slugMiddleware = require('./middleware/slugs');
+
 // utilities
+const multerUtil = require('./utils/multer');
+const mongoUtil = require('./utils/mongoDb');
 const logger = require('./utils/logger');
 
 const PORT = process.env.PORT || 3000;
@@ -51,13 +68,12 @@ app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/sourcecode`
  * submission endpoints
  * note: for the "add" endpoint, append /?submissionId=submissionId to upsert
  */
-app.post(`${BASE_PATH}/api/:eventId/submission/add`, submissionController.addSubmission);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove`, submissionController.removeSubmission);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/:type`, multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/add`, submissionController.addLike);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add`, submissionController.addComment);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/remove`, submissionController.removeLike);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/remove`, submissionController.removeComment);
+app.post(`${BASE_PATH}/api/:eventId/submission/add/:userAuthId`, submissionController.addSubmission);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove/:userAuthId`, submissionController.removeSubmission);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/:type/:userAuthId`, multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/:userAuthId`, submissionController.toggleLike);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add/:userAuthId`, submissionController.addComment);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/:commentId/remove/:userAuthId`, submissionController.removeComment);
 
 /**
  * admin enpoints

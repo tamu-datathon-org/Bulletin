@@ -3,9 +3,8 @@ const path = require('path');
 const submissionService = require('../services/submission');
 const config = require('../utils/config');
 const logger = require('../utils/logger');
-const bouncer = require('../middleware/bouncer');
 const eventModel = require('../models/events');
-const bouncerController = require('../middleware/bouncer');
+const userSubmissionLinkModel = require('../models/userSubmissionLinks');
 
 let IS_TESTING = true;
 
@@ -54,6 +53,13 @@ const validateSubmissionFileUploads = async (request) => {
     }
 };
 
+const canAlterSubmission = async (userAuthId, submissionId) => {
+    if (!submissionId) return true;
+    const userSubmissionLink = await userSubmissionLinkModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(userAuthId, submissionId);
+    if (!userSubmissionLink) return false;
+    return true;
+};
+
 // ======================================================== //
 // ========= 📌📌📌 Submission Section 📌📌📌 ====-===== //
 // ======================================================== //
@@ -63,6 +69,7 @@ const addSubmission = async (req, res) => {
     try {
         logger.info(JSON.stringify(req.body));
         const { eventId } = req.params;
+        const { userAuthId } = req.params;
         const { submissionId } = req.body;
 
         await validateAddSubmission(eventId, req.body);
@@ -77,10 +84,11 @@ const addSubmission = async (req, res) => {
             throw new Error('📌submissions are not allowed at this time');
         }
 
-        // get userAuthId
-        const userAuthId = await bouncerController.getAuthId(req.cookies.accessToken);
+        // check if can update
+        if (!(await canAlterSubmission(userAuthId, submissionId)))
+            throw new Error('📌you are not allowed to update this submission');
 
-        response.submissionId = await submissionService.addSubmission(req.body, eventId, userAuthId, submissionId);
+        response.submissionId = await submissionService.addSubmission(req.body, eventId, submissionId);
         response.submission_time = submission_time;
         logger.info('📌submission successful');
         res.status(200).json(response);
@@ -93,15 +101,19 @@ const addSubmission = async (req, res) => {
 
 const removeSubmission = async (req, res) => {
     const response = {};
+    const { eventId } = req.params;
     const { submissionId } = req.params;
+    const { userAuthId } = req.params;
     try {
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
         }
-        const token = req.cookies.accessToken || '';
-        if (!token) throw new Error('📌you are not logged in!');
-        if (!IS_TESTING) await submissionService.validateSubmitterForUpdate(token, submissionId);
-        response.result = await submissionService.deleteSubmission(submissionId);
+
+        // check if can update
+        if (!(await canAlterSubmission(userAuthId, submissionId)))
+            throw new Error('📌you are not allowed to update this submission');
+
+        response.result = await submissionService.removeSubmission(eventId, submissionId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -114,36 +126,17 @@ const removeSubmission = async (req, res) => {
 // ============= 📌📌📌 Like Section 📌📌📌 ============ //
 // ======================================================== //
 
-const addLike = async (req, res) => {
+const toggleLike = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
+    const { userAuthId } = req.params;
     try {
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
         }
-        const token = req.cookies.accessToken || '';
-        if (!token) throw new Error('📌you are not logged in!');
-        const userAuthId = await bouncer.getAuthId(token);
-        response.result = await submissionService.addLike(userAuthId, submissionId);
-        res.status(200).json(response);
-    } catch (err) {
-        logger.info(err);
-        response.error = err.message;
-        res.status(400).json(response);
-    }
-};
-
-const removeLike = async (req, res) => {
-    const response = {};
-    const { submissionId } = req.params;
-    try {
-        if (!submissionId) {
-            throw new Error('📌submissionId is a required parameter');
-        }
-        const token = req.cookies.accessToken || '';
-        if (!token) throw new Error('📌you are not logged in!');
-        const userAuthId = await bouncer.getAuthId(token);
-        response.result = await submissionService.removeLike(userAuthId, submissionId);
+        if (!userAuthId) throw new Error('📌you are not logged in!');
+        logger.info(userAuthId);
+        response.result = await submissionService.toggleLike(userAuthId, submissionId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -160,6 +153,7 @@ const addComment = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
     const { message } = req.body;
+    const { userAuthId } = req.params;
     try {
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
@@ -167,9 +161,7 @@ const addComment = async (req, res) => {
         if (!message) {
             throw new Error('📌message is a required field');
         }
-        const token = req.cookies.accessToken || '';
-        if (!token) throw new Error('📌you are not logged in!');
-        const userAuthId = await bouncer.getAuthId(token);
+        if (!userAuthId) throw new Error('📌you are not logged in!');
         response.result = await submissionService.addComment(userAuthId, submissionId, message);
         res.status(200).json(response);
     } catch (err) {
@@ -182,18 +174,17 @@ const addComment = async (req, res) => {
 const removeComment = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
-    const { time } = req.body;
+    const { commentId } = req.params;
+    const { userAuthId } = req.params;
     try {
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
         }
-        if (!time) {
-            throw new Error('📌time is a required field');
+        if (!commentId) {
+            throw new Error('📌commentId is a required parameter');
         }
-        const token = req.cookies.accessToken || '';
-        if (!token) throw new Error('📌you are not logged in!');
-        const userAuthId = await bouncer.getAuthId(token);
-        response.result = `removed ${await submissionService.removeComment(userAuthId, submissionId, time)} comment`;
+        if (!userAuthId) throw new Error('📌you are not logged in!');
+        response.result = await submissionService.removeComment(userAuthId, submissionId, commentId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -218,8 +209,14 @@ const submissionFileUpload = async (req, res) => {
     const { submissionId } = req.params;
     const { type } = req.params;
     const { originalname } = req.file;
+    const { userAuthId } = req.params;
     try {
         await validateSubmissionFileUploads(req);
+
+        // check if can update
+        if (!(await canAlterSubmission(userAuthId, submissionId)))
+            throw new Error('📌you are not allowed to update this submission');
+
         response.location = await submissionService
             .uploadSubmissionFile(eventId, submissionId, originalname, config.submission_constraints.submission_upload_types[type], buffer);
         res.status(200).json(response);
@@ -234,8 +231,7 @@ module.exports = {
     addSubmission,
     removeSubmission,
     submissionFileUpload,
-    addLike,
-    removeLike,
+    toggleLike,
     addComment,
     removeComment,
 };

@@ -24,7 +24,7 @@ const validateAddAccolade = async (eventId, requestBody) => {
     if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
     if ((name?.length ?? 0) === 0 || typeof name !== 'string') throw new Error('📌name is a required field');
     if (description && typeof description !== 'string') throw new Error('📌description must be a string');
-    if (challengeId && typeof challenge !== 'string') throw new Error('📌challengeId must be a string');
+    if (challengeId && typeof challengeId !== 'string') throw new Error('📌challengeId must be a string');
     if (emoji && typeof emoji !== 'string') throw new Error('📌emoji must be a string');
 };
 
@@ -67,8 +67,8 @@ const removeAccolade = async (req, res) => {
         const { eventId } = req.params;
         const { accoladeId } = req.params;
         if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
-        if ((accoladeId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌accoladeId is a required field');
-        response.accoladeIds = await adminService.removeAccolade(eventId, accoladeId);
+        if ((accoladeId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌accoladeId is a required parameter');
+        response.accoladeId = await adminService.removeAccolade(eventId, accoladeId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -211,7 +211,7 @@ const removeSubmission = async (req, res) => {
         const { submissionId } = req.params;
         if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
         if ((submissionId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌submissionId is a required parameter');
-        response.result = await adminService.removeSubmission(eventId, submissionId);
+        response.submissionId = await adminService.removeSubmission(eventId, submissionId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
