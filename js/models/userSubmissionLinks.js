@@ -11,7 +11,7 @@ const createUserSubmissionLink = async (userAuthId, submissionId, discordTag) =>
     if (!userAuthId) throw new Error('📌userSubmissionLink userAuthId is required');
     if (!discordTag) throw new Error('📌userSubmissionLink discordTag is required');
     const submission_link = {
-        userAuthId: userAuthId,
+        userAuthId: await mongoUtil.ObjectId(userAuthId),
         submissionId: await mongoUtil.ObjectId(submissionId) || '',
         discordTag: discordTag || '',
     };
@@ -96,7 +96,7 @@ const getUserSubmissionLinksByUserAuthId = async (userAuthId) => {
         client = await mongoUtil.getClient();
         const docs = await client.db(config.database.name)
             .collection(config.database.collections.userSubmissionLinks).find({
-                userAuthId: userAuthId,
+                userAuthId: await mongoUtil.ObjectId(userAuthId),
             }).toArray();
         await mongoUtil.closeClient(client);
         return docs;
@@ -118,7 +118,7 @@ const getUserSubmissionLinkBySubmissionIdAndUserAuthId = async (userAuthId, subm
         client = await mongoUtil.getClient();
         const doc = await client.db(config.database.name)
             .collection(config.database.collections.userSubmissionLinks).findOne({
-                userAuthId: userAuthId,
+                userAuthId: await mongoUtil.ObjectId(userAuthId),
                 submissionId: await mongoUtil.ObjectId(submissionId),
             });
         await mongoUtil.closeClient(client);

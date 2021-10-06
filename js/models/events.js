@@ -11,6 +11,8 @@ const event = {
     challengeIds: [],
     accoladeIds: [],
     submissionIds: [],
+    image: null,
+    imageKey: null,
 };
 
 /**
@@ -105,7 +107,8 @@ const getEventById = async (eventId) => {
     try {
         client = await mongoUtil.getClient();
         const event = await client.db(config.database.name)
-            .collection(config.database.collections.events).findOne({ _id: await mongoUtil.ObjectId(eventId) });
+            .collection(config.database.collections.events)
+            .findOne({ _id: await mongoUtil.ObjectId(eventId) });
         await mongoUtil.closeClient(client);
         return event;
     } catch (err) {
@@ -119,7 +122,8 @@ const getEventByName = async (name) => {
     try {
         client = await mongoUtil.getClient();
         const event = await client.db(config.database.name)
-            .collection(config.database.collections.events).findOne({ name: name });
+            .collection(config.database.collections.events)
+            .findOne({ name: name });
         await mongoUtil.closeClient(client);
         return event;
     } catch (err) {

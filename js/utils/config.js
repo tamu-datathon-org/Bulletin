@@ -1,5 +1,3 @@
-const os = require('os');
-
 const defaultConfig = {
     siteName: 'bulletin',
     submission_constraints: {
@@ -46,15 +44,7 @@ const defaultConfig = {
             3: '🥉',
         },
     },
-    tmp_download_path: null,
     redirect_url: 'https://tamudatathon.com/bulletin',
 };
 
-const addConfigData = () => {
-    defaultConfig.submission_constraints.start_time = (new Date('16 October 2021 12:00 UTC')).toISOString();
-    defaultConfig.submission_constraints.end_time = (new Date('17 October 2021 12:00 UTC')).toISOString();
-    defaultConfig.tmp_download_path = os.tmpdir();
-    return defaultConfig;
-};
-
-module.exports = addConfigData();
+module.exports = defaultConfig;

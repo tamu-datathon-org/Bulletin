@@ -5,10 +5,15 @@ const logger = require('../utils/logger');
 const challenge = {
     name: null,
     places: null,
-    questions: [],
+    question1: null,
+    question2: null,
+    question3: null,
+    question4: null,
+    question5: null,
     accoladeIds: [],
-    sponsorsIds: [],
     eventId: null,
+    image: null,
+    imageKey: null,
 };
 
 /**

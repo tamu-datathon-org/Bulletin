@@ -10,7 +10,7 @@ const createLike = async (userAuthId, submissionId) => {
     if (!userAuthId) throw new Error('like userAuthId is required');
     if (!submissionId) throw new Error('like submissionId is required');
     const likeObj = {
-        userAuthId: userAuthId,
+        userAuthId: await mongoUtil.ObjectId(userAuthId),
         submissionId: await mongoUtil.ObjectId(submissionId),
     };
     return likeObj;
@@ -51,7 +51,8 @@ const removeLikes = async (likeIds) => {
     try {
         client = await mongoUtil.getClient();
         await client.db(config.database.name)
-            .collection(config.database.collections.likes).deleteMany({ _id: likeIds });
+            .collection(config.database.collections.likes)
+            .deleteMany({ _id: { $in: likeIds } });
         await mongoUtil.closeClient(client);
     } catch (err) {
         await mongoUtil.closeClient(client);
@@ -64,7 +65,8 @@ const getLike = async (likeId) => {
     try {
         client = await mongoUtil.getClient();
         const doc = await client.db(config.database.name)
-            .collection(config.database.collections.likes).findOne({ _id: await mongoUtil.ObjectId(likeId) });
+            .collection(config.database.collections.likes)
+            .findOne({ _id: await mongoUtil.ObjectId(likeId) });
         await mongoUtil.closeClient(client);
         return doc;
     } catch (err) {
@@ -80,7 +82,7 @@ const getLikeBySubmissionIdAndUserAuthId = async (submissionId, userAuthId) => {
         const doc = await client.db(config.database.name)
             .collection(config.database.collections.likes).findOne({ 
                 submissionId: await mongoUtil.ObjectId(submissionId),
-                userAuthId: userAuthId
+                userAuthId: await mongoUtil.ObjectId(userAuthId),
             });
         await mongoUtil.closeClient(client);
         return doc;
@@ -95,7 +97,8 @@ const removeAllLikesOfSubmissionId = async (submissionId) => {
     try {
         client = await mongoUtil.getClient();
         await client.db(config.database.name)
-            .collection(config.database.collections.likes).deleteMany({ submissionId: await mongoUtil.ObjectId(submissionId) });
+            .collection(config.database.collections.likes)
+            .deleteMany({ submissionId: await mongoUtil.ObjectId(submissionId) });
         await mongoUtil.closeClient(client);
     } catch (err) {
         await mongoUtil.closeClient(client);
