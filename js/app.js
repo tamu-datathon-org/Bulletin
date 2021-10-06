@@ -68,24 +68,24 @@ app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/sourcecode`
  * submission endpoints
  * note: for the "add" endpoint, append /?submissionId=submissionId to upsert
  */
-app.post(`${BASE_PATH}/api/:eventId/submission/add/:userAuthId`, bouncerMiddleware.checkIfLoggedIn(), submissionController.addSubmission);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove/:userAuthId`, bouncerMiddleware.checkIfLoggedIn(), submissionController.removeSubmission);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/:type/:userAuthId`, bouncerMiddleware.checkIfLoggedIn(), multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/:userAuthId`, bouncerMiddleware.checkIfLoggedIn(), submissionController.toggleLike);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add/:userAuthId`, bouncerMiddleware.checkIfLoggedIn(), submissionController.addComment);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/:commentId/remove/:userAuthId`, bouncerMiddleware.checkIfLoggedIn(), submissionController.removeComment);
+app.post(`${BASE_PATH}/api/:eventId/submission/add/:userAuthId`, submissionController.addSubmission);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove/:userAuthId`, submissionController.removeSubmission);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/:type/:userAuthId`, multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/:userAuthId`, submissionController.toggleLike);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add/:userAuthId`, submissionController.addComment);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/:commentId/remove/:userAuthId`, submissionController.removeComment);
 
 /**
  * admin enpoints
  */
-app.post(`${BASE_PATH}/api/admin/add/event`, bouncerMiddleware.checkIfLoggedIn(true), adminController.addEvent);
-app.post(`${BASE_PATH}/api/:eventId/admin/add/accolade`, bouncerMiddleware.checkIfLoggedIn(true), adminController.addAccolade);
-app.post(`${BASE_PATH}/api/:eventId/admin/add/challenge`, bouncerMiddleware.checkIfLoggedIn(true), adminController.addChallenge);
-app.post(`${BASE_PATH}/api/:eventId/admin/remove/event`, bouncerMiddleware.checkIfLoggedIn(true), adminController.removeEvent);
-app.post(`${BASE_PATH}/api/:eventId/admin/remove/accolade/:accoladeId`, bouncerMiddleware.checkIfLoggedIn(true), adminController.removeAccolade);
-app.post(`${BASE_PATH}/api/:eventId/admin/remove/challenge/:challengeId`, bouncerMiddleware.checkIfLoggedIn(true), adminController.removeChallenge);
-app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, bouncerMiddleware.checkIfLoggedIn(true), multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
-app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, bouncerMiddleware.checkIfLoggedIn(true), multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
+app.post(`${BASE_PATH}/api/admin/add/event`, adminController.addEvent);
+app.post(`${BASE_PATH}/api/:eventId/admin/add/accolade`, adminController.addAccolade);
+app.post(`${BASE_PATH}/api/:eventId/admin/add/challenge`, adminController.addChallenge);
+app.post(`${BASE_PATH}/api/:eventId/admin/remove/event`, adminController.removeEvent);
+app.post(`${BASE_PATH}/api/:eventId/admin/remove/accolade/:accoladeId`, adminController.removeAccolade);
+app.post(`${BASE_PATH}/api/:eventId/admin/remove/challenge/:challengeId`, adminController.removeChallenge);
+app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
+app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
 app.post(`${BASE_PATH}/api/:eventId/admin/submission/:submissionId/remove`, adminController.removeSubmission);
 
 if (process.env.NODE_ENV !== 'production')
