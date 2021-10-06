@@ -14,11 +14,15 @@ interface Accolade {
   name: string
 }
 
-interface Challenge {
+export interface Challenge {
   _id: string,
   name: string,
   questions: Array<string>
   places: number
+}
+
+export interface ChallengesResponse {
+  result: Challenge[]
 }
 
 interface ChallengeResp {
@@ -29,7 +33,7 @@ interface AccoladeResp {
   result: Accolade
 }
 
-interface Events {
+export interface Event {
   name: string;
   _id: string;
   description: string;
@@ -45,21 +49,21 @@ interface Events {
   submissions: Submission[];
 }
 
-interface Resp {
-  result: Events;
+export interface EventResponse {
+  result: Event;
 }
 
-interface Response {
-  result: Events[];
+export interface EventsResponse {
+  result: Event[];
 }
 
 /**
  * Entire admin page
  */
  export const AdminPage: React.FC = () => {
-  const [eventList, setEventList] = useState<Events[]>([]);
+  const [eventList, setEventList] = useState<Event[]>([]);
   useEffect(() => {
-    axios.get<Response>(`${BASE_URL}/api/events`)
+    axios.get<EventsResponse>(`${BASE_URL}/api/events`)
     .then(res => setEventList(res.data.result));
   },[]);
 
@@ -71,11 +75,11 @@ interface Response {
   const [eventLoaded, setEventLoaded] = useState(false);
   const [, setToast] = useToasts();
 
-  const [curEvent, setCurEvent] = useState<Events>();
+  const [curEvent, setCurEvent] = useState<Event>();
   useEffect(() => {
     if (curEventId && curEventId !== "create_new_event") {
       setEventLoaded(false);
-      axios.get<Resp>(`${BASE_URL}/api/${curEventId}?full=true`)
+      axios.get<EventResponse>(`${BASE_URL}/api/${curEventId}?full=true`)
       .then(res => {
         setCurEvent(res.data.result);
         setEventLoaded(true);
