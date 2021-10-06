@@ -96,7 +96,8 @@ const addSubmission = async (requestBody, eventId, submissionId = null) => {
     const discordTags = discordObjs.map((d) => d.discordInfo);
     const submissionObj = await submissionModel
         .createSubmission(eventId, requestBody.name, discordTags, userSubmissionLinkIds, challengeIds,
-            requestBody.links, requestBody.tags, requestBody.videoLink);
+            requestBody.links, requestBody.tags, requestBody.videoLink, requestBody.answer1,
+            requestBody.answer2, requestBody.answer3, requestBody.answer4, requestBody.answer5);
     const id = await submissionModel.addSubmission(submissionObj, submissionId) || submissionId;
     await userSubmissionLinksModel.addSubmissionIdToLinks(userSubmissionLinkIds, id);
     await eventsModel.addEventSubmissionId(eventId, id);

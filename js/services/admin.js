@@ -124,7 +124,7 @@ const removeEvent = async (eventId) => {
  * @param {String} _id
  * @returns {String} challenge id
  */
-const addChallenge = async (eventId, name, questions, places, _id = null) => {
+const addChallenge = async (eventId, name, places, _id, question1, question2, question3, question4, question5) => {
     const accoladeIds = [];
     const existingChallengeObj = await challengeModel.getChallenge(eventId, _id);
     let startingPlace = 1;
@@ -134,7 +134,8 @@ const addChallenge = async (eventId, name, questions, places, _id = null) => {
         accoladeIds.push(await addAccolade(eventId, `${ordinalSuffixOf(startingPlace)} in ${name}`, null, emoji));
         startingPlace += 1;
     }
-    const challengeObj = await challengeModel.createChallenge(name, places, accoladeIds, questions, eventId);
+    const challengeObj = await challengeModel.createChallenge(name, places, accoladeIds, 
+        eventId, question1, question2, question3, question4, question5);
     const id = await challengeModel.addChallenge(challengeObj, _id);
     await Promise.all(accoladeIds.map(async (accoladeId) => {
         await accoladeModel.addAccoladeChallengeId(accoladeId, id || _id);

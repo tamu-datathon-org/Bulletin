@@ -408,8 +408,12 @@ describe('admin controller', () => {
             body: {
                 _id: null,
                 name: null,
-                questions: null,
                 places: null,
+                question1: null,
+                question2: null,
+                question3: null,
+                question4: null,
+                question5: null,
             },
         };
 
@@ -418,7 +422,11 @@ describe('admin controller', () => {
             mockRequest.body._id = null;
             mockRequest.body.name = 'Test Challenge';
             mockRequest.body.places = null;
-            mockRequest.body.questions = null;
+            mockRequest.body.question1 = null;
+            mockRequest.body.question2 = null;
+            mockRequest.body.question3 = null;
+            mockRequest.body.question4 = null;
+            mockRequest.body.question5 = null;
         });
 
         afterEach(() => {
@@ -441,7 +449,11 @@ describe('admin controller', () => {
             const expectedRes = {
                 challengeId: mockServiceResponse,
             };
-            mockRequest.body.questions = ['first question', 'second question'];
+            mockRequest.body.question1 = 'question';
+            mockRequest.body.question2 = 'question';
+            mockRequest.body.question3 = 'question';
+            mockRequest.body.question4 = 'question';
+            mockRequest.body.question5 = 'question';
             mockRequest.body.places = config.challenges.max_places;
             await adminController.addChallenge(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(200)).to.equal(true);
@@ -453,7 +465,6 @@ describe('admin controller', () => {
                 challengeId: mockServiceResponse,
             };
             mockRequest.body._id = '100b039d-1877-49d6-8107-91d2cbcf7931';
-            mockRequest.body.questions = ['first question', 'second question'];
             mockRequest.body.places = config.challenges.max_places;
             await adminController.addChallenge(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(200)).to.equal(true);
@@ -515,16 +526,6 @@ describe('admin controller', () => {
                 error: `📌places must be <= ${config.challenges.max_places} and > 0`,
             };
             mockRequest.body.places = -1;
-            await adminController.addChallenge(mockRequest, mockResponse);
-            expect(mockResponse.status.calledWith(400)).to.equal(true);
-            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
-        });
-
-        it('add challenge - INVALID questions invalid type', async () => {
-            const expectedRes = {
-                error: '📌questions must be an array',
-            };
-            mockRequest.body.questions = 'howdy?';
             await adminController.addChallenge(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(400)).to.equal(true);
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);

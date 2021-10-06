@@ -6,12 +6,17 @@ const submission = {
     name: null,
     userSubmissionLinks: [],
     accoladeIds: [],
-    challengeIds: [],
+    challengeId: null,
     links: [],
     tags: [],
     videoLink: null,
     likeIds: [],
     commentIds: [],
+    answer1: null,
+    answer2: null,
+    answer3: null,
+    answer4: null,
+    answer5: null,
     sourceCode: null,
     sourceCodeKey: null,
     icon: null,
@@ -23,7 +28,9 @@ const submission = {
     submission_time: null,
 };
 
-const createSubmission = async (eventId, name, discordTags, userSubmissionLinkIds, challengeIds, links, tags, videoLink) => {
+const createSubmission = async (eventId, name, discordTags,
+    userSubmissionLinkIds, challengeId, links, tags, videoLink,
+    answer1, answer2, answer3, answer4, answer5) => {
     if (!eventId) throw new Error('submission eventId is required');
     if (!name) throw new Error('submission name is required');
     const submissionObj = {
@@ -31,11 +38,16 @@ const createSubmission = async (eventId, name, discordTags, userSubmissionLinkId
         name: name,
         discordTags: discordTags || [],
         userSubmissionLinkids: userSubmissionLinkIds || [],
-        challengeIds: challengeIds || [],
+        challengeIds: challengeId,
         links: links || [],
         tags: tags || [],
         videoLink: videoLink || '',
         submission_time: (new Date()).toISOString(),
+        answer1: answer1,
+        answer2: answer2,
+        answer3: answer3,
+        answer4: answer4,
+        answer5: answer5,
     };
     return submissionObj;
 };
