@@ -157,6 +157,14 @@ const removeComment = async (userAuthId, submissionId, commentId) => {
 };
 
 // ======================================================== //
+// === 📌📌📌 user submission links section 📌📌📌====== //
+// ======================================================== //
+
+const getUserSubmissionLinkBySubmissionIdAndUserAuthId = async (userAuthId, submissionId) => {
+    return userSubmissionLinksModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(userAuthId, submissionId);
+};
+
+// ======================================================== //
 // ====== 📌📌📌 Submission Files Section 📌📌📌 ======= //
 // ======================================================== //
 
@@ -210,4 +218,5 @@ module.exports = {
     getSubmissionsByUserAuthId,
     getSubmissionFile,
     uploadSubmissionFile,
+    getUserSubmissionLinkBySubmissionIdAndUserAuthId,
 };

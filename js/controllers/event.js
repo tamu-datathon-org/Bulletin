@@ -218,8 +218,6 @@ const getSubmissionsByUserAuthId = async (req, res) => {
     try {
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
         if ((userAuthId?.length ?? 0) === 0) throw new Error('📌userAuthId is a required parameter');
-        logger.info(eventId);
-        logger.info(userAuthId);
         response.result = await submissionService.getSubmissionsByUserAuthId(eventId, userAuthId);
         res.status(200).json(response);
     } catch (err) {

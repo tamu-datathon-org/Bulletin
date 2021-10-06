@@ -1,10 +1,10 @@
 const path = require('path');
 // const mimetypes = require('mime-types');
-const submissionService = require('../services/submission');
+let submissionService = require('../services/submission');
+let eventsService = require('../services/events');
+let bouncer = require('../middleware/bouncer');
 const config = require('../utils/config');
 const logger = require('../utils/logger');
-const eventModel = require('../models/events');
-const userSubmissionLinkModel = require('../models/userSubmissionLinks');
 
 let IS_TESTING = true;
 
@@ -53,9 +53,11 @@ const validateSubmissionFileUploads = async (request) => {
     }
 };
 
-const canAlterSubmission = async (userAuthId, submissionId) => {
+const canAlterSubmission = async (token, submissionId) => {
     if (!submissionId) return true;
-    const userSubmissionLink = await userSubmissionLinkModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(userAuthId, submissionId);
+    const userAuthId = await bouncer.getAuthId(token);
+    if (!userAuthId) return false;
+    const userSubmissionLink = await submissionService.getUserSubmissionLinkBySubmissionIdAndUserAuthId(userAuthId, submissionId);
     if (!userSubmissionLink) return false;
     return true;
 };
@@ -69,12 +71,11 @@ const addSubmission = async (req, res) => {
     try {
         logger.info(JSON.stringify(req.body));
         const { eventId } = req.params;
-        const { userAuthId } = req.params;
         const { submissionId } = req.body;
 
         await validateAddSubmission(eventId, req.body);
 
-        const eventObj = await eventModel.getEventById(eventId);
+        const eventObj = await eventsService.getEvent(eventId, false);
         if (!eventObj) throw new Error(`📌event ${eventId} does not exist`);
 
         // check submission time
@@ -85,7 +86,8 @@ const addSubmission = async (req, res) => {
         }
 
         // check if can update
-        if (!(await canAlterSubmission(userAuthId, submissionId)))
+        const token = req.cookies.accessToken || '';
+        if (!(await canAlterSubmission(token, submissionId)))
             throw new Error('📌you are not allowed to update this submission');
 
         response.submissionId = await submissionService.addSubmission(req.body, eventId, submissionId);
@@ -103,14 +105,14 @@ const removeSubmission = async (req, res) => {
     const response = {};
     const { eventId } = req.params;
     const { submissionId } = req.params;
-    const { userAuthId } = req.params;
     try {
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
         }
 
         // check if can update
-        if (!(await canAlterSubmission(userAuthId, submissionId)))
+        const token = req.cookies.accessToken || '';
+        if (!(await canAlterSubmission(token, submissionId)))
             throw new Error('📌you are not allowed to update this submission');
 
         response.result = await submissionService.removeSubmission(eventId, submissionId);
@@ -129,13 +131,13 @@ const removeSubmission = async (req, res) => {
 const toggleLike = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
-    const { userAuthId } = req.params;
     try {
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
         }
+        const token = req.cookies.accessToken || '';
+        const userAuthId = await bouncer.getAuthId(token);
         if (!userAuthId) throw new Error('📌you are not logged in!');
-        logger.info(userAuthId);
         response.result = await submissionService.toggleLike(userAuthId, submissionId);
         res.status(200).json(response);
     } catch (err) {
@@ -153,7 +155,6 @@ const addComment = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
     const { message } = req.body;
-    const { userAuthId } = req.params;
     try {
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
@@ -161,6 +162,8 @@ const addComment = async (req, res) => {
         if (!message) {
             throw new Error('📌message is a required field');
         }
+        const token = req.cookies.accessToken || '';
+        const userAuthId = await bouncer.getAuthId(token);
         if (!userAuthId) throw new Error('📌you are not logged in!');
         response.result = await submissionService.addComment(userAuthId, submissionId, message);
         res.status(200).json(response);
@@ -175,7 +178,6 @@ const removeComment = async (req, res) => {
     const response = {};
     const { submissionId } = req.params;
     const { commentId } = req.params;
-    const { userAuthId } = req.params;
     try {
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
@@ -183,6 +185,8 @@ const removeComment = async (req, res) => {
         if (!commentId) {
             throw new Error('📌commentId is a required parameter');
         }
+        const token = req.cookies.accessToken || '';
+        const userAuthId = await bouncer.getAuthId(token);
         if (!userAuthId) throw new Error('📌you are not logged in!');
         response.result = await submissionService.removeComment(userAuthId, submissionId, commentId);
         res.status(200).json(response);
@@ -209,12 +213,12 @@ const submissionFileUpload = async (req, res) => {
     const { submissionId } = req.params;
     const { type } = req.params;
     const { originalname } = req.file;
-    const { userAuthId } = req.params;
     try {
         await validateSubmissionFileUploads(req);
 
         // check if can update
-        if (!(await canAlterSubmission(userAuthId, submissionId)))
+        const token = req.cookies.accessToken || '';
+        if (!(await canAlterSubmission(token, submissionId)))
             throw new Error('📌you are not allowed to update this submission');
 
         response.location = await submissionService
@@ -227,6 +231,19 @@ const submissionFileUpload = async (req, res) => {
     }
 };
 
+/* testing */
+const setSubmissionService = (mockSubmissionService) => {
+    submissionService = mockSubmissionService;
+};
+
+const setEventsService = (mockEventsService) => {
+    eventsService = mockEventsService;
+};
+
+const setBouncer = (mockBouncer) => {
+    bouncer = mockBouncer;
+};
+
 module.exports = {
     addSubmission,
     removeSubmission,
@@ -234,4 +251,8 @@ module.exports = {
     toggleLike,
     addComment,
     removeComment,
+    // testing
+    setSubmissionService,
+    setEventsService,
+    setBouncer,
 };
