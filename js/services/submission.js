@@ -118,7 +118,7 @@ const removeSubmission = async (eventId, submissionId) => {
     if (doc.photosKey) await removeFileByKey(doc.photosKey);
     if (doc.markdownKey) await removeFileByKey(doc.markdownKey);
     if (doc.sourceCodeKey) await removeFileByKey(doc.sourceCodeKey);
-    return doc;
+    return doc._id;
 };
 
 // ======================================================== //
@@ -135,7 +135,7 @@ const toggleLike = async (userAuthId, submissionId) => {
     const likeObj = await likesModel.createLike(userAuthId, submissionId);
     const likeId = await likesModel.addLike(likeObj);
     await submissionModel.addLike(submissionId, likeId);
-    return likeObj;
+    return likeId;
 };
 
 // ======================================================== //
@@ -146,14 +146,14 @@ const addComment = async (userAuthId, submissionId, message) => {
     const commentObj = await commentsModel.createComment(userAuthId, submissionId, message);
     const commentId = await commentsModel.addComment(commentObj);
     await submissionModel.addComment(submissionId, commentId);
-    return commentObj;
+    return commentId;
 };
 
 const removeComment = async (userAuthId, submissionId, commentId) => {
     const comment = await commentsModel.removeComment(userAuthId, commentId);
     if (comment)
         await submissionModel.removeComment(submissionId, commentId);
-    return comment;
+    return comment._id;
 };
 
 // ======================================================== //

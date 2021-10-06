@@ -5,7 +5,7 @@ const logger = require('../../../utils/logger');
 const eventController = require('../../../controllers/event');
 // const config = require('../../../utils/config');
 
-describe('admin controller', () => {
+describe('event controller', () => {
     const mockResponse = {
         // eslint-disable-next-line no-unused-vars
         status: (code) => mockResponse,
@@ -585,7 +585,7 @@ describe('admin controller', () => {
 
         it('get submission - VALID', async () => {
             const expectedRes = {
-                result: mockEventResponse,
+                result: mockSubsmissionResponse,
             };
             await eventController.getSubmission(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(200)).to.equal(true);
@@ -653,14 +653,14 @@ describe('admin controller', () => {
 
         it('get submissions - VALID', async () => {
             const expectedRes = {
-                result: mockEventResponse,
+                result: mockSubsmissionResponse,
             };
             await eventController.getSubmissions(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(200)).to.equal(true);
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
         });
 
-        it('get submission - INVALID null eventId', async () => {
+        it('get submissions - INVALID null eventId', async () => {
             const expectedRes = {
                 error: '📌eventId is a required parameter',
             };
@@ -670,7 +670,7 @@ describe('admin controller', () => {
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
         });
 
-        it('get submission - INVALID no eventId', async () => {
+        it('get submissions - INVALID no eventId', async () => {
             const expectedRes = {
                 error: '📌eventId is a required parameter',
             };
@@ -703,7 +703,7 @@ describe('admin controller', () => {
 
         it('get submissions by userAuthId - VALID', async () => {
             const expectedRes = {
-                result: mockEventResponse,
+                result: mockSubsmissionResponse,
             };
             await eventController.getSubmissionsByUserAuthId(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(200)).to.equal(true);
