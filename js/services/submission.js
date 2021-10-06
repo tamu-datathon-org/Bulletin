@@ -161,10 +161,10 @@ const removeComment = async (userAuthId, submissionId, commentId) => {
 // ======================================================== //
 
 const uploadSubmissionFile = async (eventId, submissionId, filename, type, buffer) => {
-    const submissionObj = await submissionModel.getChallenge(eventId, submissionId);
+    const submissionObj = await submissionModel.getSubmission(eventId, submissionId);
     if (!submissionObj) throw new Error(`📌submission ${submissionId} does not exist`);
     if (!config.submission_constraints.submission_upload_types[type]) {
-        throw new Error(`📌type ${type} is invalid`);
+        throw new Error(`📌upload type ${type} is invalid`);
     }
     if (submissionObj[`${type}Key`]) {
         await removeFileByKey(submissionObj[`${type}Key`]);
@@ -188,7 +188,7 @@ const getSubmissionFile = async (eventId, submissionId, type) => {
         throw new Error(`📌type ${type} is invalid`);
     }
     if (submissionObj[`${type}Key`]) return getFileByKey(submissionObj[`${type}Key`]);
-    throw new Error(`📌submissionId ${submissionId} does not have an assigned ${type}`);
+    throw new Error(`📌submissionId ${submissionId} does not have uploaded file(s) of ${type}`);
 };
 
 const getFileByKey = async (fileKey) => {
@@ -208,7 +208,6 @@ module.exports = {
     getSubmission,
     getSubmissions,
     getSubmissionsByUserAuthId,
-    //getSubmissionByTags,
     getSubmissionFile,
     uploadSubmissionFile,
 };

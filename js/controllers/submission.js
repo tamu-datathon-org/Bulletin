@@ -108,7 +108,7 @@ const removeSubmission = async (req, res) => {
         if (!submissionId) {
             throw new Error('📌submissionId is a required parameter');
         }
-        logger.info(userAuthId);
+
         // check if can update
         if (!(await canAlterSubmission(userAuthId, submissionId)))
             throw new Error('📌you are not allowed to update this submission');
@@ -209,8 +209,14 @@ const submissionFileUpload = async (req, res) => {
     const { submissionId } = req.params;
     const { type } = req.params;
     const { originalname } = req.file;
+    const { userAuthId } = req.params;
     try {
         await validateSubmissionFileUploads(req);
+
+        // check if can update
+        if (!(await canAlterSubmission(userAuthId, submissionId)))
+            throw new Error('📌you are not allowed to update this submission');
+
         response.location = await submissionService
             .uploadSubmissionFile(eventId, submissionId, originalname, config.submission_constraints.submission_upload_types[type], buffer);
         res.status(200).json(response);

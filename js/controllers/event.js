@@ -1,5 +1,5 @@
-const eventsService = require('../services/events');
-const submissionService = require('../services/submission');
+let eventsService = require('../services/events');
+let submissionService = require('../services/submission');
 const logger = require('../utils/logger');
 
 /**
@@ -35,7 +35,7 @@ const getAllEvents = async (req, res) => {
     try {
         let full = req.query.full || false;
         if (typeof full === 'string') full = full.toLowerCase() === 'true' ? true : false;
-        response.result = await eventsService.getAllEvents(full);
+        response.result = await eventsService.getEvents(full);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -77,7 +77,7 @@ const getAccolades = async (req, res) => {
     try {
         const { eventId } = req.params;
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
-        response.result = await eventsService.getAccoladesByEvent(eventId);
+        response.result = await eventsService.getAccolades(eventId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -135,7 +135,7 @@ const getEventImage = async (req, res) => {
     const response = {};
     const { eventId } = req.params;
     try {
-        if (!eventId) throw new Error('📌eventId is a required parameter');
+        if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
         const readable = await eventsService.getEventImage(eventId);
         readable.pipe(res);
     } catch (err) {
@@ -313,6 +313,15 @@ const getSubmissionSourceCode = async (req, res) => {
     }
 };
 
+/* testing */
+const setSubmissionService = (mockSubmissionService) => {
+    submissionService = mockSubmissionService;
+};
+
+const setEventService = (mockEventService) => {
+    eventsService = mockEventService;
+};
+
 module.exports = {
     getEvent,
     getAllEvents,
@@ -329,4 +338,7 @@ module.exports = {
     getSubmissionPhotos,
     getSubmissionMarkdown,
     getSubmissionSourceCode,
+    // for testing
+    setSubmissionService,
+    setEventService,
 };

@@ -26,7 +26,7 @@ const removeSubmission = async (eventId, submissionId) => {
     const eventObj = await eventsModel.getEventById(eventId);
     logger.info(JSON.stringify(eventObj));
     if (!eventObj) throw new Error(`📌event ${eventId} does not exist`);
-    return submissionService.removeSubmission(eventId, submissionId);
+    return submissionService.removeSubmission(eventId, submissionId)._id;
 };
 
 /**
@@ -93,21 +93,21 @@ const removeEvent = async (eventId) => {
     const eventObj = await eventsModel.removeEventById(eventId);
     await Promise.all(eventObj.accoladeIds.map(async (accoladeId) => {
         try {
-            await accoladeModel.removeAccolade(accoladeId);
+            await accoladeModel.removeAccolade(eventId, accoladeId);
         } catch (err) { 
             // do nothing
         }
     }));
     await Promise.all(eventObj.challengeIds.map(async (challengeId) => {
         try {
-            await challengeModel.removeChallenge(challengeId);
+            await challengeModel.removeChallenge(eventId, challengeId);
         } catch (err) {
             // do nothing
         }
     }));
     await Promise.all(eventObj.submissionIds.map(async (submissionId) => {
         try {
-            await submissionService.removeSubmission(submissionId);
+            await submissionService.removeSubmission(eventId, submissionId);
         } catch (err) {
             // do nothing
         }
