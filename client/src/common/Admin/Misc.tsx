@@ -4,6 +4,8 @@ import axios from "axios";
 import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../../constants";
 import { Submission } from '../Project/Misc';
+import 'react-datepicker/dist/react-datepicker.css'
+import DatePicker from "react-datepicker";
 
 interface Accolade {
   _id: string,
@@ -152,6 +154,7 @@ export interface EventsResponse {
   }
 
   const eventDataHandler = (e:any) => setCurEvent((prev:any) => ({...prev, [e.target.id]: e.target.value}));
+  const eventDateDataHandler = (e:any, place:string) => setCurEvent((prev:any) => ({...prev, [place]: e}));
 
   const [curAccolade, setCurAccolade] = useState<Accolade>();
   const handleEditAccolade = (id:string) => {
@@ -273,6 +276,24 @@ export interface EventsResponse {
       <Input width="100%" label="Name" disabled={!editable} value={curEvent?.name} id="name" onChange={eventDataHandler}/>
       <Spacer h={1}/>
       <Input width="100%" label="Description" disabled={!editable} value={curEvent?.description} id="description" onChange={eventDataHandler}/>
+      <Spacer h={1}/>
+      <DatePicker
+        selected={new Date(Date.parse(curEvent!.start_time))}
+        onChange={(date) => eventDateDataHandler(date?.toString(), "start_time")}
+        timeInputLabel="Time:"
+        dateFormat="MM/dd/yyyy h:mm aa"
+        showTimeInput
+        readOnly={!editable}
+      />
+      <Spacer h={1}/>
+      <DatePicker
+        selected={new Date(Date.parse(curEvent!.end_time))}
+        onChange={(date) => eventDateDataHandler(date?.toString(), "end_time")}
+        timeInputLabel="Time:"
+        dateFormat="MM/dd/yyyy h:mm aa"
+        showTimeInput
+        readOnly={!editable}
+      />
       <Spacer h={1}/>
       <Button onClick={handleEditButton}>{editable ? "Update" : "Edit"}</Button>
       <Spacer h={0.5}/>
