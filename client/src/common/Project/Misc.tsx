@@ -35,21 +35,34 @@ export const ProjectPage: React.FC = () => {
 
     const [allChalleges, setAllChallenges] = useState<Challenge[]>([])
     useEffect(() => {
+      let mounted = true;
       if (curEventId) {
         axios.get<ChallengesResponse>(`${BASE_URL}/api/${curEventId}/challenge`)
-        .then(res => setAllChallenges(res.data.result))
+        .then(res => {
+          if (mounted) {
+            setAllChallenges(res.data.result)
+          }
+        })
+      }
+      return () => {
+        mounted = false;
       }
     },[curEventId])
     const [selectedChallengeIds, setSelectedChallengeIds] = useState<string[]>([]);
 
     const [submission, setSubmission] = useState<Submission>();
     useEffect(() => {
+      let mounted = true
       if (curEventId) {
         axios.get<SubmissionResponse>(`${BASE_URL}/api/${curEventId}/submission/${submissionId}`)
         .then(res => {
-          // console.log(res.data)
-          setSubmission(res.data.result)
+          if (mounted) {
+            setSubmission(res.data.result)
+          }
         });
+      }
+      return () => {
+        mounted = false
       }
     }, [curEventId, submissionId])
     const submissionDataHandler = (e:any) => setSubmission((prev:any) => ({...prev, [e.target.id]: (e.target.id === "name" ? e.target.value : e.target.value.split(','))}));
@@ -71,14 +84,32 @@ export const ProjectPage: React.FC = () => {
 
     const [eventList, setEventList] = useState<Event[]>([]);
     useEffect(() => {
+      let mounted = true
       axios.get<EventsResponse>(`${BASE_URL}/api/events`)
-      .then(res => setEventList(res.data.result));
+      .then(res => {
+        if (mounted) {
+          setEventList(res.data.result)
+        }
+      });
+      return () => {
+        mounted = false
+      }
     },[]);
 
     const [submissions, setSubmissions] = useState<Submission[]>([])
     useEffect(() => {
-      axios.get<SubmissionsResponse>(`${BASE_URL}/api/${curEventId}/submission/user/${userAuthId}`)
-      .then(res => setSubmissions(res.data.result))
+      let mounted = true
+      if (curEventId && userAuthId) {
+        axios.get<SubmissionsResponse>(`${BASE_URL}/api/${curEventId}/submission/user/${userAuthId}`)
+        .then(res => {
+          if (mounted) {
+            setSubmissions(res.data.result)
+          }
+        })
+      }
+      return () => {
+        mounted = false
+      }
     },[curEventId])
 
     const setSubmissionHandler = (val:any) => {

@@ -61,10 +61,20 @@ export interface EventsResponse {
  * Entire admin page
  */
  export const AdminPage: React.FC = () => {
+  const [eventsLoaded, setEventsLoaded] = useState(false);
   const [eventList, setEventList] = useState<Event[]>([]);
   useEffect(() => {
+    let mounted = true
     axios.get<EventsResponse>(`${BASE_URL}/api/events`)
-    .then(res => setEventList(res.data.result));
+    .then(res => {
+      if (mounted){
+        setEventList(res.data.result)
+       setEventsLoaded(true)
+      }
+    });
+    return () => {
+      mounted = false;
+    }
   },[]);
 
   const sendNotification = (msg:string, intent: any) => {
@@ -77,13 +87,19 @@ export interface EventsResponse {
 
   const [curEvent, setCurEvent] = useState<Event>();
   useEffect(() => {
+    let mounted = true
     if (curEventId && curEventId !== "create_new_event") {
       setEventLoaded(false);
       axios.get<EventResponse>(`${BASE_URL}/api/${curEventId}?full=true`)
       .then(res => {
-        setCurEvent(res.data.result);
-        setEventLoaded(true);
+        if (mounted) {
+          setCurEvent(res.data.result);
+          setEventLoaded(true);
+        }
       });
+      return () => {
+        mounted = false;
+      }
     }
   },[curEventId]);
 
@@ -236,7 +252,7 @@ export interface EventsResponse {
     })
    }
 
-  if (eventList.length === 0) {
+  if (!eventsLoaded) {
     return (<Spinner />)
   } else {
     return (
