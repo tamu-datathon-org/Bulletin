@@ -1,4 +1,4 @@
-import { Button, Card, Divider, Toggle, Fieldset, Image, Input, Select, Spacer, Spinner, Text, useToasts } from "@geist-ui/react";
+import { Button, Card, Radio, Divider, Toggle, Fieldset, Image, Input, Select, Spacer, Spinner, Text, useToasts } from "@geist-ui/react";
 import { Upload } from '@geist-ui/react-icons';
 import axios from "axios";
 import React, { useEffect, useState } from 'react';
@@ -334,11 +334,14 @@ export interface EventsResponse {
           </Card>
           <Spacer h={0.5}/>
           {curEvent?.accolades.map(accolade => (
-            <Card key={accolade._id}>
-              <Text>{accolade.name}</Text>
-              <Text>{accolade.description}</Text>
-              <Button auto scale={0.5} value={accolade._id} onClick={() => handleEditAccolade(accolade._id)}>Edit</Button>
-            </Card>
+            <React.Fragment key={accolade._id}>
+              <Card>
+                <Text>{accolade.name}</Text>
+                <Text>{accolade.description}</Text>
+                <Button auto scale={0.5} value={accolade._id} onClick={() => handleEditAccolade(accolade._id)}>Edit</Button>
+              </Card>
+              <Spacer h={0.5}/>
+            </React.Fragment>
             )
           )}
         </Fieldset>
@@ -351,6 +354,17 @@ export interface EventsResponse {
             <Card.Content>
               <Input label="Name" value={curChallenge?.name} id="name" onChange={challengeDataHandler}/>
               <Spacer h={0.5}/>
+              <Text>Places:</Text>
+              <Radio.Group value={curChallenge?.places} id="places" onChange={(p:any) => setCurChallenge((prev:any) => ({...prev, places: p}))} useRow>
+                {[1,2,3].map(i => <Radio key={i} value={i}>{i}</Radio>)}
+              </Radio.Group>
+              <Spacer h={0.5}/>
+                <Input label="Question 1" value={curChallenge?.question1} id="question1" key="question1" onChange={challengeDataHandler}/>
+                <Input label="Question 2" value={curChallenge?.question2} id="question2" key="question2" onChange={challengeDataHandler}/>
+                <Input label="Question 3" value={curChallenge?.question3} id="question3" key="question3" onChange={challengeDataHandler}/>
+                <Input label="Question 4" value={curChallenge?.question4} id="question4" key="question4" onChange={challengeDataHandler}/>
+                <Input label="Question 5" value={curChallenge?.question5} id="question5" key="question5" onChange={challengeDataHandler}/>
+              <Spacer h={0.5}/>
               <Button onClick={handleUpdateChallenge}>{curChallenge?._id ? "Update" : "Add"}</Button>
               <Spacer h={0.5}/>
               <Button onClick={deleteChallenge}>Delete</Button>
@@ -358,11 +372,13 @@ export interface EventsResponse {
           </Card>
           <Spacer h={0.5}/>
           {curEvent && curEvent.challenges.map(challenge => (
-            <Card key={challenge._id}>
-              <Text>{challenge.name}</Text>
-              <Text>{challenge.question1}</Text>)
-              <Button auto scale={0.5} value={challenge._id} onClick={() => handleEditChallenge(challenge._id)}>Edit</Button>
-            </Card>
+            <React.Fragment key={challenge._id}>
+              <Card key={challenge._id}>
+                <Text>{challenge.name}</Text>
+                <Button auto scale={0.5} value={challenge._id} onClick={() => handleEditChallenge(challenge._id)}>Edit</Button>
+              </Card>
+              <Spacer h={0.5}/>
+            </React.Fragment>
             )
           )}
         </Fieldset>
