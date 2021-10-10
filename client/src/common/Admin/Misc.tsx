@@ -96,7 +96,7 @@ export interface EventsResponse {
   const [curEvent, setCurEvent] = useState<Event>();
   useEffect(() => {
     let mounted = true
-    if (curEventId && curEventId !== "create_new_event") {
+    if (curEventId) {
       setEventLoaded(false);
       axios.get<EventResponse>(`${BASE_URL}/api/${curEventId}?full=true`)
       .then(res => {
@@ -126,8 +126,9 @@ export interface EventsResponse {
       .catch(res => {
         sendNotification(String(res.response.data.error), "error");
       })
+    } else {
+      setCurEventId((val as string));
     }
-    setCurEventId((val as string));
   };
   
   const [editable, setEditable] = useState(false);
