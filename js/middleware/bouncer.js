@@ -1,5 +1,7 @@
 const fetch = require('node-fetch');
 const { StatusCodes } = require('http-status-codes');
+const logger = require('../utils/logger');
+// const logger = require('../utils/logger');
 
 const gatekeeperUrl = process.env.GATEKEEPER_URL || 'https://tamudatathon.com/auth';
 const harmoniaUrl = process.env.HARMONIA_URL || 'https://tamudatathon.com/guild';
@@ -59,9 +61,18 @@ const getAuthId = async (token) => {
     return authId;
 };
 
-const getDiscordUser = async (userAuthId) => {
+const getDiscordUser = async (discordTag, userAuthId, accessToken) => {
     let response = null;
-    response = await fetch(`${harmoniaUrl}/api/users/?userAuthId=${userAuthId}`);
+    logger.info(accessToken);
+    if (discordTag) {
+        response = await fetch(`${harmoniaUrl}/api/users/?discordInfo=${discordTag}`,
+            { headers: { cookies: { accessToken: accessToken } } });
+    } else if (userAuthId) {
+        response = await fetch(`${harmoniaUrl}/api/users/?userAuthId=${userAuthId}`,
+            { headers: { cookies: { accessToken: accessToken } } });
+    }
+    const res = await response.json();
+    logger.info(JSON.stringify(res));
     return response.json();
 };
 

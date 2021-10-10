@@ -95,10 +95,12 @@ const addSubmission = async (req, res) => {
 
         // check if can update
         const token = req.cookies.accessToken || '';
+        logger.info('token');
+        logger.info(token);
         if (!(await canAlterSubmission(token, _id)))
             throw new Error('📌you are not allowed to update this submission');
 
-        response.submissionId = await submissionService.addSubmission(req.body, eventId, _id);
+        response.submissionId = await submissionService.addSubmission(req.body, eventId, _id, token);
         logger.info('📌submission successful');
         res.status(200).json(response);
     } catch (err) {

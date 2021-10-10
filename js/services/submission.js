@@ -57,17 +57,14 @@ const getSubmissionsByUserAuthId = async (eventId, userAuthId) => {
  * @param {String} submissionId 
  * @returns {String} submission id
  */
-const addSubmission = async (requestBody, eventId, submissionId = null) => {
+const addSubmission = async (requestBody, eventId, submissionId, token) => {
 
     // get discord Objects from harmonia
     // const discordObjs = [{discordInfo:'dan#22', discordTag:'dan#22', userAuthId: "5efc0b99a37c4300032acbce"}];
-    const discordObjs = [];
-    await Promise.all(requestBody.discordTags.map(async (discordTag) => {
-        const discordUser = await bouncerController.getDiscordUser(discordTag, null);
-        if (discordUser) {
-            discordObjs.push(discordUser);
-            return;
-        }
+    const discordObjs = await Promise.all(requestBody.discordTags.map(async (discordTag) => {
+        const discordUser = await bouncerController.getDiscordUser(discordTag, null, token);
+        if (discordUser.userAuthId)
+            return discordUser;
         throw new Error(`📌discordTag ${discordTag} does not exist`);
     }));
 
