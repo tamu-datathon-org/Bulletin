@@ -56,7 +56,7 @@ const validateSubmissionFileUploads = async (request) => {
 
 const canAlterSubmission = async (token, submissionId) => {
     if (!submissionId) return true;
-    const userAuthId = await bouncer.getAuthId(token);
+    const userAuthId = await bouncer.getAuthId(token); // "5efc0b99a37c4300032acbce"
     if (!userAuthId) return false;
     const userSubmissionLink = await submissionService.getUserSubmissionLinkBySubmissionIdAndUserAuthId(userAuthId, submissionId);
     if (!userSubmissionLink) return false;
