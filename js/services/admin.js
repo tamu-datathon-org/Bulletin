@@ -125,17 +125,24 @@ const removeEvent = async (eventId) => {
  * @returns {String} challenge id
  */
 const addChallenge = async (eventId, name, places, _id, question1, question2, question3, question4, question5) => {
-    const accoladeIds = [];
     const existingChallengeObj = await challengeModel.getChallenge(eventId, _id);
-    let startingPlace = 1;
-    if (existingChallengeObj) startingPlace = (existingChallengeObj.places || 0) + 1;
-    while (startingPlace <= places) {
-        const emoji = config.challenges.place_emojis[startingPlace] || config.challenges.place_emojis[3];
-        accoladeIds.push(await addAccolade(eventId, `${ordinalSuffixOf(startingPlace)} in ${name}`, null, emoji));
-        startingPlace += 1;
+    // just delete the accolades (its easier)
+    if (existingChallengeObj) {
+        await Promise.all(existingChallengeObj.accoladeIds.map(async accoladeId => {
+            await accoladeModel.removeAccolade(eventId, accoladeId);
+        }));
+    }
+    // add new accolades
+    let i = 1;
+    const accoladeIds = [];
+    while (i <= places) {
+        const emoji = config.challenges.place_emojis[i];
+        accoladeIds.push(await addAccolade(eventId, `${ordinalSuffixOf(i)} in ${name}`, null, emoji));
+        i += 1;
     }
     const challengeObj = await challengeModel.createChallenge(name, places, accoladeIds, 
         eventId, question1, question2, question3, question4, question5);
+    logger.info(JSON.stringify(challengeObj));
     const id = await challengeModel.addChallenge(challengeObj, _id);
     await Promise.all(accoladeIds.map(async (accoladeId) => {
         await accoladeModel.addAccoladeChallengeId(accoladeId, id || _id);
