@@ -1,4 +1,4 @@
-import { Button, Input, Textarea, Spacer, Select, useToasts, Checkbox, Text } from "@geist-ui/react";
+import { Button, Input, Radio, Spacer, Select, useToasts, Text } from "@geist-ui/react";
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../../constants";
@@ -10,7 +10,13 @@ export interface Submission {
   tags: Array<string>,
   links: Array<string>,
   discordTags: Array<string>,
-  challenges: Array<string>,
+  challengeIds: Array<string>,
+  videoLink: string,
+  answer1: string,
+  answer2: string,
+  answer3: string,
+  answer4: string,
+  answer5: string,
 }
 
 interface SubmissionResponse {
@@ -48,7 +54,6 @@ export const ProjectPage: React.FC = () => {
         mounted = false;
       }
     },[curEventId])
-    const [selectedChallengeIds, setSelectedChallengeIds] = useState<string[]>([]);
 
     const [submission, setSubmission] = useState<Submission>();
     useEffect(() => {
@@ -65,11 +70,14 @@ export const ProjectPage: React.FC = () => {
         mounted = false
       }
     }, [curEventId, submissionId])
-    const submissionDataHandler = (e:any) => setSubmission((prev:any) => ({...prev, [e.target.id]: (e.target.id === "name" ? e.target.value : e.target.value.split(','))}));
+    const submissionDataHandler = (e:any) => setSubmission((prev:any) => (
+      {
+        ...prev,
+        [e.target.id]: ((e.target.id === "name" || e.target.id === "videoLink") ? e.target.value : e.target.value.split(','))
+      }));
 
     const [editable, setEditable] = useState(false);
     const handleEditButton = () => {
-      setSubmission((prev:any) => ({...prev, "challenges": selectedChallengeIds}))
       setEditable(prev => {
         if (prev) {
           axios.post(`${BASE_URL}/api/${curEventId}/submission/add`, submission)
@@ -115,9 +123,11 @@ export const ProjectPage: React.FC = () => {
     const setSubmissionHandler = (val:any) => {
       if (val === "create_new_submission") {
         const date_string = new Date().toISOString();
-        axios.post(`${BASE_URL}/api/${curEventId}/submission/add/${userAuthId}`, {
+        axios.post(`${BASE_URL}/api/${curEventId}/submission/add`, {
           name: `New Submission created at ${date_string}`,
-          discordTags: ['default']
+          discordTags: ['default'],
+          videoLink: "dummylink",
+          challengeIds: []
         })
         .then(res => {
           sendNotification("Added new submission!", "success");
@@ -125,8 +135,9 @@ export const ProjectPage: React.FC = () => {
         .catch(res => {
           sendNotification(String(res.response.data.error), "error");
         })
+      } else {
+        setSubmissionId((val as string));
       }
-      setSubmissionId((val as string));
     };
 
     return (
@@ -147,25 +158,34 @@ export const ProjectPage: React.FC = () => {
       </Select>
       {curEventId && submissionId &&
       <>
+      <Text>{JSON.stringify(submission)}</Text>
         <Spacer h={1}/>
         <Input width="100%" label="Name" disabled={!editable} value={submission?.name} id="name" onChange={submissionDataHandler}/>
         <Spacer h={1}/>
+        <Input width="100%" label="Tags" disabled={!editable} value={submission?.tags?.join()} id="tags" onChange={submissionDataHandler}/>
+        <Spacer h={1}/>
+        <Input width="100%" label="Links" disabled={!editable} value={submission?.links?.join()} id="links" onChange={submissionDataHandler}/>
+        <Spacer h={1}/>
         <Input width="100%" label="Discord Tags" disabled={!editable} value={submission?.discordTags?.join()} id="discordTags" onChange={submissionDataHandler}/>
         <Spacer h={1}/>
-        <Text>Select challenge(s) to submit this project to:</Text>
-        <Checkbox.Group value={[]} onChange={val => setSelectedChallengeIds(val)}>
-          {allChalleges.map(challenge => <Checkbox value={challenge._id}>{challenge.name}</Checkbox>)}
-        </Checkbox.Group>
+        <Input width="100%" label="Video Link" disabled={!editable} value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler}/>
         <Spacer h={1}/>
-        {selectedChallengeIds.length > 0 &&
-          <>
-          <Text>Challenge Specific Questions</Text>
+        <Text>Select a challenge to submit this project to:</Text>
+        <Radio.Group useRow disabled={!editable} value={submission?.challengeIds?.at(0)} onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeIds: [c]}))}>
+          {allChalleges.map(challenge => <Radio key={challenge._id} value={challenge._id}>{challenge.name}</Radio>)}
+        </Radio.Group>
+        <Text>{JSON.stringify(submission?.challengeIds?.at(0))}</Text>
         <Spacer h={1}/>
-        <Textarea placeholder="Answer all of the questions above." />
-        <Spacer h={1}/>
-        <Button onClick={handleEditButton}>{editable ? "Update" : "Edit"}</Button>
-          </>
-        }
+        {allChalleges.filter(challenge => challenge._id === submission?.challengeIds?.at(0)).map(challenge =>
+            <>
+              {challenge.question1 && <Input width="100%" label={challenge?.question1} disabled={!editable} value={submission?.answer1} key="answer1" id="answer1" onChange={submissionDataHandler}/>}
+              {challenge.question2 && <Input width="100%" label={challenge?.question2} disabled={!editable} value={submission?.answer2} key="answer2" id="answer2" onChange={submissionDataHandler}/>}
+              {challenge.question3 && <Input width="100%" label={challenge?.question3} disabled={!editable} value={submission?.answer3} key="answer3" id="answer3" onChange={submissionDataHandler}/>}
+              {challenge.question4 && <Input width="100%" label={challenge?.question4} disabled={!editable} value={submission?.answer4} key="answer4" id="answer4" onChange={submissionDataHandler}/>}
+              {challenge.question5 && <Input width="100%" label={challenge?.question5} disabled={!editable} value={submission?.answer5} key="answer5" id="answer5" onChange={submissionDataHandler}/>}
+            </>
+        )}
+        <Button onClick={handleEditButton}>{editable ? "Update" : "Edit"}</Button>      
         </>
       }
     </>
