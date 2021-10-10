@@ -321,7 +321,7 @@ export interface EventsResponse {
               <Spacer h={0.5}/>
               <Input label="Emoji" value={curAccolade?.emoji} id="emoji" onChange={accoladeDataHandler}/>
               <Spacer h={0.5}/>
-              <Select placeholder="Select a Challenge" onChange={(s:any) => setCurAccolade((prev:any) => ({...prev, challengeId: s}))}>
+              <Select value={curAccolade?.challengeId} placeholder="Select a Challenge" onChange={(s:any) => setCurAccolade((prev:any) => ({...prev, challengeId: s}))}>
                 {curEvent?.challenges.map(challenge => {
                   return <Select.Option key={challenge._id} value={challenge._id}>{challenge.name}</Select.Option>
                 })}
