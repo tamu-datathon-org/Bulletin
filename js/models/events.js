@@ -37,7 +37,7 @@ const createEvent = async (name, description, start_time, end_time, show, challe
         description: description,
         start_time: (new Date(start_time)).toISOString(),
         end_time: (new Date(end_time)).toISOString(),
-        show: show || true,
+        show: show ?? true,
         ...(!challengeIds && {challengeIds: []}),
         ...(!accoladeIds && {accoladeIds: []}),
         ...(!submissionIds && {submissionIds: []}),

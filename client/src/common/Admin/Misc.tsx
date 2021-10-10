@@ -1,4 +1,4 @@
-import { Button, Card, Divider, Fieldset, Image, Input, Select, Spacer, Spinner, Text, useToasts } from "@geist-ui/react";
+import { Button, Card, Divider, Toggle, Fieldset, Image, Input, Select, Spacer, Spinner, Text, useToasts } from "@geist-ui/react";
 import { Upload } from '@geist-ui/react-icons';
 import axios from "axios";
 import React, { useEffect, useState } from 'react';
@@ -38,6 +38,7 @@ interface AccoladeResp {
 export interface Event {
   name: string;
   _id: string;
+  show: boolean;
   description: string;
   start_time: string;
   end_time: string;
@@ -277,6 +278,14 @@ export interface EventsResponse {
       <Spacer h={1}/>
       <Input width="100%" label="Description" disabled={!editable} value={curEvent?.description} id="description" onChange={eventDataHandler}/>
       <Spacer h={1}/>
+      <Text>Visible to public:</Text>
+      <Toggle checked={curEvent?.show} disabled={!editable} onChange={(e:any) => {
+        e.target.value = e.target.checked
+        e.target.id = "show"
+        eventDataHandler(e);
+        }}/>
+      <Spacer h={1}/>
+      <Text>Start time:</Text>
       <DatePicker
         selected={new Date(Date.parse(curEvent!.start_time))}
         onChange={(date) => eventDateDataHandler(date?.toString(), "start_time")}
@@ -286,6 +295,7 @@ export interface EventsResponse {
         readOnly={!editable}
       />
       <Spacer h={1}/>
+      <Text>End time:</Text>
       <DatePicker
         selected={new Date(Date.parse(curEvent!.end_time))}
         onChange={(date) => eventDateDataHandler(date?.toString(), "end_time")}
