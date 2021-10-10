@@ -12,7 +12,7 @@ const createUserSubmissionLink = async (userAuthId, submissionId, discordTag) =>
     if (!discordTag) throw new Error('📌userSubmissionLink discordTag is required');
     const submission_link = {
         userAuthId: await mongoUtil.ObjectId(userAuthId),
-        submissionId: await mongoUtil.ObjectId(submissionId) || '',
+        submissionId: await mongoUtil.ObjectId(submissionId),
         discordTag: discordTag || '',
     };
     return submission_link;

@@ -1,7 +1,7 @@
 const defaultConfig = {
     siteName: 'bulletin',
     submission_constraints: {
-        max_participants: 5,
+        max_participants: 4,
         sourceCode_formats: ['.tar', '.zip'],
         photos_formats: ['.zip'],
         icon_formats: ['.jpg', '.png'],
@@ -26,7 +26,6 @@ const defaultConfig = {
             accolades: 'accolades',
             challenges: 'challenges',
             events: 'events',
-            sponsors: 'sponsors',
         },
         bucket_name: 'fs',
         entryID_length: 24,

@@ -60,7 +60,8 @@ const getSubmissionsByUserAuthId = async (eventId, userAuthId) => {
 const addSubmission = async (requestBody, eventId, submissionId = null) => {
 
     // get discord Objects from harmonia
-    //const discordObjs = [{discordInfo:'dan#22', discordTag:'dan#22', userAuthId: "5efc0b99a37c4300032acbce"}];
+    // const discordObjs = [{discordInfo:'dan#22', discordTag:'dan#22', userAuthId: "5efc0b99a37c4300032acbce"}];
+    const discordObjs = [];
     await Promise.all(requestBody.discordTags.map(async (discordTag) => {
         const discordUser = await bouncerController.getDiscordUser(discordTag, null);
         if (discordUser) {
@@ -89,8 +90,8 @@ const addSubmission = async (requestBody, eventId, submissionId = null) => {
         );
         const userSubmissionLinkObj = await userSubmissionLinksModel
             .createUserSubmissionLink(discordObj.userAuthId, submissionId, discordObj.discordTag); // no submissionId yet
-        console.log('obj', userSubmissionLinkObj)
-        console.log('id', userSubmissionLink?._id)
+        console.log('obj', userSubmissionLinkObj);
+        console.log('id', userSubmissionLink?._id);
         return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj, userSubmissionLink?._id) || userSubmissionLink._id;
     }));
 
@@ -101,7 +102,7 @@ const addSubmission = async (requestBody, eventId, submissionId = null) => {
             requestBody.links, requestBody.tags, requestBody.videoLink, requestBody.answer1,
             requestBody.answer2, requestBody.answer3, requestBody.answer4, requestBody.answer5);
     const id = await submissionModel.addSubmission(submissionObj, submissionId) || submissionId;
-    console.log('added id', id)
+    console.log('added id', id);
     await userSubmissionLinksModel.addSubmissionIdToLinks(userSubmissionLinkIds, id);
     await eventsModel.addEventSubmissionId(eventId, id);
     logger.info(`📌submitted with submissionId ${id}`);
