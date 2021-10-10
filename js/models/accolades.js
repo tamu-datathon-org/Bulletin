@@ -102,13 +102,28 @@ const getAccolade = async (eventId, accoladeId) => {
     }
 };
 
-const getAccolades = async (eventId) => {
+const getAccoladesByEventId = async (eventId) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
         const accolades = await client.db(config.database.name)
             .collection(config.database.collections.accolades)
             .find({ eventId: await mongoUtil.ObjectId(eventId) }).toArray();
+        await mongoUtil.closeClient(client);
+        return accolades;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting accolades:: ${err.message}`);
+    }
+};
+
+const getAccoladesByAccoladeIds = async (accoladeIds) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const accolades = await client.db(config.database.name)
+            .collection(config.database.collections.accolades)
+            .find({ _id: { $in: accoladeIds } }).toArray();
         await mongoUtil.closeClient(client);
         return accolades;
     } catch (err) {
@@ -141,6 +156,7 @@ module.exports = {
     removeAccolade,
     removeAccolades,
     getAccolade,
-    getAccolades,
+    getAccoladesByEventId,
+    getAccoladesByAccoladeIds,
     addAccoladeChallengeId,
 };

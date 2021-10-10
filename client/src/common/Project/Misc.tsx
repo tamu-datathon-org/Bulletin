@@ -160,12 +160,6 @@ export const ProjectPage: React.FC = () => {
         {selectedChallengeIds.length > 0 &&
           <>
           <Text>Challenge Specific Questions</Text>
-          {
-            allChalleges.reduce((acc: string[], cur) => {
-              if (selectedChallengeIds.indexOf(cur._id) > -1) acc.push(...cur.questions)
-              return acc
-            }, []).map(id => <li>{id}</li>)
-          }
         <Spacer h={1}/>
         <Textarea placeholder="Answer all of the questions above." />
         <Spacer h={1}/>

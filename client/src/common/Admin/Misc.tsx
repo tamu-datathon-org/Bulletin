@@ -18,8 +18,13 @@ interface Accolade {
 
 export interface Challenge {
   _id: string,
+  accoladeIds: Array<string>
   name: string,
-  questions: Array<string>
+  question1: string,
+  question2: string,
+  question3: string,
+  question4: string,
+  question5: string,
   places: number
 }
 
@@ -193,26 +198,16 @@ export interface EventsResponse {
 
    const [curChallenge, setCurChallenge]=useState<Challenge>();
    const challengeDataHandler = (e:any) => setCurChallenge((prev:any) => ({...prev,  [e.target.id]: e.target.value}));
-   const handleQuestionChange = (i:number, e:any) => {
-     const values:Array<string> = curChallenge ? curChallenge.questions : [];
-     values[i]=(e.target.value as string)
-     setCurChallenge((prev:any) => ({...prev, "questions":values})) 
-   }
-   const handleQuestionDelete = (i:number) => {
-     const values = [...curChallenge!.questions]
-     values.splice(i,1)
-     setCurChallenge((prev:any) => ({...prev, "questions":values}))
-   }
-   const handleQuestionAdd = () => {
-     const values:Array<string> = curChallenge?.questions ? curChallenge.questions : [];
-     values.push("");
-     setCurChallenge((prev:any)=>({...prev,"questions":values}))
-   }
    const emptyCurChallenge = () => setCurChallenge({
     _id: "",
     name: "",
-    questions: [],
     places: 0,
+    accoladeIds: [],
+    question1: "",
+    question2: "",
+    question3: "",
+    question4: "",
+    question5: "",
    })
    const handleUpdateChallenge = () => {
      axios.post(`${BASE_URL}/api/${curEventId}/admin/add/challenge`, curChallenge)
@@ -248,7 +243,6 @@ export interface EventsResponse {
      data.append('file', file);
      axios.post(`${BASE_URL}/api/${curEventId}/admin/upload/eventImage`, data)
      .then(res => {
-       console.log(res)
       sendNotification("Uploaded image!", "success")
     })
     .catch(res => {
@@ -322,7 +316,16 @@ export interface EventsResponse {
             <Divider />
             <Card.Content>
               <Input label="Name" value={curAccolade?.name} id="name" onChange={accoladeDataHandler}/>
+              <Spacer h={0.5}/>
               <Input label="Description" value={curAccolade?.description} id="description" onChange={accoladeDataHandler}/>
+              <Spacer h={0.5}/>
+              <Input label="Emoji" value={curAccolade?.emoji} id="emoji" onChange={accoladeDataHandler}/>
+              <Spacer h={0.5}/>
+              <Select placeholder="Select a Challenge" onChange={(s:any) => setCurAccolade((prev:any) => ({...prev, challengeId: s}))}>
+                {curEvent?.challenges.map(challenge => {
+                  return <Select.Option key={challenge._id} value={challenge._id}>{challenge.name}</Select.Option>
+                })}
+              </Select>
               <Spacer h={0.5}/>
               <Button onClick={handleUpdateAccolade}>{curAccolade?._id ? "Update" : "Add"}</Button>
               <Spacer h={0.5}/>
@@ -347,14 +350,6 @@ export interface EventsResponse {
             <Divider />
             <Card.Content>
               <Input label="Name" value={curChallenge?.name} id="name" onChange={challengeDataHandler}/>
-              {
-                curChallenge?.questions?.map((question,i) =>
-                <>
-                <Input value={question} onChange={e => handleQuestionChange(i,e)}></Input>
-                <Button value={i} onClick={()=>handleQuestionDelete(i)}>Remove</Button>
-                </>)
-              }
-              <Button onClick={handleQuestionAdd}>Add Question</Button>
               <Spacer h={0.5}/>
               <Button onClick={handleUpdateChallenge}>{curChallenge?._id ? "Update" : "Add"}</Button>
               <Spacer h={0.5}/>
@@ -365,7 +360,7 @@ export interface EventsResponse {
           {curEvent && curEvent.challenges.map(challenge => (
             <Card key={challenge._id}>
               <Text>{challenge.name}</Text>
-              {challenge.questions.map(question=><Text>{question}</Text>)}
+              <Text>{challenge.question1}</Text>)
               <Button auto scale={0.5} value={challenge._id} onClick={() => handleEditChallenge(challenge._id)}>Edit</Button>
             </Card>
             )

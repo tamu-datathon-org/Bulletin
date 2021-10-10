@@ -6,7 +6,7 @@ const frontendS3 = require('../utils/frontendS3');
 
 const getEventFull = async (eventObj) => {
     const eventCopy = eventObj;
-    eventCopy.accolades = await accoladeModel.getAccolades(eventObj.eventId);
+    eventCopy.accolades = await accoladeModel.getAccoladesByAccoladeIds(eventObj.accoladeIds);
     eventCopy.challenges = await challengeModel.getChallenges(eventObj.challengeIds);
     eventCopy.submissions = await submissionModel.getSubmissions(eventObj.submissionIds);
     return eventObj;
@@ -67,7 +67,7 @@ const getAccolade = async (eventId, accoladeId) => {
  * @returns {List<Object>} accolades
  */
 const getAccolades = async (eventId) => {
-    return accoladeModel.getAccolades(eventId);
+    return accoladeModel.getAccoladesByEventId(eventId);
 };
 
 /**
