@@ -10,7 +10,7 @@ export interface Submission {
   tags: Array<string>,
   links: Array<string>,
   discordTags: Array<string>,
-  challengeIds: Array<string>,
+  challengeId: string,
   videoLink: string,
   answer1: string,
   answer2: string,
@@ -67,7 +67,7 @@ export const ProjectPage: React.FC = () => {
         tags: [],
         links: [],
         discordTags: [],
-        challengeIds: [],
+        challengeId: "",
         videoLink: "",
         answer1: "",
         answer2: "",
@@ -147,11 +147,11 @@ export const ProjectPage: React.FC = () => {
         <Input width="100%" key="videolink" label="Video Link" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler}/>
         <Spacer h={1}/>
         <Text>Select a challenge to submit this project to:</Text>
-        <Radio.Group useRow value={submission?.challengeIds?.at(0)} onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeIds: [c]}))}>
+        <Radio.Group useRow value={submission?.challengeId} onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
           {allChalleges.map(challenge => <Radio key={challenge._id} value={challenge._id}>{challenge.name}</Radio>)}
         </Radio.Group>
         <Spacer h={1}/>
-        {allChalleges.filter(challenge => challenge._id === submission?.challengeIds?.at(0)).map(challenge =>
+        {allChalleges.filter(challenge => challenge._id === submission?.challengeId).map(challenge =>
             <>
               {challenge.question1 && <Input width="100%" label={challenge?.question1} value={submission?.answer1} key="answer1" id="answer1" onChange={submissionDataHandler}/>}
               {challenge.question2 && <Input width="100%" label={challenge?.question2} value={submission?.answer2} key="answer2" id="answer2" onChange={submissionDataHandler}/>}
