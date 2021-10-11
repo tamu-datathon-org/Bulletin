@@ -22,8 +22,7 @@ const submission = {
     sourceCodeKey: null,
     icon: null,
     iconKey: null,
-    photos: null,
-    photosKey: null,
+    photos: {},
     markdown: null,
     markdownKey: null,
     submission_time: null,
@@ -378,26 +377,32 @@ const editSubmissionFile = async (eventId, submissionId, type, url, key) => {
                         }
                     },
                 );
-        } else if (type === config.submission_constraints.submission_upload_types.photos) {
-            await client.db(config.database.name)
-                .collection(config.database.collections.submissions)
-                .updateOne(
-                    {
-                        _id: await mongoUtil.ObjectId(submissionId),
-                        eventId: await mongoUtil.ObjectId(eventId),
-                    },
-                    { $set: 
-                        {
-                            photos: url,
-                            photosKey: key,
-                        }
-                    },
-                );
         }
         await mongoUtil.closeClient(client);
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error getting editing submission file ${err.message}`);
+    }
+};
+
+const editSubmissionPhoto = async (eventId, submissionId, index, data) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const prop = `photos.${index}`;
+        const docs = await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .updateOne({
+                _id: await mongoUtil.ObjectId(submissionId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            }, { $set: { [prop]: [data.Key, data.Location] },
+            });
+        await mongoUtil.closeClient(client);
+        logger.info(JSON.stringify(docs));
+        return docs;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting all event submissions ${err.message}`);
     }
 };
 
@@ -420,4 +425,5 @@ module.exports = {
     addSubmissionUserSubmissionLinkId,
     removeSubmissionUserSubmissionLinkId,
     editSubmissionFile,
+    editSubmissionPhoto,
 };

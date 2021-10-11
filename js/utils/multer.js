@@ -15,14 +15,14 @@ const submissionFileOptions = multer({
     },
 });
 
-const submissionPhotosOptions = multer({
+const submissionPhotoOptions = multer({
     storage: multer.memoryStorage(),
     limits: {
         fileSize: FILE_SIZE_LIMIT,
     },
     fileFilter(req, file, cb) {
-        if (!config.submission_constraints.photo_compression_formats.includes(path.extname(file.originalname))) {
-            return cb(new Error(`Acceptable file types: ${config.submission_constraints.photo_compression_formats.toString()}`));
+        if (!config.submission_constraints.image_formats.test(file.originalname)) {
+            return cb(new Error('Photo does not have an acceptable extension'));
         }
         return cb(undefined, true);
     },
@@ -69,7 +69,7 @@ const adminUploadOptions = multer({
 
 module.exports = {
     submissionFileOptions,
-    submissionPhotosOptions,
+    submissionPhotoOptions,
     submissionIconOptions,
     submissionMarkdownOptions,
     adminUploadOptions,

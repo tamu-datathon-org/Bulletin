@@ -177,15 +177,34 @@ const getUserSubmissionLinkBySubmissionIdAndUserAuthId = async (userAuthId, subm
 // ====== 📌📌📌 Submission Files Section 📌📌📌 ======= //
 // ======================================================== //
 
-const uploadSubmissionFile = async (eventId, submissionId, filename, type, buffer) => {
+const uploadSubmissionPhoto = async (eventId, submissionId, originalname, index, buffer) => {
     const submissionObj = await submissionModel.getSubmission(eventId, submissionId);
     if (!submissionObj) throw new Error(`📌submission ${submissionId} does not exist`);
-    if (!config.submission_constraints.submission_upload_types[type]) {
+    if (index >= config.submission_constraints.max_submission_photos)
+        throw new Error(`📌cannot upload photo at that index, max photos is ${config.submission_constraints.max_submission_photos}`);
+    if (submissionObj.photos) {
+        if (submissionObj.photos[index]) {
+            logger.info(`previous photo existed with index ${index} so we're deleting it...`);
+            logger.info(submissionObj.photos[index][0]);
+            await removeFileByKey(submissionObj.photos[index][0]);
+        }
+    }
+    logger.info('uploading photo to s3...');
+    const data = await submissionS3.uploadFile(`${originalname}`, buffer);
+    logger.info('adding key and url to submission entry...');
+    await submissionModel.editSubmissionPhoto(eventId, submissionId, index, data);
+    logger.info('done');
+    return data.Location;
+};
+
+const uploadSubmissionFile = async (eventId, submissionId, filename, type, buffer) => {
+    const submissionObj = await submissionModel.getSubmission(eventId, submissionId);
+    if (!submissionObj) 
+        throw new Error(`📌submission ${submissionId} does not exist`);
+    if (!config.submission_constraints.submission_upload_types[type])
         throw new Error(`📌upload type ${type} is invalid`);
-    }
-    if (submissionObj[`${type}Key`]) {
+    if (submissionObj[`${type}Key`])
         await removeFileByKey(submissionObj[`${type}Key`]);
-    }
     const data = await submissionS3.uploadFile(`${filename}`, buffer);
     await submissionModel.editSubmissionFile(eventId, submissionId, type, data.Location, data.Key);
     return data.Location;
@@ -229,5 +248,6 @@ module.exports = {
     getSubmissionsByUserAuthId,
     getSubmissionFile,
     uploadSubmissionFile,
+    uploadSubmissionPhoto,
     getUserSubmissionLinkBySubmissionIdAndUserAuthId,
 };

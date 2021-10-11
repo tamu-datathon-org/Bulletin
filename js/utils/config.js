@@ -3,7 +3,7 @@ const defaultConfig = {
     submission_constraints: {
         max_participants: 4,
         sourceCode_formats: ['.tar', '.zip'],
-        photos_formats: ['.zip'],
+        image_formats: /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i,
         icon_formats: ['.jpg', '.png'],
         markdown_formats: ['.md'],
         submission_upload_types: {
@@ -15,6 +15,7 @@ const defaultConfig = {
         max_tags: 12,
         max_links: 12,
         max_file_upload_size: 1000 * 1000 * 30, // 30 Mb
+        max_submission_photos: 3,
     },
     database: {
         name: 'bulletin',

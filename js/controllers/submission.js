@@ -227,6 +227,32 @@ const removeComment = async (req, res) => {
 // ====== 📌📌📌 Submission Files Section 📌📌📌 ======= //
 // ======================================================== //
 
+const uploadSubmissionPhoto = async (req, res) => {
+    const response = {};
+    const { eventId } = req.params;
+    const { buffer } = req.file;
+    const { submissionId } = req.params;
+    const { index } = req.params;
+    const { originalname } = req.file;
+    try {
+        // check submission time
+        if (!(await isWithinEventTime(eventId)))
+            throw new Error('📌submission is not editable at this time or event does not exist');
+
+        // check if can update
+        const token = req.cookies.accessToken || '';
+        if (!(await canAlterSubmission(token, submissionId)))
+            throw new Error('📌you are not allowed to update this submission');
+
+        response.location = await submissionService.uploadSubmissionPhoto(eventId, submissionId, originalname, index, buffer);
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
 /**
  * @function submissionFileUpload
  * @param {Object} req 
@@ -279,6 +305,7 @@ module.exports = {
     addSubmission,
     removeSubmission,
     submissionFileUpload,
+    uploadSubmissionPhoto,
     toggleLike,
     addComment,
     removeComment,
