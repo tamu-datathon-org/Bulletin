@@ -29,6 +29,25 @@ const removeSubmission = async (eventId, submissionId) => {
     return submissionService.removeSubmission(eventId, submissionId)._id;
 };
 
+const addAccoladeToSubmission = async (eventId, submissionId, accoladeId) => {
+    const accoladeObj = await accoladeModel.getAccolade(eventId, accoladeId);
+    if (!accoladeObj)
+        throw new Error(`📌accolade ${accoladeId} does not exist`);
+    const submissionObj = await submissionService.getSubmission(eventId, submissionId);
+    if (!submissionObj)
+        throw new Error(`📌submission ${submissionId} does not exist`);
+    if (submissionObj.accoladeIds) {
+        for (let i = 0; i < submissionObj.accoladeIds.length; i++) {
+            if (submissionObj.accoladeIds[i].toString() === accoladeId) {
+                logger.info('removing an accolade from submission');
+                return submissionService.removeAccoladeToSubmission(submissionId, accoladeId);
+            }
+        }
+    }
+    logger.info('adding an accolade to submission');
+    return submissionService.addAccoladeToSubmission(submissionId, accoladeId);
+};
+
 /**
  * @function addAccolade
  * @param {String} eventId id of the event
@@ -237,6 +256,7 @@ module.exports = {
     uploadEventImage,
     uploadChallengeImage,
     removeSubmission,
+    addAccoladeToSubmission,
     // testing
     setEventModel,
     setChallengeModel,

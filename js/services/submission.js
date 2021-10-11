@@ -123,6 +123,14 @@ const removeSubmission = async (eventId, submissionId) => {
     return doc._id;
 };
 
+const addAccoladeToSubmission = async (submissionId, accoladeId) => {
+    return submissionModel.addSubmissionAccoladeId(submissionId, accoladeId);
+};
+
+const removeAccoladeToSubmission = async (submissionId, accoladeId) => {
+    return submissionModel.removeSubmissionAccoladeId(submissionId, accoladeId);
+};
+
 // ======================================================== //
 // =========== 📌📌📌 Likes Section 📌📌📌 ============= //
 // ======================================================== //
@@ -212,6 +220,8 @@ const removeFileByKey = async (fileKey) => {
 module.exports = {
     addSubmission,
     removeSubmission,
+    addAccoladeToSubmission,
+    removeAccoladeToSubmission,
     toggleLike,
     addComment,
     removeComment,
