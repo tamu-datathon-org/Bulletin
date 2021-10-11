@@ -1,7 +1,5 @@
 const fetch = require('node-fetch');
 const { StatusCodes } = require('http-status-codes');
-const logger = require('../utils/logger');
-// const logger = require('../utils/logger');
 
 const gatekeeperUrl = process.env.GATEKEEPER_URL || 'https://tamudatathon.com/auth';
 const harmoniaUrl = process.env.HARMONIA_URL || 'https://tamudatathon.com/guild';
@@ -62,18 +60,22 @@ const getAuthId = async (token) => {
 };
 
 const getDiscordUser = async (discordTag, userAuthId, accessToken) => {
-    let response = null;
-    logger.info(accessToken);
-    if (discordTag) {
-        response = await fetch(`${harmoniaUrl}/api/users/?discordInfo=${discordTag}`,
-            { headers: { cookies: { accessToken: accessToken } } });
-    } else if (userAuthId) {
-        response = await fetch(`${harmoniaUrl}/api/users/?userAuthId=${userAuthId}`,
-            { headers: { cookies: { accessToken: accessToken } } });
+    try {
+        let response = null;
+        const options = {
+            headers: {
+                cookie: `accessToken=${accessToken};`,
+            },
+        };
+        if (discordTag) {
+            response = await fetch(`${harmoniaUrl}/api/user/?discordInfo=${discordTag}`, options);
+        } else if (userAuthId) {
+            response = await fetch(`${harmoniaUrl}/api/user/?userAuthId=${userAuthId}`, options);
+        }
+        return response.json();
+    } catch (err) {
+        throw new Error('📌you are not logged in!');
     }
-    const res = await response.json();
-    logger.info(JSON.stringify(res));
-    return response.json();
 };
 
 module.exports = {

@@ -56,7 +56,8 @@ const validateSubmissionFileUploads = async (request) => {
 
 const canAlterSubmission = async (token, submissionId) => {
     if (!submissionId) return true;
-    const userAuthId = await bouncer.getAuthId(token); // "5efc0b99a37c4300032acbce"
+    const userAuthId = await bouncer.getAuthId(token);
+    logger.info(`userAuthId ${userAuthId}`);
     if (!userAuthId) return false;
     const userSubmissionLink = await submissionService.getUserSubmissionLinkBySubmissionIdAndUserAuthId(userAuthId, submissionId);
     if (!userSubmissionLink) return false;
@@ -77,7 +78,7 @@ const isWithinEventTime = async (eventId) => {
 };
 
 // ======================================================== //
-// ========= 📌📌📌 Submission Section 📌📌📌 ====-===== //
+// ========= 📌📌📌 Submission Section 📌📌📌 ========== //
 // ======================================================== //
 
 const addSubmission = async (req, res) => {
@@ -95,10 +96,11 @@ const addSubmission = async (req, res) => {
 
         // check if can update
         const token = req.cookies.accessToken || '';
-        logger.info('token');
-        logger.info(token);
         if (!(await canAlterSubmission(token, _id)))
             throw new Error('📌you are not allowed to update this submission');
+
+        if (req.body.accoladeIds)
+            throw new Error('📌participants cannot add accolades to submissions');
 
         response.submissionId = await submissionService.addSubmission(req.body, eventId, _id, token);
         logger.info('📌submission successful');
