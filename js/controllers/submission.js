@@ -50,13 +50,13 @@ const validateSubmissionFileUploads = async (request) => {
         throw new Error(`📌invalid type parameter provided, valid types are ${config.submission_constraints.submission_upload_types.toString()}`);
     }
     if (!config.submission_constraints[`${_type}_formats`].includes(path.extname(originalname))) {
-        throw new Error('📌invalid file type provided');
+        throw new Error(`📌invalid file type provided: ${_type}`);
     }
 };
 
 const canAlterSubmission = async (token, submissionId) => {
     if (!submissionId) return true;
-    const userAuthId = await bouncer.getAuthId(token);
+    const userAuthId = await bouncer.getAuthId(token); // "5efc0b99a37c4300032acbce"
     logger.info(`userAuthId ${userAuthId}`);
     if (!userAuthId) return false;
     const userSubmissionLink = await submissionService.getUserSubmissionLinkBySubmissionIdAndUserAuthId(userAuthId, submissionId);
@@ -114,9 +114,9 @@ const addSubmission = async (req, res) => {
 
 const removeSubmission = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { submissionId } = req.params;
     try {
+        const { eventId } = req.params;
+        const { submissionId } = req.params;
         if ((submissionId?.length ?? 0) === 0 || typeof submissionId !== 'string')
             throw new Error('📌submissionId is a required parameter');
 
@@ -147,8 +147,8 @@ const removeSubmission = async (req, res) => {
 
 const toggleLike = async (req, res) => {
     const response = {};
-    const { submissionId } = req.params;
     try {
+        const { submissionId } = req.params;
         if ((submissionId?.length ?? 0) === 0 || typeof submissionId !== 'string')
             throw new Error('📌submissionId is a required parameter');
 
@@ -173,9 +173,9 @@ const toggleLike = async (req, res) => {
 
 const addComment = async (req, res) => {
     const response = {};
-    const { submissionId } = req.params;
-    const { message } = req.body;
     try {
+        const { submissionId } = req.params;
+        const { message } = req.body;
         if ((submissionId?.length ?? 0) === 0 || typeof submissionId !== 'string')
             throw new Error('📌submissionId is a required parameter');
 
@@ -199,9 +199,9 @@ const addComment = async (req, res) => {
 
 const removeComment = async (req, res) => {
     const response = {};
-    const { submissionId } = req.params;
-    const { commentId } = req.params;
     try {
+        const { submissionId } = req.params;
+        const { commentId } = req.params;
         if ((submissionId?.length ?? 0) === 0 || typeof submissionId !== 'string')
             throw new Error('📌submissionId is a required parameter');
         
@@ -234,12 +234,13 @@ const removeComment = async (req, res) => {
  */
 const submissionFileUpload = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { buffer } = req.file;
-    const { submissionId } = req.params;
-    const { type } = req.params;
-    const { originalname } = req.file;
     try {
+        const { eventId } = req.params;
+        const { buffer } = req.file;
+        const { submissionId } = req.params;
+        const { type } = req.params;
+        const { originalname } = req.file;
+
         await validateSubmissionFileUploads(req);
 
         // check submission time
