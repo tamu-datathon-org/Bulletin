@@ -74,7 +74,7 @@ const getDiscordUser = async (discordTag, userAuthId, accessToken) => {
         }
         return response.json();
     } catch (err) {
-        throw new Error('📌you are not logged in!');
+        throw new Error('📌getDiscordUser:: you are not logged in!');
     }
 };
 
