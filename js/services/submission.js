@@ -1,4 +1,3 @@
-const path = require('path');
 const logger = require('../utils/logger');
 const config = require('../utils/config');
 
