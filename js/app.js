@@ -71,7 +71,9 @@ app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/sourcecode`
 app.post(`${BASE_PATH}/api/:eventId/submission/add`, submissionController.addSubmission);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove`, submissionController.removeSubmission);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/photo/:index`, multerUtil.submissionPhotoOptions.single('file'), submissionController.uploadSubmissionPhoto);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/:type`, multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/sourceCode`, multerUtil.submissionSourceCodeOptions.single('file'), submissionController.uploadSubmissionSourceCode);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/markdown`, multerUtil.submissionMarkdownOptions.single('file'), submissionController.uploadSubmissionMarkdown);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/icon`, multerUtil.submissionIconOptions.single('file'), submissionController.uploadSubmissionIcon);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like`, submissionController.toggleLike);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add`, submissionController.addComment);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/:commentId/remove`, submissionController.removeComment);

@@ -2,13 +2,11 @@ const defaultConfig = {
     siteName: 'bulletin',
     submission_constraints: {
         max_participants: 4,
-        sourceCode_formats: ['.tar', '.zip'],
         image_formats: /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i,
-        icon_formats: ['.jpg', '.png'],
-        markdown_formats: ['.md'],
+        markdown_formats: /\.(md)$/i,
+        sourceCode_formats: /\.(zip|tar|tar(.gz)?)$/i,
         submission_upload_types: {
             sourceCode: 'sourceCode',
-            photos: 'photos',
             icon: 'icon',
             markdown: 'markdown',
         },

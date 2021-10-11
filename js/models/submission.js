@@ -19,12 +19,9 @@ const submission = {
     answer4: null,
     answer5: null,
     sourceCode: null,
-    sourceCodeKey: null,
-    icon: null,
-    iconKey: null,
-    photos: {},
     markdown: null,
-    markdownKey: null,
+    icon: null,
+    photos: {},
     submission_time: null,
 };
 
@@ -51,6 +48,10 @@ const createSubmission = async (eventId, name, discordTags,
     };
     return submissionObj;
 };
+
+// ======================================================== //
+// ======== 📌📌📌 Submission Modifiers 📌📌📌 ========= //
+// ======================================================== //
 
 const addSubmission = async (submissionObj, submissionId = null) => {
     let client = null;
@@ -95,6 +96,10 @@ const removeSubmission = async (eventId, submissionId) => {
     }
 };
 
+// ======================================================== //
+// =========== 📌📌📌 Likes Section 📌📌📌 ============= //
+// ======================================================== //
+
 const addLike = async (submissionId, likeId) => {
     let client = null;
     try {
@@ -129,6 +134,10 @@ const removeLike = async (submissionId, likeId) => {
     }
 };
 
+// ======================================================== //
+// ========== 📌📌📌 Comments Section 📌📌📌 =========== //
+// ======================================================== //
+
 const addComment = async (submissionId, commentId) => {
     let client = null;
     try {
@@ -162,6 +171,10 @@ const removeComment = async (submissionId, commentId) => {
         throw new Error(`📌Error removing comment from submission:: ${err.message}`);
     }
 };
+
+// ======================================================== //
+// ========= 📌📌📌 Submission Getters 📌📌📌 ========== //
+// ======================================================== //
 
 /**
  * @function getSubmission
@@ -216,21 +229,9 @@ const getSubmissionsDump = async () => {
     }
 };
 
-const updateSubmissionData = async (submissionId, setOptions) => {
-    let client = null;
-    try {
-        client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.submissions).updateOne(
-            { _id: await mongoUtil.ObjectId(submissionId) },
-            { $set: setOptions },
-        );
-        await mongoUtil.closeClient(client);
-        return upsertedId;
-    } catch (err) {
-        await mongoUtil.closeClient(client);
-        throw new Error(`📌Error updating submission:: ${err.message}`);
-    }
-};
+// ======================================================== //
+// === 📌📌📌 user submission links section 📌📌📌====== //
+// ======================================================== //
 
 const addSubmissionUserSubmissionLinkId = async (submissionId, userSubmissionLinkId) => {
     let client = null;
@@ -263,6 +264,10 @@ const removeSubmissionUserSubmissionLinkId = async (submissionId, userSubmission
         throw new Error(`📌Error updating submission:: ${err.message}`);
     }
 };
+
+// ======================================================== //
+// ======= 📌📌📌 Submission AccoladeIds 📌📌📌 ======== //
+// ======================================================== //
 
 const addSubmissionAccoladeId = async (submissionId, accoladeId) => {
     let client = null;
@@ -319,71 +324,9 @@ const getAllSubmissionsByEventId = async (eventId) => {
     }
 };
 
-/**
- * @function editSubmissionFile
- * @description add a file url & key after s3 bucket upload
- * @param {String} eventId
- * @param {String} submissionId 
- * @param {String} type 
- * @param {String} url 
- * @param {String} key 
- */
-const editSubmissionFile = async (eventId, submissionId, type, url, key) => {
-    let client = null;
-    try {
-        client = await mongoUtil.getClient();
-        if (type === config.submission_constraints.submission_upload_types.icon) {
-            await client.db(config.database.name)
-                .collection(config.database.collections.submissions)
-                .updateOne(
-                    {
-                        _id: await mongoUtil.ObjectId(submissionId),
-                        eventId: await mongoUtil.ObjectId(eventId),
-                    },
-                    { $set: 
-                        {
-                            icon: url,
-                            iconKey: key,
-                        }
-                    },
-                );
-        } else if (type === config.submission_constraints.submission_upload_types.markdown) {
-            await client.db(config.database.name)
-                .collection(config.database.collections.submissions)
-                .updateOne(
-                    {
-                        _id: await mongoUtil.ObjectId(submissionId),
-                        eventId: await mongoUtil.ObjectId(eventId),
-                    },
-                    { $set: 
-                        {
-                            markdown: url,
-                            markdownKey: key,
-                        }
-                    },
-                );
-        } else if (type === config.submission_constraints.submission_upload_types.sourceCode) {
-            await client.db(config.database.name)
-                .collection(config.database.collections.submissions)
-                .updateOne(
-                    {
-                        _id: await mongoUtil.ObjectId(submissionId),
-                        eventId: await mongoUtil.ObjectId(eventId),
-                    },
-                    { $set: 
-                        {
-                            sourceCode: url,
-                            sourceCodeKey: key,
-                        }
-                    },
-                );
-        }
-        await mongoUtil.closeClient(client);
-    } catch (err) {
-        await mongoUtil.closeClient(client);
-        throw new Error(`📌Error getting editing submission file ${err.message}`);
-    }
-};
+// ======================================================== //
+// ====== 📌📌📌 Submission Files Section 📌📌📌 ======= //
+// ======================================================== //
 
 const editSubmissionPhoto = async (eventId, submissionId, index, data) => {
     let client = null;
@@ -406,6 +349,66 @@ const editSubmissionPhoto = async (eventId, submissionId, index, data) => {
     }
 };
 
+const editSubmissionMarkdown = async (eventId, submissionId, data) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const docs = await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .updateOne({
+                _id: await mongoUtil.ObjectId(submissionId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            }, { $set: { markdown: [data.Key, data.Location] },
+            });
+        await mongoUtil.closeClient(client);
+        logger.info(JSON.stringify(docs));
+        return docs;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting all event submissions ${err.message}`);
+    }
+};
+
+const editSubmissionIcon = async (eventId, submissionId, data) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const docs = await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .updateOne({
+                _id: await mongoUtil.ObjectId(submissionId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            }, { $set: { icon: [data.Key, data.Location] },
+            });
+        await mongoUtil.closeClient(client);
+        logger.info(JSON.stringify(docs));
+        return docs;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting all event submissions ${err.message}`);
+    }
+};
+
+const editSubmissionSourceCode = async (eventId, submissionId, data) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const docs = await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .updateOne({
+                _id: await mongoUtil.ObjectId(submissionId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            }, { $set: { sourceCode: [data.Key, data.Location] },
+            });
+        await mongoUtil.closeClient(client);
+        logger.info(JSON.stringify(docs));
+        return docs;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting all event submissions ${err.message}`);
+    }
+};
+
 module.exports = {
     submission,
     createSubmission,
@@ -418,12 +421,13 @@ module.exports = {
     getSubmission,
     getSubmissions,
     getSubmissionsDump,
-    updateSubmissionData,
     getAllSubmissionsByEventId,
     addSubmissionAccoladeId,
     removeSubmissionAccoladeId,
     addSubmissionUserSubmissionLinkId,
     removeSubmissionUserSubmissionLinkId,
-    editSubmissionFile,
     editSubmissionPhoto,
+    editSubmissionIcon,
+    editSubmissionMarkdown,
+    editSubmissionSourceCode,
 };

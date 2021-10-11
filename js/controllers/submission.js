@@ -1,4 +1,3 @@
-const path = require('path');
 // const mimetypes = require('mime-types');
 let submissionService = require('../services/submission');
 let eventsService = require('../services/events');
@@ -36,22 +35,12 @@ const validateSubmissionFileUploads = async (request) => {
     const { eventId } = request.params;
     const { buffer } = request.file;
     const { submissionId } = request.params;
-    const { type } = request.params;
     const { originalname } = request.file;
     if (!buffer) throw new Error('📌no file provided');
     if (!eventId) throw new Error('📌eventId is a required parameter');
     if (!submissionId) throw new Error('📌submissionId is a required parameter');
-    if (!type) throw new Error('📌type is a required parameter');
-    if ((originalname?.length ?? 0) === 0) {
+    if ((originalname?.length ?? 0) === 0)
         throw new Error('📌no filename provided');
-    }
-    const _type = config.submission_constraints.submission_upload_types[type];
-    if (!_type) {
-        throw new Error(`📌invalid type parameter provided, valid types are ${config.submission_constraints.submission_upload_types.toString()}`);
-    }
-    if (!config.submission_constraints[`${_type}_formats`].includes(path.extname(originalname))) {
-        throw new Error(`📌invalid file type provided: ${_type}`);
-    }
 };
 
 const canAlterSubmission = async (token, submissionId) => {
@@ -235,6 +224,8 @@ const uploadSubmissionPhoto = async (req, res) => {
     const { index } = req.params;
     const { originalname } = req.file;
     try {
+        await validateSubmissionFileUploads(req);
+
         // check submission time
         if (!(await isWithinEventTime(eventId)))
             throw new Error('📌submission is not editable at this time or event does not exist');
@@ -253,20 +244,13 @@ const uploadSubmissionPhoto = async (req, res) => {
     }
 };
 
-/**
- * @function submissionFileUpload
- * @param {Object} req 
- * @param {Object} res 
- */
-const submissionFileUpload = async (req, res) => {
+const uploadSubmissionSourceCode = async (req, res) => {
     const response = {};
+    const { eventId } = req.params;
+    const { buffer } = req.file;
+    const { submissionId } = req.params;
+    const { originalname } = req.file;
     try {
-        const { eventId } = req.params;
-        const { buffer } = req.file;
-        const { submissionId } = req.params;
-        const { type } = req.params;
-        const { originalname } = req.file;
-
         await validateSubmissionFileUploads(req);
 
         // check submission time
@@ -278,8 +262,61 @@ const submissionFileUpload = async (req, res) => {
         if (!(await canAlterSubmission(token, submissionId)))
             throw new Error('📌you are not allowed to update this submission');
 
-        response.location = await submissionService
-            .uploadSubmissionFile(eventId, submissionId, originalname, config.submission_constraints.submission_upload_types[type], buffer);
+        response.location = await submissionService.uploadSubmissionSourceCode(eventId, submissionId, originalname, buffer);
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+const uploadSubmissionMarkdown = async (req, res) => {
+    const response = {};
+    const { eventId } = req.params;
+    const { buffer } = req.file;
+    const { submissionId } = req.params;
+    const { originalname } = req.file;
+    try {
+        await validateSubmissionFileUploads(req);
+
+        // check submission time
+        if (!(await isWithinEventTime(eventId)))
+            throw new Error('📌submission is not editable at this time or event does not exist');
+
+        // check if can update
+        const token = req.cookies.accessToken || '';
+        if (!(await canAlterSubmission(token, submissionId)))
+            throw new Error('📌you are not allowed to update this submission');
+
+        response.location = await submissionService.uploadSubmissionMarkdown(eventId, submissionId, originalname, buffer);
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+const uploadSubmissionIcon = async (req, res) => {
+    const response = {};
+    const { eventId } = req.params;
+    const { buffer } = req.file;
+    const { submissionId } = req.params;
+    const { originalname } = req.file;
+    try {
+        await validateSubmissionFileUploads(req);
+
+        // check submission time
+        if (!(await isWithinEventTime(eventId)))
+            throw new Error('📌submission is not editable at this time or event does not exist');
+
+        // check if can update
+        const token = req.cookies.accessToken || '';
+        if (!(await canAlterSubmission(token, submissionId)))
+            throw new Error('📌you are not allowed to update this submission');
+
+        response.location = await submissionService.uploadSubmissionIcon(eventId, submissionId, originalname, buffer);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -304,8 +341,10 @@ const setBouncer = (mockBouncer) => {
 module.exports = {
     addSubmission,
     removeSubmission,
-    submissionFileUpload,
     uploadSubmissionPhoto,
+    uploadSubmissionIcon,
+    uploadSubmissionMarkdown,
+    uploadSubmissionSourceCode,
     toggleLike,
     addComment,
     removeComment,

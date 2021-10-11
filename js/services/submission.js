@@ -197,16 +197,51 @@ const uploadSubmissionPhoto = async (eventId, submissionId, originalname, index,
     return data.Location;
 };
 
-const uploadSubmissionFile = async (eventId, submissionId, filename, type, buffer) => {
+const uploadSubmissionSourceCode = async (eventId, submissionId, originalname, buffer) => {
     const submissionObj = await submissionModel.getSubmission(eventId, submissionId);
-    if (!submissionObj) 
-        throw new Error(`📌submission ${submissionId} does not exist`);
-    if (!config.submission_constraints.submission_upload_types[type])
-        throw new Error(`📌upload type ${type} is invalid`);
-    if (submissionObj[`${type}Key`])
-        await removeFileByKey(submissionObj[`${type}Key`]);
-    const data = await submissionS3.uploadFile(`${filename}`, buffer);
-    await submissionModel.editSubmissionFile(eventId, submissionId, type, data.Location, data.Key);
+    if (!submissionObj) throw new Error(`📌submission ${submissionId} does not exist`);
+    if ((submissionObj?.sourceCode?.length ?? 0) !== 0) {
+        logger.info('previous sourceCode existed so we\'re deleting it...');
+        logger.info(submissionObj.sourceCode[0]);
+        await removeFileByKey(submissionObj.sourceCode[0]);
+    }
+    logger.info('uploading sourceCode to s3...');
+    const data = await submissionS3.uploadFile(`${originalname}`, buffer);
+    logger.info('adding key and url to submission entry...');
+    await submissionModel.editSubmissionSourceCode(eventId, submissionId, data);
+    logger.info('done');
+    return data.Location;
+};
+
+const uploadSubmissionIcon = async (eventId, submissionId, originalname, buffer) => {
+    const submissionObj = await submissionModel.getSubmission(eventId, submissionId);
+    if (!submissionObj) throw new Error(`📌submission ${submissionId} does not exist`);
+    if ((submissionObj?.icon?.length ?? 0) !== 0) {
+        logger.info('previous icon existed so we\'re deleting it...');
+        logger.info(submissionObj.icon[0]);
+        await removeFileByKey(submissionObj.icon[0]);
+    }
+    logger.info('uploading icon to s3...');
+    const data = await submissionS3.uploadFile(`${originalname}`, buffer);
+    logger.info('adding key and url to submission entry...');
+    await submissionModel.editSubmissionIcon(eventId, submissionId, data);
+    logger.info('done');
+    return data.Location;
+};
+
+const uploadSubmissionMarkdown = async (eventId, submissionId, originalname, buffer) => {
+    const submissionObj = await submissionModel.getSubmission(eventId, submissionId);
+    if (!submissionObj) throw new Error(`📌submission ${submissionId} does not exist`);
+    if ((submissionObj?.markdown?.length ?? 0) !== 0) {
+        logger.info('previous markdown existed so we\'re deleting it...');
+        logger.info(submissionObj.markdown[0]);
+        await removeFileByKey(submissionObj.markdown[0]);
+    }
+    logger.info('uploading markdown to s3...');
+    const data = await submissionS3.uploadFile(`${originalname}`, buffer);
+    logger.info('adding key and url to submission entry...');
+    await submissionModel.editSubmissionMarkdown(eventId, submissionId, data);
+    logger.info('done');
     return data.Location;
 };
 
@@ -223,7 +258,7 @@ const getSubmissionFile = async (eventId, submissionId, type) => {
     if (!config.submission_constraints.submission_upload_types[type]) {
         throw new Error(`📌type ${type} is invalid`);
     }
-    if (submissionObj[`${type}Key`]) return getFileByKey(submissionObj[`${type}Key`]);
+    if (submissionObj[type]) return getFileByKey(submissionObj[type]);
     throw new Error(`📌submissionId ${submissionId} does not have uploaded file(s) of ${type}`);
 };
 
@@ -247,7 +282,9 @@ module.exports = {
     getSubmissions,
     getSubmissionsByUserAuthId,
     getSubmissionFile,
-    uploadSubmissionFile,
     uploadSubmissionPhoto,
+    uploadSubmissionSourceCode,
+    uploadSubmissionMarkdown,
+    uploadSubmissionIcon,
     getUserSubmissionLinkBySubmissionIdAndUserAuthId,
 };
