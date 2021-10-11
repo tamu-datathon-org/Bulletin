@@ -179,7 +179,7 @@ const uploadSubmissionFile = async (eventId, submissionId, filename, type, buffe
     if (submissionObj[`${type}Key`]) {
         await removeFileByKey(submissionObj[`${type}Key`]);
     }
-    const data = await submissionS3.uploadFile(`${filename}${path.extname(filename)}`, buffer);
+    const data = await submissionS3.uploadFile(`${filename}`, buffer);
     await submissionModel.editSubmissionFile(eventId, submissionId, type, data.Location, data.Key);
     return data.Location;
 };

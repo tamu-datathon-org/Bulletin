@@ -1,8 +1,16 @@
-import { Button, Card, Divider, Input, Radio, Spacer, Select, useToasts, Text } from "@geist-ui/react";
+import { Button, Link, Card, Divider, Input, Radio, Spacer, Select, useToasts, Text } from "@geist-ui/react";
 import axios from 'axios';
+import { Upload } from '@geist-ui/react-icons';
 import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../../constants";
 import { Event, ChallengesResponse, Challenge, EventsResponse } from '../Admin/Misc';
+
+enum FileType {
+  sourceCode = 'sourceCode',
+  photos = 'photos',
+  icon = 'icon',
+  markdown = 'markdown',
+}
 
 export interface Submission {
   _id: string,
@@ -17,6 +25,10 @@ export interface Submission {
   answer3: string,
   answer4: string,
   answer5: string,
+  sourceCode: string,
+  photos: string,
+  icon: string,
+  markdown: string,
 }
 
 interface SubmissionResponse {
@@ -74,6 +86,10 @@ export const ProjectPage: React.FC = () => {
         answer3: "",
         answer4: "",
         answer5: "",
+        sourceCode: "",
+        photos: "",
+        icon: "",
+        markdown: "",
       })
 
     const handleUpdateSubmission = () => {
@@ -121,6 +137,37 @@ export const ProjectPage: React.FC = () => {
       }
     },[curEventId])
 
+    const [sourceCode, setSourceCode] = useState<any>();
+    const sourceCodeHandler = (e:any) => setSourceCode(e.target.files[0])
+
+    const [photos, setPhotos] = useState<any>();
+    const photosHandler = (e:any) => setPhotos(e.target.files[0])
+
+    const [icon, setIcon] = useState<any>();
+    const iconHandler = (e:any) => setIcon(e.target.files[0])
+
+    const [markdown, setMarkdown] = useState<any>();
+    const markdownHandler = (e:any) => setMarkdown(e.target.files[0])
+
+    const uploadFile = (type:FileType) => {
+      const data = new FormData();
+      if (type === 'sourceCode') data.append('file', sourceCode);
+      else if (type === 'photos') data.append('file', photos)
+      else if (type === 'icon') data.append('file', icon)
+      else if (type === 'markdown') data.append('file', markdown)
+      else {
+        sendNotification("Incompatible submission file upload detected. Please contact an organizer.", "error");
+      }
+      axios.post(`${BASE_URL}/api/${curEventId}/submission/${submission?._id}/upload/${type}`, data)
+      .then(res => {
+       sendNotification(`Uploaded ${type}!`, "success")
+     })
+     .catch(res => {
+       console.log(res)
+       sendNotification(String(res.response.data.error), "error");
+     })
+    }
+
     return (
     <>
       <Select placeholder="Select an Event" onChange={val => setCurEventId((val as string))}>
@@ -161,7 +208,27 @@ export const ProjectPage: React.FC = () => {
             </>
         )}
         <Spacer h={1}/>
-        <Button onClick={handleUpdateSubmission}>{submission?._id ? "Update" : "Add"}</Button>    
+        <Button onClick={handleUpdateSubmission}>{submission?._id ? "Update" : "Add"}</Button>
+        <Spacer h={1}/>
+        <Card>
+          <Link href={submission?.sourceCode} icon block color>Source Code (.tar, .zip)</Link>
+          <Input htmlType="file" accept=".tar,.zip" name="Source Code" onChange={sourceCodeHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.sourceCode)}/>
+          </Card>
+        <Spacer h={1}/>
+        <Card>
+          <Link href={submission?.photos} icon block color>Project Photos (.zip)</Link>
+          <Input htmlType="file" accept=".zip" name="Photos" onChange={photosHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.photos)}/>
+        </Card>
+        <Spacer h={1}/>
+        <Card>
+          <Link href={submission?.icon} icon block color>Project Image (.jpg, .png)</Link>
+          <Input htmlType="file" accept=".jpg,.png" name="Icon" onChange={iconHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.icon)}/>
+          </Card>
+        <Spacer h={1}/>
+        <Card>
+          <Link href={submission?.markdown} icon block color>Description (.md)</Link>
+          <Input htmlType="file" accept=".md" name="Markdown" onChange={markdownHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.markdown)}/>
+        </Card>
         </Card.Content>
       </Card>
       }
