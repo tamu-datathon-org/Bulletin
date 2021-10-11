@@ -57,30 +57,27 @@ const getSubmissionsByUserAuthId = async (eventId, userAuthId) => {
  * @param {String} submissionId 
  * @returns {String} submission id
  */
-const addSubmission = async (requestBody, eventId, submissionId = null) => {
+const addSubmission = async (requestBody, eventId, submissionId, token) => {
 
     // get discord Objects from harmonia
     // const discordObjs = [{discordInfo:'dan#22', discordTag:'dan#22', userAuthId: "5efc0b99a37c4300032acbce"}];
-    const discordObjs = [];
-    await Promise.all(requestBody.discordTags.map(async (discordTag) => {
-        const discordUser = await bouncerController.getDiscordUser(discordTag, null);
-        if (discordUser) {
-            discordObjs.push(discordUser);
-            return;
+    const discordObjs = await Promise.all(requestBody.discordTags.map(async (discordTag) => {
+        const discordUser = await bouncerController.getDiscordUser(discordTag, null, token);
+        if (discordUser.userAuthId) {
+            return discordUser;
         }
         throw new Error(`📌discordTag ${discordTag} does not exist`);
     }));
+    if (discordObjs.length === 0)
+        throw new Error('📌no provided discordTag are in our server');
+    logger.info(JSON.stringify(discordObjs));
 
-    // get valid challenge ids
-    const challengeIds = [];
-    await Promise.all(requestBody.challengeIds.map(async (challengeId) => {
-        const challengeObj = await challengesModel.getChallenge(eventId, challengeId);
-        if (challengeObj) {
-            challengeIds.push(challengeObj._id);
-        } else {
-            throw new Error(`📌challenge ${challengeId} does not exist`);
-        }
-    }));
+    // get valid challenge id
+    if (requestBody.challengeId) {
+        const challengeObj = await challengesModel.getChallenge(eventId, requestBody.challengeId);
+        if (!challengeObj)
+            throw new Error(`📌challenge ${requestBody.challengeId} does not exist`);
+    }
     
     // get/create the user submission links
     const userSubmissionLinkIds = await Promise.all(discordObjs.map(async (discordObj) => {
@@ -89,20 +86,20 @@ const addSubmission = async (requestBody, eventId, submissionId = null) => {
             submissionId, 
         );
         const userSubmissionLinkObj = await userSubmissionLinksModel
-            .createUserSubmissionLink(discordObj.userAuthId, submissionId, discordObj.discordTag); // no submissionId yet
-        console.log('obj', userSubmissionLinkObj);
-        console.log('id', userSubmissionLink?._id);
+            .createUserSubmissionLink(discordObj.userAuthId, submissionId, discordObj.discordInfo); // no submissionId yet
+        logger.info(`user submission link obj ${JSON.stringify(userSubmissionLinkObj)}`);
+        logger.info(`usere submission link id ${userSubmissionLink?._id}`);
         return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj, userSubmissionLink?._id) || userSubmissionLink._id;
     }));
 
     // create the submission
     const discordTags = discordObjs.map((d) => d.discordInfo);
     const submissionObj = await submissionModel
-        .createSubmission(eventId, requestBody.name, discordTags, userSubmissionLinkIds, challengeIds,
+        .createSubmission(eventId, requestBody.name, discordTags, userSubmissionLinkIds, requestBody.challengeId,
             requestBody.links, requestBody.tags, requestBody.videoLink, requestBody.answer1,
             requestBody.answer2, requestBody.answer3, requestBody.answer4, requestBody.answer5);
     const id = await submissionModel.addSubmission(submissionObj, submissionId) || submissionId;
-    console.log('added id', id);
+    logger.info(`submission id ${id}`);
     await userSubmissionLinksModel.addSubmissionIdToLinks(userSubmissionLinkIds, id);
     await eventsModel.addEventSubmissionId(eventId, id);
     logger.info(`📌submitted with submissionId ${id}`);
