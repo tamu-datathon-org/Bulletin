@@ -121,25 +121,19 @@ export const ProjectPage: React.FC = () => {
     }
 
     const [submissions, setSubmissions] = useState<Submission[]>([])
-    useEffect(() => {
-      let mounted = true
-      if (curEventId) {
-        axios.get<SubmissionsResponse>(`${BASE_URL}/api/${curEventId}/submission/user`)
+    const selectEventHandler = (val:any) => {
+      if (val) {
+        setCurEventId(val)
+        axios.get<SubmissionsResponse>(`${BASE_URL}/api/${val}/submission/user`)
         .then(res => {
-          if (mounted) {
             setSubmissions(res.data.result)
-          }
         })
         .catch(res => {
           console.log(res)
           sendNotification(String(res.response.data.error), "error");
         })
       }
-      return () => {
-        mounted = false
-      }
-    },[curEventId])
-
+    }
     const [sourceCode, setSourceCode] = useState<any>();
     const sourceCodeHandler = (e:any) => setSourceCode(e.target.files[0])
 
@@ -173,7 +167,7 @@ export const ProjectPage: React.FC = () => {
 
     return (
     <>
-      <Select placeholder="Select an Event" onChange={val => setCurEventId((val as string))}>
+      <Select placeholder="Select an Event" onChange={selectEventHandler}>
         {eventList.map(event => {
           return <Select.Option key={event._id} value={event._id}>{event.name}</Select.Option>
         })}
