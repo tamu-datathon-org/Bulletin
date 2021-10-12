@@ -128,8 +128,8 @@ const removeSubmission = async (eventId, submissionId) => {
     return doc._id;
 };
 
-const addAccoladeToSubmission = async (submissionId, accoladeId) => {
-    return submissionModel.addSubmissionAccoladeId(submissionId, accoladeId);
+const addAccoladesToSubmission = async (submissionId, accoladeIds) => {
+    return submissionModel.addSubmissionAccoladeIds(submissionId, accoladeIds);
 };
 
 const removeAccoladeToSubmission = async (submissionId, accoladeId) => {
@@ -279,7 +279,7 @@ const removeFileByKey = async (fileKey) => {
 module.exports = {
     addSubmission,
     removeSubmission,
-    addAccoladeToSubmission,
+    addAccoladesToSubmission,
     removeAccoladeToSubmission,
     toggleLike,
     addComment,

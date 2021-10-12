@@ -269,14 +269,16 @@ const removeSubmissionUserSubmissionLinkId = async (submissionId, userSubmission
 // ======= 📌📌📌 Submission AccoladeIds 📌📌📌 ======== //
 // ======================================================== //
 
-const addSubmissionAccoladeId = async (submissionId, accoladeId) => {
+const addSubmissionAccoladeIds = async (submissionId, accoladeIds) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const { upsertedId } = await client.db(config.database.name).collection(config.database.collections.submissions).updateOne(
-            { _id: await mongoUtil.ObjectId(submissionId) },
-            { $addToSet: { accoladeIds: await mongoUtil.ObjectId(accoladeId) } },
-        );
+        const { upsertedId } = await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .updateOne(
+                { _id: await mongoUtil.ObjectId(submissionId) },
+                { accoladeIds: accoladeIds },
+            );
         await mongoUtil.closeClient(client);
         return upsertedId;
     } catch (err) {
@@ -422,7 +424,7 @@ module.exports = {
     getSubmissions,
     getSubmissionsDump,
     getAllSubmissionsByEventId,
-    addSubmissionAccoladeId,
+    addSubmissionAccoladeIds,
     removeSubmissionAccoladeId,
     addSubmissionUserSubmissionLinkId,
     removeSubmissionUserSubmissionLinkId,

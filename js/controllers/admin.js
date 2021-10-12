@@ -228,13 +228,13 @@ const removeSubmission = async (req, res) => {
     }
 };
 
-const addAccoladeToSubmission = async (req, res) => {
+const addAccoladesToSubmission = async (req, res) => {
     const response = {};
-    const { accoladeId } = req.body;
+    const { accoladeIds } = req.body;
     const { submissionId } = req.params;
     const { eventId } = req.params;
     try {
-        response.submissionId = await adminService.addAccoladeToSubmission(eventId, submissionId, accoladeId);
+        response.submissionId = await adminService.addAccoladesToSubmission(eventId, submissionId, accoladeIds);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -259,7 +259,7 @@ module.exports = {
     uploadEventImage,
     uploadChallengeImage,
     removeSubmission,
-    addAccoladeToSubmission,
+    addAccoladesToSubmission,
     // testing
     setAdminService,
 };
