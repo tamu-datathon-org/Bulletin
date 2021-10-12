@@ -218,12 +218,12 @@ const removeComment = async (req, res) => {
 
 const uploadSubmissionPhoto = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { buffer } = req.file;
-    const { submissionId } = req.params;
-    const { index } = req.params;
-    const { originalname } = req.file;
     try {
+        const { eventId } = req.params;
+        const { buffer } = req.file;
+        const { submissionId } = req.params;
+        const { index } = req.params;
+        const { originalname } = req.file;
         await validateSubmissionFileUploads(req);
 
         // check submission time
@@ -246,11 +246,11 @@ const uploadSubmissionPhoto = async (req, res) => {
 
 const uploadSubmissionSourceCode = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { buffer } = req.file;
-    const { submissionId } = req.params;
-    const { originalname } = req.file;
     try {
+        const { eventId } = req.params;
+        const { buffer } = req.file;
+        const { submissionId } = req.params;
+        const { originalname } = req.file;
         await validateSubmissionFileUploads(req);
 
         // check submission time
@@ -273,11 +273,11 @@ const uploadSubmissionSourceCode = async (req, res) => {
 
 const uploadSubmissionMarkdown = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { buffer } = req.file;
-    const { submissionId } = req.params;
-    const { originalname } = req.file;
     try {
+        const { eventId } = req.params;
+        const { buffer } = req.file;
+        const { submissionId } = req.params;
+        const { originalname } = req.file;
         await validateSubmissionFileUploads(req);
 
         // check submission time
@@ -300,11 +300,11 @@ const uploadSubmissionMarkdown = async (req, res) => {
 
 const uploadSubmissionIcon = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { buffer } = req.file;
-    const { submissionId } = req.params;
-    const { originalname } = req.file;
     try {
+        const { eventId } = req.params;
+        const { buffer } = req.file;
+        const { submissionId } = req.params;
+        const { originalname } = req.file;
         await validateSubmissionFileUploads(req);
 
         // check submission time
