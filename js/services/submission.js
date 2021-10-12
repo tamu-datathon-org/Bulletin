@@ -87,7 +87,7 @@ const addSubmission = async (requestBody, eventId, submissionId, token) => {
         const userSubmissionLinkObj = await userSubmissionLinksModel
             .createUserSubmissionLink(discordObj.userAuthId, submissionId, discordObj.discordInfo); // no submissionId yet
         logger.info(`user submission link obj ${JSON.stringify(userSubmissionLinkObj)}`);
-        logger.info(`usere submission link id ${userSubmissionLink?._id}`);
+        logger.info(`user submission link id ${userSubmissionLink?._id}`);
         return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj, userSubmissionLink?._id) || userSubmissionLink._id;
     }));
 

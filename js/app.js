@@ -66,7 +66,7 @@ app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/sourcecode`
 
 /**
  * submission endpoints
- * note: for the "add" endpoint, append /?submissionId=submissionId to upsert
+ * note: for the "add" endpoints it upserts
  */
 app.post(`${BASE_PATH}/api/:eventId/submission/add`, submissionController.addSubmission);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove`, submissionController.removeSubmission);
