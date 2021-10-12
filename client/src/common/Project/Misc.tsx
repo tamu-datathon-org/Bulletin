@@ -29,9 +29,10 @@ export interface Submission {
   photos: string,
   icon: string,
   markdown: string,
+  accoladeIds: Array<string>
 }
 
-interface SubmissionResponse {
+export interface SubmissionResponse {
     result: Submission;
 }
 
@@ -87,6 +88,7 @@ export const ProjectPage: React.FC = () => {
         photos: "",
         icon: "",
         markdown: "",
+        accoladeIds: []
       })
 
     const handleUpdateSubmission = () => {

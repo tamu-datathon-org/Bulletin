@@ -3,7 +3,7 @@ import { Upload } from '@geist-ui/react-icons';
 import axios from "axios";
 import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../../constants";
-import { Submission } from '../Project/Misc';
+import { Submission, SubmissionResponse } from '../Project/Misc';
 import 'react-datepicker/dist/react-datepicker.css'
 import DatePicker from "react-datepicker";
 
@@ -251,6 +251,43 @@ export interface EventsResponse {
     })
    }
 
+   const [curSubmission, setCurSubmission]=useState<Submission>();
+   const emptyCurSubmission = () => setCurSubmission({
+      _id: "",name: "",tags: [],links: [],discordTags: [],challengeId: "",
+      videoLink: "",answer1: "",answer2: "",answer3: "",answer4: "",answer5: "",
+      sourceCode: "",photos: "",icon: "",markdown: "",accoladeIds: []
+    })
+   const handleEditSubmission = (id:string) => {
+    axios.get<SubmissionResponse>(`${BASE_URL}/api/${curEventId}/submission/${id}`)
+    .then(res => setCurSubmission(res.data.result));
+   }
+   const deleteSubmission = () => {
+    if (window.confirm(`Are you sure you want to delete this submission? Name: ${curSubmission?.name}, Discord Tags: ${curSubmission?.discordTags}`)) {
+      if (window.prompt("To delete this submission, enter the full submission name","") === curSubmission?.name) {
+        axios.post(`${BASE_URL}/api/${curEventId}/admin/submission/${curSubmission?._id}/remove`)
+        .then(() => {
+          sendNotification("Deleted submission!", "success")
+          emptyCurSubmission();
+        })
+        .catch(res => {
+          sendNotification(String(res.response.data.error), "error");
+        })
+      } else {
+        window.alert("Incorrect submission name.")
+      }
+    }
+   }
+   const updateSubmissionAccolades = () => {
+    axios.post(`${BASE_URL}/api/${curEventId}/admin/submission/${curSubmission?._id}/accolades`, curSubmission)
+    .then(() => {
+      sendNotification("Updated submission accolades!", "success")
+      emptyCurSubmission();
+    })
+    .catch(res => {
+      sendNotification(String(res.response.data.error), "error");
+    })
+   }
+
   if (!eventsLoaded) {
     return (<Spinner />)
   } else {
@@ -347,7 +384,7 @@ export interface EventsResponse {
           )}
         </Fieldset>
         <Fieldset label="challenges">
-        <Card>
+          <Card>
             <Card.Content>
               <Text b>Add/Update a Challenge</Text>
             </Card.Content>
@@ -384,10 +421,44 @@ export interface EventsResponse {
           )}
         </Fieldset>
         <Fieldset label="submissions">
+        <Card>
+          <Card.Content>
+            <Text b>Award/Delete a Submission</Text>
+          </Card.Content>
+          <Divider />
+          <Card.Content>
+            <Input width="100%" key="name" label="Name" value={curSubmission?.name} id="name" disabled/>
+            <Spacer h={0.5}/>
+            <Input width="100%" key="tags" label="Tags" value={curSubmission?.tags?.join()} id="tags" disabled/>
+            <Spacer h={0.5}/>
+            <Input width="100%" key="links" label="Links" value={curSubmission?.links?.join()} id="links" disabled/>
+            <Spacer h={0.5}/>
+            <Input width="100%" key="discordtags" label="Discord Tags" value={curSubmission?.discordTags?.join()} id="discordTags" disabled/>
+            <Spacer h={0.5}/>
+            <Input width="100%" key="videolink" label="Video Link" value={curSubmission?.videoLink} id="videoLink" disabled/>
+            <Spacer h={0.5}/>
+            <Button type="error" onClick={deleteSubmission}>Delete Submission</Button>
+            <Spacer h={0.5}/>
+            <Text>Submission Accolades:</Text>
+            <Select placeholder="Award Accolade(s)" multiple initialValue={curSubmission?.accoladeIds} onChange={(s:any) => setCurSubmission((prev:any) => ({...prev, accoladeIds: s}))}>
+              {curEvent?.accolades.map(accolade => {
+                return <Select.Option key={accolade._id} value={accolade._id}>{accolade.name}</Select.Option>
+              })}
+            </Select>
+            <Button onClick={updateSubmissionAccolades}>Update Submission Accolade</Button>
+          </Card.Content>
+        </Card>
+        <Spacer h={0.5}/>
         {curEvent && curEvent.submissions.map(submission => 
-        (<Card key={submission._id}>
-            <Text>{submission.name}</Text>
-          </Card>)
+          (
+            <React.Fragment key={submission._id}>
+              <Card>
+                <Text>{submission.name}</Text>
+                <Button auto scale={0.5} value={submission._id} onClick={() => handleEditSubmission(submission._id)}>Edit</Button>
+              </Card>
+              <Spacer h={0.5}/>
+            </React.Fragment>
+          )
         )}
         </Fieldset>
       </Fieldset.Group>
