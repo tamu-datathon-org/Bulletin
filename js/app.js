@@ -55,7 +55,7 @@ app.get(`${BASE_PATH}/api/:eventId/download/challengeImage/:challengeId`, eventC
 // ================== all submissions by event =========================
 app.get(`${BASE_PATH}/api/:eventId/submission`, eventController.getSubmissions);
 // ================== user submissions by userAuth id ========================
-app.get(`${BASE_PATH}/api/:eventId/submission/user/:userAuthId`, eventController.getSubmissionsByUserAuthId);
+app.get(`${BASE_PATH}/api/:eventId/submission/user`, eventController.getSubmissionsByUserAuthId);
 // ================== submission by submission id ======================
 app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId`, eventController.getSubmission);
 // ============ download submission files ================

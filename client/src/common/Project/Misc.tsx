@@ -44,9 +44,6 @@ export const ProjectPage: React.FC = () => {
     const sendNotification = (msg:string, intent: any) => {
         setToast({ text: msg, type: intent, delay: 8000 });
       };
-
-    // TODO: Get this from UserAuthProvider
-    const userAuthId = "5efc0b99a37c4300032acbce"
     
     const [curEventId, setCurEventId] = useState<string>("");
 
@@ -124,8 +121,8 @@ export const ProjectPage: React.FC = () => {
     const [submissions, setSubmissions] = useState<Submission[]>([])
     useEffect(() => {
       let mounted = true
-      if (curEventId && userAuthId) {
-        axios.get<SubmissionsResponse>(`${BASE_URL}/api/${curEventId}/submission/user/${userAuthId}`)
+      if (curEventId) {
+        axios.get<SubmissionsResponse>(`${BASE_URL}/api/${curEventId}/submission/user`)
         .then(res => {
           if (mounted) {
             setSubmissions(res.data.result)
