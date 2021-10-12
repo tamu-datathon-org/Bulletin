@@ -59,10 +59,23 @@ const getAuthId = async (token) => {
     return authId;
 };
 
-const getDiscordUser = async (userAuthId) => {
-    let response = null;
-    response = await fetch(`${harmoniaUrl}/api/users/?userAuthId=${userAuthId}`);
-    return response.json();
+const getDiscordUser = async (discordTag, userAuthId, accessToken) => {
+    try {
+        let response = null;
+        const options = {
+            headers: {
+                cookie: `accessToken=${accessToken};`,
+            },
+        };
+        if (discordTag) {
+            response = await fetch(`${harmoniaUrl}/api/user/?discordInfo=${discordTag}`, options);
+        } else if (userAuthId) {
+            response = await fetch(`${harmoniaUrl}/api/user/?userAuthId=${userAuthId}`, options);
+        }
+        return response.json();
+    } catch (err) {
+        throw new Error('📌getDiscordUser:: you are not logged in!');
+    }
 };
 
 module.exports = {

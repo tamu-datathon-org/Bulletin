@@ -1,9 +1,11 @@
-import { Button, Card, Divider, Fieldset, Image, Input, Select, Spacer, Spinner, Text, useToasts } from "@geist-ui/react";
+import { Button, Card, Radio, Divider, Toggle, Fieldset, Image, Input, Select, Spacer, Spinner, Text, useToasts } from "@geist-ui/react";
 import { Upload } from '@geist-ui/react-icons';
 import axios from "axios";
 import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../../constants";
-import { Submission } from '../Project/Misc';
+import { Submission, SubmissionResponse } from '../Project/Misc';
+import 'react-datepicker/dist/react-datepicker.css'
+import DatePicker from "react-datepicker";
 
 interface Accolade {
   _id: string,
@@ -16,8 +18,13 @@ interface Accolade {
 
 export interface Challenge {
   _id: string,
+  accoladeIds: Array<string>
   name: string,
-  questions: Array<string>
+  question1: string,
+  question2: string,
+  question3: string,
+  question4: string,
+  question5: string,
   places: number
 }
 
@@ -36,6 +43,7 @@ interface AccoladeResp {
 export interface Event {
   name: string;
   _id: string;
+  show: boolean;
   description: string;
   start_time: string;
   end_time: string;
@@ -61,10 +69,20 @@ export interface EventsResponse {
  * Entire admin page
  */
  export const AdminPage: React.FC = () => {
+  const [eventsLoaded, setEventsLoaded] = useState(false);
   const [eventList, setEventList] = useState<Event[]>([]);
   useEffect(() => {
+    let mounted = true
     axios.get<EventsResponse>(`${BASE_URL}/api/events`)
-    .then(res => setEventList(res.data.result));
+    .then(res => {
+      if (mounted){
+        setEventList(res.data.result)
+       setEventsLoaded(true)
+      }
+    });
+    return () => {
+      mounted = false;
+    }
   },[]);
 
   const sendNotification = (msg:string, intent: any) => {
@@ -77,13 +95,19 @@ export interface EventsResponse {
 
   const [curEvent, setCurEvent] = useState<Event>();
   useEffect(() => {
-    if (curEventId && curEventId !== "create_new_event") {
+    let mounted = true
+    if (curEventId) {
       setEventLoaded(false);
       axios.get<EventResponse>(`${BASE_URL}/api/${curEventId}?full=true`)
       .then(res => {
-        setCurEvent(res.data.result);
-        setEventLoaded(true);
+        if (mounted) {
+          setCurEvent(res.data.result);
+          setEventLoaded(true);
+        }
       });
+      return () => {
+        mounted = false;
+      }
     }
   },[curEventId]);
 
@@ -102,8 +126,9 @@ export interface EventsResponse {
       .catch(res => {
         sendNotification(String(res.response.data.error), "error");
       })
+    } else {
+      setCurEventId((val as string));
     }
-    setCurEventId((val as string));
   };
   
   const [editable, setEditable] = useState(false);
@@ -136,6 +161,7 @@ export interface EventsResponse {
   }
 
   const eventDataHandler = (e:any) => setCurEvent((prev:any) => ({...prev, [e.target.id]: e.target.value}));
+  const eventDateDataHandler = (e:any, place:string) => setCurEvent((prev:any) => ({...prev, [place]: e}));
 
   const [curAccolade, setCurAccolade] = useState<Accolade>();
   const handleEditAccolade = (id:string) => {
@@ -173,26 +199,16 @@ export interface EventsResponse {
 
    const [curChallenge, setCurChallenge]=useState<Challenge>();
    const challengeDataHandler = (e:any) => setCurChallenge((prev:any) => ({...prev,  [e.target.id]: e.target.value}));
-   const handleQuestionChange = (i:number, e:any) => {
-     const values:Array<string> = curChallenge ? curChallenge.questions : [];
-     values[i]=(e.target.value as string)
-     setCurChallenge((prev:any) => ({...prev, "questions":values})) 
-   }
-   const handleQuestionDelete = (i:number) => {
-     const values = [...curChallenge!.questions]
-     values.splice(i,1)
-     setCurChallenge((prev:any) => ({...prev, "questions":values}))
-   }
-   const handleQuestionAdd = () => {
-     const values:Array<string> = curChallenge?.questions ? curChallenge.questions : [];
-     values.push("");
-     setCurChallenge((prev:any)=>({...prev,"questions":values}))
-   }
    const emptyCurChallenge = () => setCurChallenge({
     _id: "",
     name: "",
-    questions: [],
     places: 0,
+    accoladeIds: [],
+    question1: "",
+    question2: "",
+    question3: "",
+    question4: "",
+    question5: "",
    })
    const handleUpdateChallenge = () => {
      axios.post(`${BASE_URL}/api/${curEventId}/admin/add/challenge`, curChallenge)
@@ -228,7 +244,6 @@ export interface EventsResponse {
      data.append('file', file);
      axios.post(`${BASE_URL}/api/${curEventId}/admin/upload/eventImage`, data)
      .then(res => {
-       console.log(res)
       sendNotification("Uploaded image!", "success")
     })
     .catch(res => {
@@ -236,7 +251,44 @@ export interface EventsResponse {
     })
    }
 
-  if (eventList.length === 0) {
+   const [curSubmission, setCurSubmission]=useState<Submission>();
+   const emptyCurSubmission = () => setCurSubmission({
+      _id: "",name: "",tags: [],links: [],discordTags: [],challengeId: "",
+      videoLink: "",answer1: "",answer2: "",answer3: "",answer4: "",answer5: "",
+      sourceCode: "",photos: "",icon: "",markdown: "",accoladeIds: []
+    })
+   const handleEditSubmission = (id:string) => {
+    axios.get<SubmissionResponse>(`${BASE_URL}/api/${curEventId}/submission/${id}`)
+    .then(res => setCurSubmission(res.data.result));
+   }
+   const deleteSubmission = () => {
+    if (window.confirm(`Are you sure you want to delete this submission? Name: ${curSubmission?.name}, Discord Tags: ${curSubmission?.discordTags}`)) {
+      if (window.prompt("To delete this submission, enter the full submission name","") === curSubmission?.name) {
+        axios.post(`${BASE_URL}/api/${curEventId}/admin/submission/${curSubmission?._id}/remove`)
+        .then(() => {
+          sendNotification("Deleted submission!", "success")
+          emptyCurSubmission();
+        })
+        .catch(res => {
+          sendNotification(String(res.response.data.error), "error");
+        })
+      } else {
+        window.alert("Incorrect submission name.")
+      }
+    }
+   }
+   const updateSubmissionAccolades = () => {
+    axios.post(`${BASE_URL}/api/${curEventId}/admin/submission/${curSubmission?._id}/accolades`, curSubmission)
+    .then(() => {
+      sendNotification("Updated submission accolades!", "success")
+      emptyCurSubmission();
+    })
+    .catch(res => {
+      sendNotification(String(res.response.data.error), "error");
+    })
+   }
+
+  if (!eventsLoaded) {
     return (<Spinner />)
   } else {
     return (
@@ -258,6 +310,33 @@ export interface EventsResponse {
       <Spacer h={1}/>
       <Input width="100%" label="Description" disabled={!editable} value={curEvent?.description} id="description" onChange={eventDataHandler}/>
       <Spacer h={1}/>
+      <Text>Visible to public:</Text>
+      <Toggle checked={curEvent?.show} disabled={!editable} onChange={(e:any) => {
+        e.target.value = e.target.checked
+        e.target.id = "show"
+        eventDataHandler(e);
+        }}/>
+      <Spacer h={1}/>
+      <Text>Start time:</Text>
+      <DatePicker
+        selected={new Date(Date.parse(curEvent!.start_time))}
+        onChange={(date) => eventDateDataHandler(date?.toString(), "start_time")}
+        timeInputLabel="Time:"
+        dateFormat="MM/dd/yyyy h:mm aa"
+        showTimeInput
+        readOnly={!editable}
+      />
+      <Spacer h={1}/>
+      <Text>End time:</Text>
+      <DatePicker
+        selected={new Date(Date.parse(curEvent!.end_time))}
+        onChange={(date) => eventDateDataHandler(date?.toString(), "end_time")}
+        timeInputLabel="Time:"
+        dateFormat="MM/dd/yyyy h:mm aa"
+        showTimeInput
+        readOnly={!editable}
+      />
+      <Spacer h={1}/>
       <Button onClick={handleEditButton}>{editable ? "Update" : "Edit"}</Button>
       <Spacer h={0.5}/>
       <Button onClick={deleteEvent}>Delete</Button>
@@ -275,7 +354,16 @@ export interface EventsResponse {
             <Divider />
             <Card.Content>
               <Input label="Name" value={curAccolade?.name} id="name" onChange={accoladeDataHandler}/>
+              <Spacer h={0.5}/>
               <Input label="Description" value={curAccolade?.description} id="description" onChange={accoladeDataHandler}/>
+              <Spacer h={0.5}/>
+              <Input label="Emoji" value={curAccolade?.emoji} id="emoji" onChange={accoladeDataHandler}/>
+              <Spacer h={0.5}/>
+              <Select value={curAccolade?.challengeId} placeholder="Select a Challenge" onChange={(s:any) => setCurAccolade((prev:any) => ({...prev, challengeId: s}))}>
+                {curEvent?.challenges.map(challenge => {
+                  return <Select.Option key={challenge._id} value={challenge._id}>{challenge.name}</Select.Option>
+                })}
+              </Select>
               <Spacer h={0.5}/>
               <Button onClick={handleUpdateAccolade}>{curAccolade?._id ? "Update" : "Add"}</Button>
               <Spacer h={0.5}/>
@@ -284,30 +372,36 @@ export interface EventsResponse {
           </Card>
           <Spacer h={0.5}/>
           {curEvent?.accolades.map(accolade => (
-            <Card key={accolade._id}>
-              <Text>{accolade.name}</Text>
-              <Text>{accolade.description}</Text>
-              <Button auto scale={0.5} value={accolade._id} onClick={() => handleEditAccolade(accolade._id)}>Edit</Button>
-            </Card>
+            <React.Fragment key={accolade._id}>
+              <Card>
+                <Text>{accolade.name}</Text>
+                <Text>{accolade.description}</Text>
+                <Button auto scale={0.5} value={accolade._id} onClick={() => handleEditAccolade(accolade._id)}>Edit</Button>
+              </Card>
+              <Spacer h={0.5}/>
+            </React.Fragment>
             )
           )}
         </Fieldset>
         <Fieldset label="challenges">
-        <Card>
+          <Card>
             <Card.Content>
               <Text b>Add/Update a Challenge</Text>
             </Card.Content>
             <Divider />
             <Card.Content>
               <Input label="Name" value={curChallenge?.name} id="name" onChange={challengeDataHandler}/>
-              {
-                curChallenge?.questions?.map((question,i) =>
-                <>
-                <Input value={question} onChange={e => handleQuestionChange(i,e)}></Input>
-                <Button value={i} onClick={()=>handleQuestionDelete(i)}>Remove</Button>
-                </>)
-              }
-              <Button onClick={handleQuestionAdd}>Add Question</Button>
+              <Spacer h={0.5}/>
+              <Text>Places:</Text>
+              <Radio.Group value={curChallenge?.places} id="places" onChange={(p:any) => setCurChallenge((prev:any) => ({...prev, places: p}))} useRow>
+                {[1,2,3].map(i => <Radio key={i} value={i}>{i}</Radio>)}
+              </Radio.Group>
+              <Spacer h={0.5}/>
+                <Input label="Question 1" value={curChallenge?.question1} id="question1" key="question1" onChange={challengeDataHandler}/>
+                <Input label="Question 2" value={curChallenge?.question2} id="question2" key="question2" onChange={challengeDataHandler}/>
+                <Input label="Question 3" value={curChallenge?.question3} id="question3" key="question3" onChange={challengeDataHandler}/>
+                <Input label="Question 4" value={curChallenge?.question4} id="question4" key="question4" onChange={challengeDataHandler}/>
+                <Input label="Question 5" value={curChallenge?.question5} id="question5" key="question5" onChange={challengeDataHandler}/>
               <Spacer h={0.5}/>
               <Button onClick={handleUpdateChallenge}>{curChallenge?._id ? "Update" : "Add"}</Button>
               <Spacer h={0.5}/>
@@ -316,19 +410,55 @@ export interface EventsResponse {
           </Card>
           <Spacer h={0.5}/>
           {curEvent && curEvent.challenges.map(challenge => (
-            <Card key={challenge._id}>
-              <Text>{challenge.name}</Text>
-              {challenge.questions.map(question=><Text>{question}</Text>)}
-              <Button auto scale={0.5} value={challenge._id} onClick={() => handleEditChallenge(challenge._id)}>Edit</Button>
-            </Card>
+            <React.Fragment key={challenge._id}>
+              <Card key={challenge._id}>
+                <Text>{challenge.name}</Text>
+                <Button auto scale={0.5} value={challenge._id} onClick={() => handleEditChallenge(challenge._id)}>Edit</Button>
+              </Card>
+              <Spacer h={0.5}/>
+            </React.Fragment>
             )
           )}
         </Fieldset>
         <Fieldset label="submissions">
+        <Card>
+          <Card.Content>
+            <Text b>Award/Delete a Submission</Text>
+          </Card.Content>
+          <Divider />
+          <Card.Content>
+            <Input width="100%" key="name" label="Name" value={curSubmission?.name} id="name" disabled/>
+            <Spacer h={0.5}/>
+            <Input width="100%" key="tags" label="Tags" value={curSubmission?.tags?.join()} id="tags" disabled/>
+            <Spacer h={0.5}/>
+            <Input width="100%" key="links" label="Links" value={curSubmission?.links?.join()} id="links" disabled/>
+            <Spacer h={0.5}/>
+            <Input width="100%" key="discordtags" label="Discord Tags" value={curSubmission?.discordTags?.join()} id="discordTags" disabled/>
+            <Spacer h={0.5}/>
+            <Input width="100%" key="videolink" label="Video Link" value={curSubmission?.videoLink} id="videoLink" disabled/>
+            <Spacer h={0.5}/>
+            <Button type="error" onClick={deleteSubmission}>Delete Submission</Button>
+            <Spacer h={0.5}/>
+            <Text>Submission Accolades:</Text>
+            <Select placeholder="Award Accolade(s)" multiple value={curSubmission?.accoladeIds} onChange={(s:any) => setCurSubmission((prev:any) => ({...prev, accoladeIds: s}))}>
+              {curEvent?.accolades.map(accolade => {
+                return <Select.Option key={accolade._id} value={accolade._id}>{accolade.name}</Select.Option>
+              })}
+            </Select>
+            <Button onClick={updateSubmissionAccolades}>Update Submission Accolade</Button>
+          </Card.Content>
+        </Card>
+        <Spacer h={0.5}/>
         {curEvent && curEvent.submissions.map(submission => 
-        (<Card key={submission._id}>
-            <Text>{submission.name}</Text>
-          </Card>)
+          (
+            <React.Fragment key={submission._id}>
+              <Card>
+                <Text>{submission.name}</Text>
+                <Button auto scale={0.5} value={submission._id} onClick={() => handleEditSubmission(submission._id)}>Edit</Button>
+              </Card>
+              <Spacer h={0.5}/>
+            </React.Fragment>
+          )
         )}
         </Fieldset>
       </Fieldset.Group>

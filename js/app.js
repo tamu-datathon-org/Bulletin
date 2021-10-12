@@ -55,7 +55,7 @@ app.get(`${BASE_PATH}/api/:eventId/download/challengeImage/:challengeId`, eventC
 // ================== all submissions by event =========================
 app.get(`${BASE_PATH}/api/:eventId/submission`, eventController.getSubmissions);
 // ================== user submissions by userAuth id ========================
-app.get(`${BASE_PATH}/api/:eventId/submission/user/:userAuthId`, eventController.getSubmissionsByUserAuthId);
+app.get(`${BASE_PATH}/api/:eventId/submission/user`, eventController.getSubmissionsByUserAuthId);
 // ================== submission by submission id ======================
 app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId`, eventController.getSubmission);
 // ============ download submission files ================
@@ -68,12 +68,15 @@ app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/sourcecode`
  * submission endpoints
  * note: for the "add" endpoint, append /?submissionId=submissionId to upsert
  */
-app.post(`${BASE_PATH}/api/:eventId/submission/add/:userAuthId`, submissionController.addSubmission);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove/:userAuthId`, submissionController.removeSubmission);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/:type/:userAuthId`, multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like/:userAuthId`, submissionController.toggleLike);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add/:userAuthId`, submissionController.addComment);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/:commentId/remove/:userAuthId`, submissionController.removeComment);
+app.post(`${BASE_PATH}/api/:eventId/submission/add`, submissionController.addSubmission);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove`, submissionController.removeSubmission);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/photo/:index`, multerUtil.submissionPhotoOptions.single('file'), submissionController.uploadSubmissionPhoto);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/sourceCode`, multerUtil.submissionSourceCodeOptions.single('file'), submissionController.uploadSubmissionSourceCode);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/markdown`, multerUtil.submissionMarkdownOptions.single('file'), submissionController.uploadSubmissionMarkdown);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/icon`, multerUtil.submissionIconOptions.single('file'), submissionController.uploadSubmissionIcon);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like`, submissionController.toggleLike);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add`, submissionController.addComment);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/:commentId/remove`, submissionController.removeComment);
 
 /**
  * admin enpoints
@@ -87,6 +90,7 @@ app.post(`${BASE_PATH}/api/:eventId/admin/remove/challenge/:challengeId`, adminC
 app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
 app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
 app.post(`${BASE_PATH}/api/:eventId/admin/submission/:submissionId/remove`, adminController.removeSubmission);
+app.post(`${BASE_PATH}/api/:eventId/admin/submission/:submissionId/accolades`, adminController.addAccoladesToSubmission);
 
 if (process.env.NODE_ENV !== 'production')
     app.use('/', createProxyMiddleware({ target: 'https://tamudatathon.com', changeOrigin: true, hostRewrite: true }));

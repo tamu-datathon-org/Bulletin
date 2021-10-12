@@ -31,10 +31,8 @@ const validateAddAccolade = async (eventId, requestBody) => {
 const validateAddChallenge = async (eventId, requestBody) => {
     const { name } = requestBody;
     const { description } = requestBody;
-    const { questions } = requestBody;
     if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
     if ((name?.length ?? 0) === 0 || typeof name !== 'string') throw new Error('📌name is a required field');
-    if (questions && !Array.isArray(questions)) throw new Error('📌questions must be an array');
     if (description && typeof description !== 'string') throw new Error('📌description must be a string');
 };
 
@@ -127,8 +125,12 @@ const addChallenge = async (req, res) => {
         const { eventId } = req.params;
         const { _id } = req.body;
         const { name } = req.body;
-        const { questions } = req.body;
         const { places } = req.body;
+        const { question1 } = req.body;
+        const { question2 } = req.body;
+        const { question3 } = req.body;
+        const { question4 } = req.body;
+        const { question5 } = req.body;
         await validateAddChallenge(eventId, req.body);
         let numPlaces = null;
         if (places) {
@@ -138,8 +140,8 @@ const addChallenge = async (req, res) => {
                 throw new Error(`📌places must be <= ${config.challenges.max_places} and > 0`);
             }
         }
-        response.challengeId = await adminService
-            .addChallenge(eventId, name, questions, numPlaces, _id);
+        response.challengeId = await adminService.addChallenge(eventId, name, numPlaces, _id, 
+            question1, question2, question3, question4, question5);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -204,6 +206,12 @@ const uploadChallengeImage = async (req, res) => {
     }
 };
 
+/**
+ * @function removeSubmission
+ * @param {Object} req 
+ * @param {Object} res 
+ */
+
 const removeSubmission = async (req, res) => {
     const response = {};
     try {
@@ -212,6 +220,21 @@ const removeSubmission = async (req, res) => {
         if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
         if ((submissionId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌submissionId is a required parameter');
         response.submissionId = await adminService.removeSubmission(eventId, submissionId);
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+const addAccoladesToSubmission = async (req, res) => {
+    const response = {};
+    try {
+        const { accoladeIds } = req.body;
+        const { submissionId } = req.params;
+        const { eventId } = req.params;
+        response.submissionId = await adminService.addAccoladesToSubmission(eventId, submissionId, accoladeIds);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -236,6 +259,7 @@ module.exports = {
     uploadEventImage,
     uploadChallengeImage,
     removeSubmission,
+    addAccoladesToSubmission,
     // testing
     setAdminService,
 };

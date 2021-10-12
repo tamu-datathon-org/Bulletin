@@ -5,7 +5,7 @@ const logger = require('../../../utils/logger');
 const eventController = require('../../../controllers/event');
 // const config = require('../../../utils/config');
 
-describe('admin controller', () => {
+describe('event controller', () => {
     const mockResponse = {
         // eslint-disable-next-line no-unused-vars
         status: (code) => mockResponse,
@@ -36,7 +36,7 @@ describe('admin controller', () => {
     });
 
     const mockEventResponse = 'event';
-    const mockSubsmissionResponse = 'event';
+    const mockSubsmissionResponse = 'submission';
     const mockPipe = {
         pipe: () => { },
     };
@@ -62,7 +62,7 @@ describe('admin controller', () => {
         getSubmission: () => mockSubsmissionResponse,
         getSubmissions: () => mockSubsmissionResponse,
         getSubmissionsByUserAuthId: () => mockSubsmissionResponse,
-        getSubmissionFile: () => mockSubsmissionResponse,
+        getSubmissionFile: () => mockPipe,
         uploadSubmissionFile: () => mockSubsmissionResponse,
     };
 
@@ -585,7 +585,7 @@ describe('admin controller', () => {
 
         it('get submission - VALID', async () => {
             const expectedRes = {
-                result: mockEventResponse,
+                result: mockSubsmissionResponse,
             };
             await eventController.getSubmission(mockRequest, mockResponse);
             expect(mockResponse.status.calledWith(200)).to.equal(true);
@@ -632,4 +632,387 @@ describe('admin controller', () => {
             expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
         });
     });
+
+    describe('get submissions', () => {
+        const mockRequest = {
+            params: {
+                eventId: null,
+            },
+        };
+
+        beforeEach(() => {
+            mockRequest.params.eventId = mockuuid;
+        });
+
+        afterEach(() => {
+            sinon.reset(mockResponse, 'status');
+            sinon.reset(mockResponse, 'json');
+            sinon.reset(mockResponse, 'send');
+            sinon.reset(mockResponse, 'download');
+        });
+
+        it('get submissions - VALID', async () => {
+            const expectedRes = {
+                result: mockSubsmissionResponse,
+            };
+            await eventController.getSubmissions(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(200)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submissions - INVALID null eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = null;
+            await eventController.getSubmissions(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submissions - INVALID no eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = '';
+            await eventController.getSubmissions(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+    });
+
+    describe('get submissions by userAuthId', () => {
+        const mockRequest = {
+            params: {
+                eventId: null,
+                userAuthId: null,
+            },
+        };
+
+        beforeEach(() => {
+            mockRequest.params.eventId = mockuuid;
+            mockRequest.params.userAuthId = mockuuid;
+        });
+
+        afterEach(() => {
+            sinon.reset(mockResponse, 'status');
+            sinon.reset(mockResponse, 'json');
+            sinon.reset(mockResponse, 'send');
+            sinon.reset(mockResponse, 'download');
+        });
+
+        it('get submissions by userAuthId - VALID', async () => {
+            const expectedRes = {
+                result: mockSubsmissionResponse,
+            };
+            await eventController.getSubmissionsByUserAuthId(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(200)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission by userAuthId - INVALID null eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = null;
+            await eventController.getSubmissionsByUserAuthId(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission - INVALID no eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = '';
+            await eventController.getSubmissionsByUserAuthId(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission by userAuthId - INVALID null userAuthId', async () => {
+            const expectedRes = {
+                error: '📌userAuthId is a required parameter',
+            };
+            mockRequest.params.userAuthId = null;
+            await eventController.getSubmissionsByUserAuthId(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission - INVALID no userAuthId', async () => {
+            const expectedRes = {
+                error: '📌userAuthId is a required parameter',
+            };
+            mockRequest.params.userAuthId = '';
+            await eventController.getSubmissionsByUserAuthId(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+    });
+
+    describe('get submission icon', () => {
+        const mockRequest = {
+            params: {
+                eventId: null,
+                submissionId: null
+            },
+        };
+
+        beforeEach(() => {
+            mockRequest.params.eventId = mockuuid;
+            mockRequest.params.submissionId = mockuuid;
+        });
+
+        afterEach(() => {
+            sinon.reset(mockResponse, 'status');
+            sinon.reset(mockResponse, 'json');
+            sinon.reset(mockResponse, 'send');
+            sinon.reset(mockResponse, 'download');
+        });
+
+        it('get submission icon - VALID', async () => {
+            await eventController.getSubmissionIcon(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).not.to.equal(true);
+        });
+
+        it('get submission icon - INVALID null eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = null;
+            await eventController.getSubmissionIcon(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission icon - INVALID no eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = '';
+            await eventController.getSubmissionIcon(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission icon - INVALID null submissionId', async () => {
+            const expectedRes = {
+                error: '📌submissionId is a required parameter',
+            };
+            mockRequest.params.submissionId = null;
+            await eventController.getSubmissionIcon(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission icon - INVALID no submissionId', async () => {
+            const expectedRes = {
+                error: '📌submissionId is a required parameter',
+            };
+            mockRequest.params.submissionId = '';
+            await eventController.getSubmissionIcon(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+    });
+
+    describe('get submission photos', () => {
+        const mockRequest = {
+            params: {
+                eventId: null,
+                submissionId: null
+            },
+        };
+
+        beforeEach(() => {
+            mockRequest.params.eventId = mockuuid;
+            mockRequest.params.submissionId = mockuuid;
+        });
+
+        afterEach(() => {
+            sinon.reset(mockResponse, 'status');
+            sinon.reset(mockResponse, 'json');
+            sinon.reset(mockResponse, 'send');
+            sinon.reset(mockResponse, 'download');
+        });
+
+        it('get submission photos - VALID', async () => {
+            await eventController.getSubmissionPhotos(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).not.to.equal(true);
+        });
+
+        it('get submission phtotos - INVALID null eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = null;
+            await eventController.getSubmissionPhotos(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission photos - INVALID no eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = '';
+            await eventController.getSubmissionPhotos(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission photos - INVALID null submissionId', async () => {
+            const expectedRes = {
+                error: '📌submissionId is a required parameter',
+            };
+            mockRequest.params.submissionId = null;
+            await eventController.getSubmissionPhotos(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission photos - INVALID no submissionId', async () => {
+            const expectedRes = {
+                error: '📌submissionId is a required parameter',
+            };
+            mockRequest.params.submissionId = '';
+            await eventController.getSubmissionPhotos(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+    });
+
+    describe('get submission markdown', () => {
+        const mockRequest = {
+            params: {
+                eventId: null,
+                submissionId: null
+            },
+        };
+
+        beforeEach(() => {
+            mockRequest.params.eventId = mockuuid;
+            mockRequest.params.submissionId = mockuuid;
+        });
+
+        afterEach(() => {
+            sinon.reset(mockResponse, 'status');
+            sinon.reset(mockResponse, 'json');
+            sinon.reset(mockResponse, 'send');
+            sinon.reset(mockResponse, 'download');
+        });
+
+        it('get submission markdown - VALID', async () => {
+            await eventController.getSubmissionMarkdown(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).not.to.equal(true);
+        });
+
+        it('get submission markdown - INVALID null eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = null;
+            await eventController.getSubmissionMarkdown(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission markdown - INVALID no eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = '';
+            await eventController.getSubmissionMarkdown(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission markdown - INVALID null submissionId', async () => {
+            const expectedRes = {
+                error: '📌submissionId is a required parameter',
+            };
+            mockRequest.params.submissionId = null;
+            await eventController.getSubmissionMarkdown(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission markdown - INVALID no submissionId', async () => {
+            const expectedRes = {
+                error: '📌submissionId is a required parameter',
+            };
+            mockRequest.params.submissionId = '';
+            await eventController.getSubmissionMarkdown(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+    });
+
+    describe('get submission source code', () => {
+        const mockRequest = {
+            params: {
+                eventId: null,
+                submissionId: null
+            },
+        };
+
+        beforeEach(() => {
+            mockRequest.params.eventId = mockuuid;
+            mockRequest.params.submissionId = mockuuid;
+        });
+
+        afterEach(() => {
+            sinon.reset(mockResponse, 'status');
+            sinon.reset(mockResponse, 'json');
+            sinon.reset(mockResponse, 'send');
+            sinon.reset(mockResponse, 'download');
+        });
+
+        it('get submission source code - VALID', async () => {
+            await eventController.getSubmissionSourceCode(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).not.to.equal(true);
+        });
+
+        it('get submission source code - INVALID null eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = null;
+            await eventController.getSubmissionSourceCode(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission source code - INVALID no eventId', async () => {
+            const expectedRes = {
+                error: '📌eventId is a required parameter',
+            };
+            mockRequest.params.eventId = '';
+            await eventController.getSubmissionSourceCode(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission source code - INVALID null submissionId', async () => {
+            const expectedRes = {
+                error: '📌submissionId is a required parameter',
+            };
+            mockRequest.params.submissionId = null;
+            await eventController.getSubmissionSourceCode(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+
+        it('get submission source code - INVALID no submissionId', async () => {
+            const expectedRes = {
+                error: '📌submissionId is a required parameter',
+            };
+            mockRequest.params.submissionId = '';
+            await eventController.getSubmissionSourceCode(mockRequest, mockResponse);
+            expect(mockResponse.status.calledWith(400)).to.equal(true);
+            expect(mockResponse.json.calledWith(expectedRes)).to.equal(true);
+        });
+    });
 });
+

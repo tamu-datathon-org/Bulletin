@@ -5,10 +5,15 @@ const logger = require('../utils/logger');
 const challenge = {
     name: null,
     places: null,
-    questions: [],
+    question1: null,
+    question2: null,
+    question3: null,
+    question4: null,
+    question5: null,
     accoladeIds: [],
-    sponsorsIds: [],
     eventId: null,
+    image: null,
+    imageKey: null,
 };
 
 /**
@@ -20,13 +25,18 @@ const challenge = {
  * @param {String} eventId
  * @returns {Object} challenge obj
  */
-const createChallenge = async (name, places, accoladeIds, questions, eventId) => {
+const createChallenge = async (name, places, accoladeIds, eventId, 
+    question1, question2, question3, question4, question5) => {
     const challengeObj = {
         name: name,
         places: places || 0,
-        questions: questions || [],
         accoladeIds: accoladeIds || [],
         eventId: await mongoUtil.ObjectId(eventId),
+        question1: question1,
+        question2: question2,
+        question3: question3,
+        question4: question4,
+        question5: question5,
     };
     return challengeObj;
 };
