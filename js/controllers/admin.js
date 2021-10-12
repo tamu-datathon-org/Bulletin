@@ -230,10 +230,10 @@ const removeSubmission = async (req, res) => {
 
 const addAccoladesToSubmission = async (req, res) => {
     const response = {};
-    const { accoladeIds } = req.body;
-    const { submissionId } = req.params;
-    const { eventId } = req.params;
     try {
+        const { accoladeIds } = req.body;
+        const { submissionId } = req.params;
+        const { eventId } = req.params;
         response.submissionId = await adminService.addAccoladesToSubmission(eventId, submissionId, accoladeIds);
         res.status(200).json(response);
     } catch (err) {

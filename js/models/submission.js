@@ -277,7 +277,7 @@ const addSubmissionAccoladeIds = async (submissionId, accoladeIds) => {
             .collection(config.database.collections.submissions)
             .updateOne(
                 { _id: await mongoUtil.ObjectId(submissionId) },
-                { accoladeIds: accoladeIds },
+                { $set: { accoladeIds: accoladeIds } },
             );
         await mongoUtil.closeClient(client);
         return upsertedId;
