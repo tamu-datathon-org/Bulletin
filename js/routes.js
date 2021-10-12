@@ -70,11 +70,14 @@ app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/sourcecode`
  */
 app.post(`${BASE_PATH}/api/:eventId/submission/add`, bouncerMiddleware.checkIfLoggedIn(), submissionController.addSubmission);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove`, bouncerMiddleware.checkIfLoggedIn(), submissionController.removeSubmission);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/:type`, bouncerMiddleware.checkIfLoggedIn(), multerUtil.submissionFileOptions.single('file'), submissionController.submissionFileUpload);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/photo/:index`, bouncerMiddleware.checkIfLoggedIn(), multerUtil.submissionPhotoOptions.single('file'), submissionController.uploadSubmissionPhoto);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/sourceCode`, bouncerMiddleware.checkIfLoggedIn(), multerUtil.submissionSourceCodeOptions.single('file'), submissionController.uploadSubmissionSourceCode);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/markdown`, bouncerMiddleware.checkIfLoggedIn(), multerUtil.submissionMarkdownOptions.single('file'), submissionController.uploadSubmissionMarkdown);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/icon`, bouncerMiddleware.checkIfLoggedIn(), multerUtil.submissionIconOptions.single('file'), submissionController.uploadSubmissionIcon);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like`, bouncerMiddleware.checkIfLoggedIn(), submissionController.toggleLike);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add`, bouncerMiddleware.checkIfLoggedIn(), submissionController.addComment);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/remove`, bouncerMiddleware.checkIfLoggedIn(), submissionController.removeComment);
- 
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/:commentId/remove`, bouncerMiddleware.checkIfLoggedIn(), submissionController.removeComment);
+
 /**
  * admin enpoints
  */
@@ -87,6 +90,7 @@ app.post(`${BASE_PATH}/api/:eventId/admin/remove/challenge/:challengeId`, bounce
 app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, bouncerMiddleware.checkIfLoggedIn(true), multerUtil.adminUploadOptions.single('file'), adminController.uploadEventImage);
 app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, bouncerMiddleware.checkIfLoggedIn(true), multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
 app.post(`${BASE_PATH}/api/:eventId/admin/submission/:submissionId/remove`, bouncerMiddleware.checkIfLoggedIn(true), adminController.removeSubmission);
+app.post(`${BASE_PATH}/api/:eventId/admin/submission/:submissionId/accolades`, bouncerMiddleware.checkIfLoggedIn(true), adminController.addAccoladesToSubmission);
 
 if (process.env.NODE_ENV !== 'production')
     app.use('/', createProxyMiddleware({ target: 'https://tamudatathon.com', changeOrigin: true, hostRewrite: true }));
