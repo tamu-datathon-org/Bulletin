@@ -440,7 +440,7 @@ export interface EventsResponse {
             <Button type="error" onClick={deleteSubmission}>Delete Submission</Button>
             <Spacer h={0.5}/>
             <Text>Submission Accolades:</Text>
-            <Select placeholder="Award Accolade(s)" multiple initialValue={curSubmission?.accoladeIds} onChange={(s:any) => setCurSubmission((prev:any) => ({...prev, accoladeIds: s}))}>
+            <Select placeholder="Award Accolade(s)" multiple value={curSubmission?.accoladeIds} onChange={(s:any) => setCurSubmission((prev:any) => ({...prev, accoladeIds: s}))}>
               {curEvent?.accolades.map(accolade => {
                 return <Select.Option key={accolade._id} value={accolade._id}>{accolade.name}</Select.Option>
               })}

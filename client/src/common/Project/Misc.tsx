@@ -130,6 +130,10 @@ export const ProjectPage: React.FC = () => {
             setSubmissions(res.data.result)
           }
         })
+        .catch(res => {
+          console.log(res)
+          sendNotification(String(res.response.data.error), "error");
+        })
       }
       return () => {
         mounted = false
