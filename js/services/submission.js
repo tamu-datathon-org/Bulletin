@@ -106,24 +106,30 @@ const addSubmission = async (requestBody, eventId, submissionId, token) => {
 };
 
 const removeSubmission = async (eventId, submissionId) => {
+    logger.info('removing the submission...');
+    // find & delete the main submission
     const doc = await submissionModel.removeSubmission(eventId, submissionId);
     logger.info(JSON.stringify(doc));
-    if (!doc) throw new Error(`📌no submission with submissionId ${submissionId}`);
+    if (!doc)
+        throw new Error(`📌no submission with submissionId ${submissionId}`);
+    // delete the database stuff
     await eventsModel.removeEventSubmissionId(eventId, submissionId);
     await commentsModel.removeAllCommentsOfSubmissionId(submissionId);
     await likesModel.removeAllLikesOfSubmissionId(submissionId);
-    if (doc.userSubmissionLinkIds) await userSubmissionLinksModel.removeUserSubmissionLinks(doc.userSubmissionLinkIds);
-    if (doc.likeIds) await likesModel.removeLikes(doc.likeIds);
-    if (doc.commentIds) await commentsModel.removeComments(doc.commentIds);
-    if (doc.iconKey) await removeFileByKey(doc.iconKey);
-    if (doc.photosKey) await removeFileByKey(doc.photosKey);
-    if (doc.markdownKey) await removeFileByKey(doc.markdownKey);
-    if (doc.sourceCodeKey) await removeFileByKey(doc.sourceCodeKey);
+    await userSubmissionLinksModel.removeAllUserSubmissionLinksOfSubmissionId(submissionId);
+    // delete the s3 stuff
+    if ((doc?.icon?.length ?? 0) === 2) await removeFileByKey(doc.icon[0]);
+    if ((doc?.markdown?.length ?? 0) === 2) await removeFileByKey(doc.markdown[0]);
+    if ((doc?.sourceCode?.length ?? 0) === 2) await removeFileByKey(doc.sourceCode[0]);
+    await Promise.all(Object.values(doc.photos).map(async photoArr => {
+        if (photoArr.length === 2) await removeFileByKey(photoArr[0]);
+    }));
+    logger.info('done.');
     return doc._id;
 };
 
-const addAccoladeToSubmission = async (submissionId, accoladeId) => {
-    return submissionModel.addSubmissionAccoladeId(submissionId, accoladeId);
+const addAccoladesToSubmission = async (submissionId, accoladeIds) => {
+    return submissionModel.addSubmissionAccoladeIds(submissionId, accoladeIds);
 };
 
 const removeAccoladeToSubmission = async (submissionId, accoladeId) => {
@@ -273,7 +279,7 @@ const removeFileByKey = async (fileKey) => {
 module.exports = {
     addSubmission,
     removeSubmission,
-    addAccoladeToSubmission,
+    addAccoladesToSubmission,
     removeAccoladeToSubmission,
     toggleLike,
     addComment,

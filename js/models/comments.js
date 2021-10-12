@@ -65,7 +65,7 @@ const removeComments = async (commentIds) => {
         client = await mongoUtil.getClient();
         await client.db(config.database.name)
             .collection(config.database.collections.comments)
-            .deleteMany({ _id: commentIds });
+            .deleteMany({ _id: { $in: commentIds } });
         await mongoUtil.closeClient(client);
     } catch (err) {
         await mongoUtil.closeClient(client);

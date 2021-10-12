@@ -29,23 +29,16 @@ const removeSubmission = async (eventId, submissionId) => {
     return submissionService.removeSubmission(eventId, submissionId)._id;
 };
 
-const addAccoladeToSubmission = async (eventId, submissionId, accoladeId) => {
-    const accoladeObj = await accoladeModel.getAccolade(eventId, accoladeId);
-    if (!accoladeObj)
-        throw new Error(`📌accolade ${accoladeId} does not exist`);
-    const submissionObj = await submissionService.getSubmission(eventId, submissionId);
-    if (!submissionObj)
-        throw new Error(`📌submission ${submissionId} does not exist`);
-    if (submissionObj.accoladeIds) {
-        for (let i = 0; i < submissionObj.accoladeIds.length; i++) {
-            if (submissionObj.accoladeIds[i].toString() === accoladeId) {
-                logger.info('removing an accolade from submission');
-                return submissionService.removeAccoladeToSubmission(submissionId, accoladeId);
-            }
-        }
-    }
-    logger.info('adding an accolade to submission');
-    return submissionService.addAccoladeToSubmission(submissionId, accoladeId);
+const addAccoladesToSubmission = async (eventId, submissionId, accoladeIds) => {
+    logger.info('validating accolades...');
+    await Promise.all(accoladeIds.map(async id => {
+        const accoladeObj = await accoladeModel.getAccolade(eventId, id);
+        if (!accoladeObj)
+            throw new Error(`📌accolade ${id} does not exist`);
+    }));
+    logger.info('adding accolades to submission');
+    await submissionService.addAccoladesToSubmission(submissionId, accoladeIds);
+    logger.info('done.');
 };
 
 /**
@@ -256,7 +249,7 @@ module.exports = {
     uploadEventImage,
     uploadChallengeImage,
     removeSubmission,
-    addAccoladeToSubmission,
+    addAccoladesToSubmission,
     // testing
     setEventModel,
     setChallengeModel,
