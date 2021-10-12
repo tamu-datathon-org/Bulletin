@@ -65,10 +65,24 @@ const removeUserSubmissionLinks = async (userSubmissionLinkIds) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const doc = await client.db(config.database.name)
-            .collection(config.database.collections.userSubmissionLinks).deleteMany({ _id: userSubmissionLinkIds });
+        await client.db(config.database.name)
+            .collection(config.database.collections.userSubmissionLinks)
+            .deleteMany({ _id: { $in: userSubmissionLinkIds } });
         await mongoUtil.closeClient(client);
-        return doc;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error removing userSubmissionLink:: ${err.message}`);
+    }
+};
+
+const removeAllUserSubmissionLinksOfSubmissionId = async (submissionId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        await client.db(config.database.name)
+            .collection(config.database.collections.userSubmissionLinks)
+            .deleteMany({ submissionId: await mongoUtil.ObjectId(submissionId) });
+        await mongoUtil.closeClient(client);
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error removing userSubmissionLink:: ${err.message}`);
@@ -176,6 +190,7 @@ module.exports = {
     addUserSubmissionLink,
     removeUserSubmissionLink,
     removeUserSubmissionLinks,
+    removeAllUserSubmissionLinksOfSubmissionId,
     getUserSubmissionLink,
     getUserSubmissionLinkBySubmissionIdAndUserAuthId,
     getUserSubmissionLinksByUserAuthId,
