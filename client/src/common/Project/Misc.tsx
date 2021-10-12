@@ -230,7 +230,7 @@ export const ProjectPage: React.FC = () => {
       </Card>
       }
       <Spacer h={0.5}/>
-      {submissions.filter(submission => (submission && submission._id)).map(submission => (
+      {submissions?.filter(submission => (submission && submission._id)).map(submission => (
           <React.Fragment key={submission._id}>
             <Card>
               <Text>{submission.name}</Text>
