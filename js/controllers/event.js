@@ -1,6 +1,7 @@
 let eventsService = require('../services/events');
 let submissionService = require('../services/submission');
 const logger = require('../utils/logger');
+let bouncer = require('../middleware/bouncer');
 
 /**
  * @function getEvent
@@ -215,9 +216,11 @@ const getSubmissionsByUserAuthId = async (req, res) => {
     const response = {};
     try {
         const { eventId } = req.params;
-        const { userAuthId } = req.params;
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
-        if ((userAuthId?.length ?? 0) === 0) throw new Error('📌userAuthId is a required parameter');
+        const token = req.cookies.accessToken || '';
+        const userAuthId = await bouncer.getAuthId(token); // "5efc0b99a37c4300032acbce"
+        if ((userAuthId?.length ?? 0) === 0)
+            throw new Error('📌you are not logged in!');
         response.result = await submissionService.getSubmissionsByUserAuthId(eventId, userAuthId);
         res.status(200).json(response);
     } catch (err) {
