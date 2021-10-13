@@ -129,7 +129,9 @@ export const ProjectPage: React.FC = () => {
             setSubmissions(res.data.result)
         })
         .catch(res => {
-          console.log(res)
+          if (res.response.status === 307) {
+            window.location.replace(`https://tamudatathon.com${String(res.response.data.error)}`);
+          }
           sendNotification(String(res.response.data.error), "error");
         })
       }

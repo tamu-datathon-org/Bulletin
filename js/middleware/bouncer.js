@@ -24,7 +24,7 @@ const checkIfLoggedIn = (onlyAllowIfAdminstrator) => async (req, res, next) => {
 
     // if there is no auth token cookie then they are definetely not logged in
     if (!token) 
-        return res.redirect(`/auth/login?r=${redirectUrl}`); 
+        return res.status(StatusCodes.TEMPORARY_REDIRECT).send({error:`/auth/login?r=/bulletin`}); 
 
     // there is an auth token cookie, ask gatekeeper if it is valid
     const authRes = await fetch(`${gatekeeperUrl}/user`, {
