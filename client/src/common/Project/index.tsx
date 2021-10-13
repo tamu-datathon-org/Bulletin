@@ -3,42 +3,7 @@ import axios from 'axios';
 import { Upload } from '@geist-ui/react-icons';
 import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../../constants";
-import { Event, ChallengesResponse, Challenge, EventsResponse } from '../Admin';
-
-enum FileType {
-  sourceCode = 'sourceCode',
-  photos = 'photos',
-  icon = 'icon',
-  markdown = 'markdown',
-}
-
-export interface Submission {
-  _id: string,
-  name: string,
-  tags: Array<string>,
-  links: Array<string>,
-  discordTags: Array<string>,
-  challengeId: string,
-  videoLink: string,
-  answer1: string,
-  answer2: string,
-  answer3: string,
-  answer4: string,
-  answer5: string,
-  sourceCode: string,
-  photos: string,
-  icon: string,
-  markdown: string,
-  accoladeIds: Array<string>
-}
-
-export interface SubmissionResponse {
-    result: Submission;
-}
-
-interface SubmissionsResponse {
-  result: Submission[];
-}
+import { Event, ChallengesResponse, Challenge, EventsResponse, Submission, SubmissionResponse, FileType, SubmissionsResponse } from '../interfaces';
 
 export const ProjectPage: React.FC = () => {
     const [, setToast] = useToasts();

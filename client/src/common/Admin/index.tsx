@@ -3,67 +3,9 @@ import { Upload } from '@geist-ui/react-icons';
 import axios from "axios";
 import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../../constants";
-import { Submission, SubmissionResponse } from '../Project';
+import { Submission, SubmissionResponse, EventsResponse, EventResponse, Event, Accolade, AccoladeResp, Challenge, ChallengeResp } from '../interfaces';
 import 'react-datepicker/dist/react-datepicker.css'
 import DatePicker from "react-datepicker";
-
-interface Accolade {
-  _id: string,
-  challengeId: string,
-  description: string,
-  emoji: string,
-  eventId: string,
-  name: string
-}
-
-export interface Challenge {
-  _id: string,
-  accoladeIds: Array<string>
-  name: string,
-  question1: string,
-  question2: string,
-  question3: string,
-  question4: string,
-  question5: string,
-  places: number
-}
-
-export interface ChallengesResponse {
-  result: Challenge[]
-}
-
-interface ChallengeResp {
-  result: Challenge
-}
-
-interface AccoladeResp {
-  result: Accolade
-}
-
-export interface Event {
-  name: string;
-  _id: string;
-  show: boolean;
-  description: string;
-  start_time: string;
-  end_time: string;
-  challengeIds: string[];
-  accoladeIds: string[];
-  submissionIds: string[];
-  image: string;
-  imageKey: string;
-  accolades: Accolade[];
-  challenges: Challenge[];
-  submissions: Submission[];
-}
-
-export interface EventResponse {
-  result: Event;
-}
-
-export interface EventsResponse {
-  result: Event[];
-}
 
 /**
  * Entire admin page
