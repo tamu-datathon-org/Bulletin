@@ -1,36 +1,54 @@
-import { Button, Link, Card, Divider, Input, Radio, Spacer, Select, useToasts, Text } from "@geist-ui/react";
+import { Button, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text } from "@geist-ui/react";
 import axios from 'axios';
 import { Upload } from '@geist-ui/react-icons';
 import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../../constants";
-import { Event, ChallengesResponse, Challenge, EventsResponse, Submission, SubmissionResponse, FileType, SubmissionsResponse } from '../interfaces';
+import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse } from '../interfaces';
 import { CUR_EVENT_ID } from "../Admin";
+
+export const authRedirector = (res:any) => {
+  if (res.response.status === 307) {
+    window.location.replace(`https://tamudatathon.com${String(res.response.data.error)}`);
+  }
+}
 
 export const ProjectPage: React.FC = () => {
     const [, setToast] = useToasts();
     const sendNotification = (msg:string, intent: any) => {
-        setToast({ text: msg, type: intent, delay: 8000 });
-      };
-
-
+      setToast({ text: msg, type: intent, delay: 8000 });
+    };
+    const errorHandler = (res:any) => {
+      authRedirector(res);
+      if (res?.response?.data?.error) {
+        sendNotification(String(res.response.data.error), 'error');
+      } else {
+        sendNotification("Server Error!", 'error');
+      }
+    }
+ 
     const [allChalleges, setAllChallenges] = useState<Challenge[]>([])
     const [submissions, setSubmissions] = useState<Submission[]>([])
     useEffect(() => {
+      let mounted = true
       axios.get<ChallengesResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/challenge`)
       .then(res => {
-        setAllChallenges(res.data.result)
+        if (mounted){
+          setAllChallenges(res.data.result)
+        }
       })
+      .catch(errorHandler)
+
       axios.get<SubmissionsResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/user`)
       .then(res => {
+        if (mounted){
           setSubmissions(res.data.result)
-      })
-      .catch(res => {
-        if (res.response.status === 307) {
-          window.location.replace(`https://tamudatathon.com${String(res.response.data.error)}`);
         }
-        sendNotification(String(res.response.data.error), "error");
       })
-    },[])
+      .catch(errorHandler)
+      return () => {
+        mounted = false;
+      }
+    },[]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const [submission, setSubmission] = useState<Submission>();
     const submissionDataHandler = (e:any) => setSubmission((prev:any) => (
@@ -65,27 +83,13 @@ export const ProjectPage: React.FC = () => {
         sendNotification("Updated submission!", "success")
         emptyCurSubmission();
       })
-      .catch(res => {
-        sendNotification(String(res.response.data.error), "error");
-      })};
-
-    const [eventList, setEventList] = useState<Event[]>([]);
-    useEffect(() => {
-      let mounted = true
-      axios.get<EventsResponse>(`${BASE_URL}/api/events`)
-      .then(res => {
-        if (mounted) {
-          setEventList(res.data.result)
-        }
-      });
-      return () => {
-        mounted = false
-      }
-    },[]);
+      .catch(errorHandler)
+    };
 
     const handleEditSubmission = (id:string) => {
       axios.get<SubmissionResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}`)
-      .then(res => setSubmission(res.data.result));
+      .then(res => setSubmission(res.data.result))
+      .catch(errorHandler);
     }
 
     const [sourceCode, setSourceCode] = useState<any>();
@@ -110,13 +114,8 @@ export const ProjectPage: React.FC = () => {
         sendNotification("Incompatible submission file upload detected. Please contact an organizer.", "error");
       }
       axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/${type}`, data)
-      .then(res => {
-       sendNotification(`Uploaded ${type}!`, "success")
-     })
-     .catch(res => {
-       console.log(res)
-       sendNotification(String(res.response.data.error), "error");
-     })
+      .then(() => sendNotification(`Uploaded ${type}!`, "success"))
+      .catch(errorHandler)
     }
 
     return (

@@ -6,6 +6,7 @@ import { BASE_URL } from "../../constants";
 import { Submission, SubmissionResponse, EventsResponse, EventResponse, Event, Accolade, AccoladeResp, Challenge, ChallengeResp } from '../interfaces';
 import 'react-datepicker/dist/react-datepicker.css'
 import DatePicker from "react-datepicker";
+import { authRedirector } from "../Project";
 
 export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
 
@@ -13,6 +14,15 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
  * Entire admin page
  */
  export const AdminPage: React.FC = () => {
+  const errorHandler = (res:any) => {
+    authRedirector(res);
+    if (res?.response?.data?.error) {
+      sendNotification(String(res.response.data.error), 'error');
+    } else {
+      sendNotification("Server Error!", 'error');
+    }
+  }
+
   const [eventsLoaded, setEventsLoaded] = useState(false);
   const [eventList, setEventList] = useState<Event[]>([]);
   useEffect(() => {
@@ -23,11 +33,12 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
         setEventList(res.data.result)
        setEventsLoaded(true)
       }
-    });
+    })
+    .catch(errorHandler);
     return () => {
       mounted = false;
     }
-  },[]);
+  },[]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendNotification = (msg:string, intent: any) => {
     setToast({ text: msg, type: intent, delay: 8000 });
@@ -48,12 +59,13 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
           setCurEvent(res.data.result);
           setEventLoaded(true);
         }
-      });
+      })
+      .catch(errorHandler);
       return () => {
         mounted = false;
       }
     }
-  },[curEventId]);
+  },[curEventId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setEventHandler = (val:any) => {
     if (val === "create_new_event") {
@@ -64,12 +76,8 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
         start_time: date_string,
         end_time: date_string
       })
-      .then(res => {
-        sendNotification("Added new event!", "success");
-      })
-      .catch(res => {
-        sendNotification(String(res.response.data.error), "error");
-      })
+      .then(() => sendNotification("Added new event!", "success"))
+      .catch(errorHandler)
     } else {
       setCurEventId((val as string));
     }
@@ -82,9 +90,7 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
       if (prev) {
         axios.post(`${BASE_URL}/api/admin/add/event`, curEvent)
         .then(() => sendNotification("Updated event!", "success"))
-        .catch(res => {
-          sendNotification(String(res.response.data.error), "error");
-        })
+        .catch(errorHandler)
       }
       return !prev
     });
@@ -95,9 +101,7 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
       if (window.prompt("To delete this event, enter the full event name","") === curEvent?.name) {
         axios.post(`${BASE_URL}/api/${curEventId}/admin/remove/event`)
         .then(() => sendNotification("Deleted event!", "success"))
-        .catch(res => {
-          sendNotification(String(res.response.data.error), "error");
-        })
+        .catch(errorHandler)
       } else {
         window.alert("Incorrect event name.")
       }
@@ -110,7 +114,8 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
   const [curAccolade, setCurAccolade] = useState<Accolade>();
   const handleEditAccolade = (id:string) => {
     axios.get<AccoladeResp>(`${BASE_URL}/api/${curEventId}/accolade/${id}`)
-    .then(res => setCurAccolade(res.data.result));
+    .then(res => setCurAccolade(res.data.result))
+    .catch(errorHandler);
   }
   const emptyCurAccolade = () => setCurAccolade({
     _id: "",
@@ -126,9 +131,7 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
       sendNotification("Updated accolade!", "success")
       emptyCurAccolade();
     })
-    .catch(res => {
-      sendNotification(String(res.response.data.error), "error");
-    })
+    .catch(errorHandler)
   }
   const deleteAccolade = () => {
     axios.post(`${BASE_URL}/api/${curEventId}/admin/remove/accolade/${curAccolade?._id}`)
@@ -136,9 +139,7 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
       sendNotification("Deleted accolade!", "success")
       emptyCurAccolade();
     })
-    .catch(res => {
-      sendNotification(String(res.response.data.error), "error");
-    })
+    .catch(errorHandler)
   }
 
    const [curChallenge, setCurChallenge]=useState<Challenge>();
@@ -160,9 +161,7 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
        sendNotification("Updated challenge!", "success")
        emptyCurChallenge();
      })
-     .catch(res => {
-       sendNotification(String(res.response.data.error), "error");
-     })
+     .catch(errorHandler)
    }
    const deleteChallenge = () => {
     axios.post(`${BASE_URL}/api/${curEventId}/admin/remove/challenge/${curChallenge?._id}`)
@@ -170,13 +169,12 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
       sendNotification("Deleted challenge!", "success")
       emptyCurChallenge();
     })
-    .catch(res => {
-      sendNotification(String(res.response.data.error), "error");
-    })
+    .catch(errorHandler)
    }
    const handleEditChallenge = (id:string) => {
     axios.get<ChallengeResp>(`${BASE_URL}/api/${curEventId}/challenge/${id}`)
-    .then(res => setCurChallenge(res.data.result));
+    .then(res => setCurChallenge(res.data.result))
+    .catch(errorHandler);
    }
 
    const [file, setFile] = useState<any>();
@@ -187,13 +185,9 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
      const data = new FormData();
      data.append('file', file);
      axios.post(`${BASE_URL}/api/${curEventId}/admin/upload/eventImage`, data)
-     .then(res => {
-      sendNotification("Uploaded image!", "success")
-    })
-    .catch(res => {
-      sendNotification(String(res.response.data.error), "error");
-    })
-   }
+     .then(() => sendNotification("Uploaded image!", "success"))
+     .catch(errorHandler)
+    }
 
    const [curSubmission, setCurSubmission]=useState<Submission>();
    const emptyCurSubmission = () => setCurSubmission({
@@ -203,8 +197,9 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
     })
    const handleEditSubmission = (id:string) => {
     axios.get<SubmissionResponse>(`${BASE_URL}/api/${curEventId}/submission/${id}`)
-    .then(res => setCurSubmission(res.data.result));
-   }
+    .then(res => setCurSubmission(res.data.result))
+    .catch(errorHandler)
+    }
    const deleteSubmission = () => {
     if (window.confirm(`Are you sure you want to delete this submission? Name: ${curSubmission?.name}, Discord Tags: ${curSubmission?.discordTags}`)) {
       if (window.prompt("To delete this submission, enter the full submission name","") === curSubmission?.name) {
@@ -213,9 +208,7 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
           sendNotification("Deleted submission!", "success")
           emptyCurSubmission();
         })
-        .catch(res => {
-          sendNotification(String(res.response.data.error), "error");
-        })
+        .catch(errorHandler)
       } else {
         window.alert("Incorrect submission name.")
       }
@@ -227,9 +220,7 @@ export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
       sendNotification("Updated submission accolades!", "success")
       emptyCurSubmission();
     })
-    .catch(res => {
-      sendNotification(String(res.response.data.error), "error");
-    })
+    .catch(errorHandler)
    }
 
   if (!eventsLoaded) {

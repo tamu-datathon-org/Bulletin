@@ -10,7 +10,7 @@ const harmoniaUrl = process.env.HARMONIA_URL || 'https://tamudatathon.com/guild'
  */
 const checkIfLoggedIn = (onlyAllowIfAdminstrator) => async (req, res, next) => {
     const token = req.cookies.accessToken || '';
-    const redirectUrl = `${req.baseUrl}${req.path}`;
+    const redirectUrl = '/auth/login?r=/bulletin'; // `${req.baseUrl}${req.path}`;
     const user = req.user;
 
     // check if the auth middleware has already happened in this request before
@@ -24,7 +24,7 @@ const checkIfLoggedIn = (onlyAllowIfAdminstrator) => async (req, res, next) => {
 
     // if there is no auth token cookie then they are definetely not logged in
     if (!token) 
-        return res.status(StatusCodes.TEMPORARY_REDIRECT).send({error:`/auth/login?r=/bulletin`}); 
+        return res.status(StatusCodes.TEMPORARY_REDIRECT).send({error:redirectUrl}); 
 
     // there is an auth token cookie, ask gatekeeper if it is valid
     const authRes = await fetch(`${gatekeeperUrl}/user`, {
@@ -36,7 +36,7 @@ const checkIfLoggedIn = (onlyAllowIfAdminstrator) => async (req, res, next) => {
 
     // if gatekeeper says user token is invalid send to login page
     if (authRes.status != StatusCodes.OK)
-        return res.redirect(`/auth/login?r=${redirectUrl}`); 
+        return res.status(StatusCodes.TEMPORARY_REDIRECT).send({error:redirectUrl});  
     
     const json = await authRes.json();
     
