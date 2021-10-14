@@ -7,6 +7,8 @@ import { Submission, SubmissionResponse, EventsResponse, EventResponse, Event, A
 import 'react-datepicker/dist/react-datepicker.css'
 import DatePicker from "react-datepicker";
 
+export const CUR_EVENT_ID = "61638c45dacc9ccfee024234"
+
 /**
  * Entire admin page
  */
@@ -387,6 +389,7 @@ import DatePicker from "react-datepicker";
                 return <Select.Option key={accolade._id} value={accolade._id}>{accolade.name}</Select.Option>
               })}
             </Select>
+            <Spacer h={0.5}/>
             <Button onClick={updateSubmissionAccolades}>Update Submission Accolade</Button>
           </Card.Content>
         </Card>

@@ -4,30 +4,33 @@ import { Upload } from '@geist-ui/react-icons';
 import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../../constants";
 import { Event, ChallengesResponse, Challenge, EventsResponse, Submission, SubmissionResponse, FileType, SubmissionsResponse } from '../interfaces';
+import { CUR_EVENT_ID } from "../Admin";
 
 export const ProjectPage: React.FC = () => {
     const [, setToast] = useToasts();
     const sendNotification = (msg:string, intent: any) => {
         setToast({ text: msg, type: intent, delay: 8000 });
       };
-    
-    const [curEventId, setCurEventId] = useState<string>("");
+
 
     const [allChalleges, setAllChallenges] = useState<Challenge[]>([])
+    const [submissions, setSubmissions] = useState<Submission[]>([])
     useEffect(() => {
-      let mounted = true;
-      if (curEventId) {
-        axios.get<ChallengesResponse>(`${BASE_URL}/api/${curEventId}/challenge`)
-        .then(res => {
-          if (mounted) {
-            setAllChallenges(res.data.result)
-          }
-        })
-      }
-      return () => {
-        mounted = false;
-      }
-    },[curEventId])
+      axios.get<ChallengesResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/challenge`)
+      .then(res => {
+        setAllChallenges(res.data.result)
+      })
+      axios.get<SubmissionsResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/user`)
+      .then(res => {
+          setSubmissions(res.data.result)
+      })
+      .catch(res => {
+        if (res.response.status === 307) {
+          window.location.replace(`https://tamudatathon.com${String(res.response.data.error)}`);
+        }
+        sendNotification(String(res.response.data.error), "error");
+      })
+    },[])
 
     const [submission, setSubmission] = useState<Submission>();
     const submissionDataHandler = (e:any) => setSubmission((prev:any) => (
@@ -57,7 +60,7 @@ export const ProjectPage: React.FC = () => {
       })
 
     const handleUpdateSubmission = () => {
-      axios.post(`${BASE_URL}/api/${curEventId}/submission/add`, submission)
+      axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/add`, submission)
       .then(() => {
         sendNotification("Updated submission!", "success")
         emptyCurSubmission();
@@ -81,26 +84,10 @@ export const ProjectPage: React.FC = () => {
     },[]);
 
     const handleEditSubmission = (id:string) => {
-      axios.get<SubmissionResponse>(`${BASE_URL}/api/${curEventId}/submission/${id}`)
+      axios.get<SubmissionResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}`)
       .then(res => setSubmission(res.data.result));
     }
 
-    const [submissions, setSubmissions] = useState<Submission[]>([])
-    const selectEventHandler = (val:any) => {
-      if (val) {
-        setCurEventId(val)
-        axios.get<SubmissionsResponse>(`${BASE_URL}/api/${val}/submission/user`)
-        .then(res => {
-            setSubmissions(res.data.result)
-        })
-        .catch(res => {
-          if (res.response.status === 307) {
-            window.location.replace(`https://tamudatathon.com${String(res.response.data.error)}`);
-          }
-          sendNotification(String(res.response.data.error), "error");
-        })
-      }
-    }
     const [sourceCode, setSourceCode] = useState<any>();
     const sourceCodeHandler = (e:any) => setSourceCode(e.target.files[0])
 
@@ -122,7 +109,7 @@ export const ProjectPage: React.FC = () => {
       else {
         sendNotification("Incompatible submission file upload detected. Please contact an organizer.", "error");
       }
-      axios.post(`${BASE_URL}/api/${curEventId}/submission/${submission?._id}/upload/${type}`, data)
+      axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/${type}`, data)
       .then(res => {
        sendNotification(`Uploaded ${type}!`, "success")
      })
@@ -134,13 +121,6 @@ export const ProjectPage: React.FC = () => {
 
     return (
     <>
-      <Select placeholder="Select an Event" onChange={selectEventHandler}>
-        {eventList.map(event => {
-          return <Select.Option key={event._id} value={event._id}>{event.name}</Select.Option>
-        })}
-      </Select>
-      <Spacer h={1}/>
-      {curEventId &&
       <Card>
         <Card.Content>
         <Text b>Add/Update a Submission</Text>
@@ -195,7 +175,6 @@ export const ProjectPage: React.FC = () => {
         </Card>
         </Card.Content>
       </Card>
-      }
       <Spacer h={0.5}/>
       {submissions?.filter(submission => (submission && submission._id)).map(submission => (
           <React.Fragment key={submission._id}>
