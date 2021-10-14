@@ -91,6 +91,7 @@ app.post(`${BASE_PATH}/api/:eventId/admin/upload/eventImage`, bouncerMiddleware.
 app.post(`${BASE_PATH}/api/:eventId/admin/upload/challengeImage/:challenge`, bouncerMiddleware.checkIfLoggedIn(true), multerUtil.adminUploadOptions.single('file'), adminController.uploadChallengeImage);
 app.post(`${BASE_PATH}/api/:eventId/admin/submission/:submissionId/remove`, bouncerMiddleware.checkIfLoggedIn(true), adminController.removeSubmission);
 app.post(`${BASE_PATH}/api/:eventId/admin/submission/:submissionId/accolades`, bouncerMiddleware.checkIfLoggedIn(true), adminController.addAccoladesToSubmission);
+app.get(`${BASE_PATH}/api/:eventId/admin/download/submissions`, bouncerMiddleware.checkIfLoggedIn(true), adminController.downloadSubmissions);
 
 if (process.env.NODE_ENV !== 'production')
     app.use('/', createProxyMiddleware({ target: 'https://tamudatathon.com', changeOrigin: true, hostRewrite: true }));
