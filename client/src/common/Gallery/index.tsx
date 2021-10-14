@@ -36,7 +36,7 @@ export const GalleryPage: React.FC = () => {
         <Grid key={submission._id} xs={24} sm={12} md={8} lg={6} xl={4}>
           <Card shadow width="100%">
           <Image
-            src={submission.icon ? submission.icon : placeholder}
+            src={submission.icon ? submission.icon?.[1] : placeholder}
           />
           <Text b>{submission.name}</Text>
           </Card>

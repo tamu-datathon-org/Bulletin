@@ -59,16 +59,20 @@ const getSubmissionsByUserAuthId = async (eventId, userAuthId) => {
 const addSubmission = async (requestBody, eventId, submissionId, token) => {
 
     // get discord Objects from harmonia
-    // const discordObjs = [{discordInfo:'dan#22', discordTag:'dan#22', userAuthId: "5efc0b99a37c4300032acbce"}];
+    let hasSelf = false;
+    const selfUserAuthId = await bouncerController.getAuthId(token);
     const discordObjs = await Promise.all(requestBody.discordTags.map(async (discordTag) => {
         const discordUser = await bouncerController.getDiscordUser(discordTag, null, token);
         if (discordUser.userAuthId) {
+            if (discordUser.userAuthId === selfUserAuthId) hasSelf = true;
             return discordUser;
         }
         throw new Error(`📌discordTag ${discordTag} does not exist`);
     }));
     if (discordObjs.length === 0)
         throw new Error('📌no provided discordTag are in our server');
+    if (!hasSelf)
+        throw new Error('📌you did not provide your own discordTag');
     logger.info(JSON.stringify(discordObjs));
 
     // get valid challenge id

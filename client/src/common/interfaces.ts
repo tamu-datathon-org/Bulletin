@@ -58,7 +58,6 @@ result: Event[];
 
 export enum FileType {
 sourceCode = 'sourceCode',
-photos = 'photos',
 icon = 'icon',
 markdown = 'markdown',
 }
@@ -76,11 +75,11 @@ answer2: string,
 answer3: string,
 answer4: string,
 answer5: string,
-sourceCode: string,
-photos: string,
-icon: string,
-markdown: string,
-accoladeIds: Array<string>
+sourceCode: string[],
+photos: SubmissionPhoto,
+icon: string[],
+markdown: string[],
+accoladeIds: string[]
 }
 
 export interface SubmissionResponse {
@@ -89,4 +88,8 @@ export interface SubmissionResponse {
 
 export interface SubmissionsResponse {
 result: Submission[];
+}
+
+export interface SubmissionPhoto {
+[key: string]: Array<string>;  
 }
