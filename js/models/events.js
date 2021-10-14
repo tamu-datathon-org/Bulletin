@@ -279,6 +279,29 @@ const removeEventAccoladeId = async (eventId, accoladeId) => {
     }
 };
 
+const getAllSubmissions = async (eventId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const docs = await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .aggregate([
+                { $match: { eventId: await mongoUtil.ObjectId(eventId) } },
+                { $lookup: {
+                    from: 'userSubmissionLinks',
+                    localField: '_id',
+                    foreignField: 'submissionId',
+                    as: 'userSubmissionLink',
+                } },
+            ]).toArray();
+        await mongoUtil.closeClient(client);
+        return docs;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error updating events ${err.message}`);
+    }
+};
+
 module.exports = {
     event,
     createEvent,
@@ -294,4 +317,5 @@ module.exports = {
     removeEventChallengeId,
     removeEventSubmissionId,
     removeEventAccoladeId,
+    getAllSubmissions,
 };

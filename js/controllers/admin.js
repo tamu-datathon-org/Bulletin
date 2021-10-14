@@ -1,6 +1,7 @@
 const logger = require('../utils/logger');
 const config = require('../utils/config');
 let adminService = require('../services/admin');
+let eventsService = require('../services/events');
 
 const validateAddEvent = (requestBody) => {
     const { name } = requestBody;
@@ -206,6 +207,10 @@ const uploadChallengeImage = async (req, res) => {
     }
 };
 
+// ======================================================== //
+// === 📌📌📌 Altering Submissions Section 📌📌📌 ====== //
+// ======================================================== //
+
 /**
  * @function removeSubmission
  * @param {Object} req 
@@ -243,10 +248,43 @@ const addAccoladesToSubmission = async (req, res) => {
     }
 };
 
+// ======================================================== //
+// =========== 📌📌📌 Gavel Section 📌📌📌 ============= //
+// ======================================================== //
+
+const downloadSubmissions = async (req, res) => {
+    const response = {};
+    const { eventId } = req.params;
+    try {
+        if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string')
+            throw new Error('📌eventId is a required parameter');
+        
+        const eventObj = await eventsService.getEvent(eventId, false);
+        if (!eventObj)
+            throw new Error(`📌event ${eventId} does not exist`);
+
+        const fileName = `${eventObj.name}_submission_dump.csv`;
+        logger.info('downloading making query to get all submissions...');
+        const readStream = await adminService.downloadSubmissions(eventId);
+        logger.info('sending data to csv download...');
+        res.set('Content-disposition', 'attachment; filename=' + fileName);
+        res.set('Content-Type', 'text/plain');
+        readStream.pipe(res);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
 /* for testing only */
 
 const setAdminService = (testAdminService) => {
     adminService = testAdminService;
+};
+
+const setEventsService = (testEventsService) => {
+    eventsService = testEventsService;
 };
 
 module.exports = {
@@ -260,6 +298,8 @@ module.exports = {
     uploadChallengeImage,
     removeSubmission,
     addAccoladesToSubmission,
+    downloadSubmissions,
     // testing
     setAdminService,
+    setEventsService,
 };
