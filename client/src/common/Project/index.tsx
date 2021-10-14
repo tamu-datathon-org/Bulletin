@@ -51,14 +51,17 @@ export const ProjectPage: React.FC = () => {
     },[]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const [submission, setSubmission] = useState<Submission>();
-    const submissionDataHandler = (e:any) => setSubmission((prev:any) => (
-      {
+    const submissionDataHandler = (e:any) => setSubmission((prev:any) => {
+      console.log(e);
+      console.log(e.target);
+      console.log(e.target.id);
+      return {
         ...prev,
         [e.target.id]: ((e.target.id === "name" || e.target.id === "videoLink") ? e.target.value : e.target.value.split(',')),
         discordTags: discordTags,
         tags: tags,
         links: links,
-      }));
+    }});
 
     const emptyCurSubmission = () => setSubmission({
       _id: "",
@@ -114,9 +117,9 @@ export const ProjectPage: React.FC = () => {
       }
       submissionDataHandler(e);
     }
-    const handleDeleteTags = (item: string) => {
+    const handleDeleteTags = (e:any, item: string) => {
       setTags(tags?.filter((i:string) => i !== item) || []);
-      submissionDataHandler(null);
+      submissionDataHandler(e);
     };
 
     const [discordTags, setDiscordTags] = useState<any>();
@@ -138,9 +141,9 @@ export const ProjectPage: React.FC = () => {
       }
       submissionDataHandler(e);
     }
-    const handleDeleteDiscordTags = (item: string) => {
+    const handleDeleteDiscordTags = (e:any, item: string) => {
       setDiscordTags(discordTags?.filter((i:string) => i !== item) || []);
-      submissionDataHandler(null);
+      submissionDataHandler(e);
     };
 
     const [links, setLinks] = useState<any>();
@@ -162,9 +165,9 @@ export const ProjectPage: React.FC = () => {
       }
       submissionDataHandler(e);
     }
-    const handleDeleteLinks = (item: string) => {
+    const handleDeleteLinks = (e:any, item: string) => {
       setLinks(links?.filter((i:string) => i !== item) || []);
-      submissionDataHandler(null);
+      submissionDataHandler(e);
     };
 
     const [sourceCode, setSourceCode] = useState<any>();
@@ -213,7 +216,7 @@ export const ProjectPage: React.FC = () => {
         <ButtonGroup type="success">
         {tags?.map((item: any) =>
           <>
-            <Button onClick={() => handleDeleteTags(item)} icon={<X />} auto>{item}</Button>
+            <Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item}>{item}</Button>
           </>
         )}
         </ButtonGroup>
@@ -222,7 +225,7 @@ export const ProjectPage: React.FC = () => {
         <ButtonGroup type="success">
         {links?.map((item: any) =>
           <>
-            <Button onClick={() => handleDeleteLinks(item)} icon={<X />} auto>{item}</Button>
+            <Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item}>{item}</Button>
           </>
         )}
         </ButtonGroup>
@@ -231,7 +234,7 @@ export const ProjectPage: React.FC = () => {
         <ButtonGroup type="success">
         {discordTags?.map((item: any) =>
           <>
-            <Button onClick={() => handleDeleteDiscordTags(item)} icon={<X />} auto>{item}</Button>
+            <Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item}>{item}</Button>
           </>
         )}
         </ButtonGroup>
