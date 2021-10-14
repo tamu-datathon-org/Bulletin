@@ -4,6 +4,7 @@ import {Navbar} from './common/Navbar';
 import './common/globals.css';
 import {AdminPage} from './common/Admin'
 import {ProjectPage} from './common/Project'
+import {GalleryPage} from './common/Gallery'
 
 import { config } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
@@ -17,7 +18,7 @@ function App() {
       <Page>
         <Tabs initialValue="1">
           <Tabs.Item label="Project Gallery" value="1">
-            View all projects submitted to this event.
+            <GalleryPage />
           </Tabs.Item>
           <Tabs.Item label="My Projects" value="2">
             <ProjectPage />
