@@ -3,7 +3,7 @@ import axios from "axios";
 import React, { useState, useEffect } from 'react';
 import { BASE_URL } from "../../constants";
 import { CUR_EVENT_ID } from "../Admin";
-import {EventResponse, Event, Submission, SubmissionResponse, AccoladeResp, Accolade} from '../interfaces';
+import {EventResponse, Event, Submission, SubmissionResponse, AccoladeResp, Accolade, MarkdownResponse} from '../interfaces';
 import { authRedirector } from "../Project";
 import placeholder from './placeholder.jpg';
 const marked = require("marked");
@@ -56,8 +56,8 @@ export const GalleryPage: React.FC = () => {
         setMarkdownLoaded(false)
         setVisible(true)
         setSubmission(res.data.result)
-        axios.get(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}/download/markdown`)
-        .then(res => setUserMarkdown(res.data))
+        axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}/markdown`)
+        .then(res => setUserMarkdown(res.data.result.text))
         .then(() => setMarkdownLoaded(true))
         if ((submission?.accoladeIds?.length ?? 0) > 0) {
           const submissionAccolades: Accolade[] = [];
@@ -98,47 +98,69 @@ export const GalleryPage: React.FC = () => {
       <Modal width="100%" {...bindings}>
         <Modal.Title>{submission?.name}</Modal.Title>
         {markdownLoaded 
-        ? <Modal.Content>
-            <Text span type="success">Created by</Text>
-            <Grid.Container gap={1} justify="center" height="100px">
-            {submission?.discordTags?.map(discordTag => 
-              <Grid xs={6}><Card shadow width="100%"><Card.Content><Text span style={{ textTransform: 'none' }}>{discordTag}</Text></Card.Content></Card></Grid>
-            )}
-            {(accolades?.length ?? 0) > 0 && <Card title="Awards"><Card.Content>
-            {accolades?.map((accolade: Accolade) =>
-              <Note type="warning"><Text>{`${accolade?.emoji || "🏆"} `}</Text><Text type="secondary">{accolade?.name || ""}</Text></Note>
-            )}
-            </Card.Content></Card>}
-            </Grid.Container>
-            <Spacer h={1}/>
-            <Text span type="success">Tags</Text>
-            <Grid.Container gap={1} justify="center" height="40px">
-            {submission?.tags?.map(tag => 
-              <Grid xs={6}><Badge type="secondary"><Text span style={{ textTransform: 'none' }}>{tag}</Text></Badge></Grid>
-            )}
-            </Grid.Container>
-            <Spacer h={1}/>
-            <Text span type="success">Links</Text>
-            <Grid.Container gap={1} justify="center" height="40px">
-            {submission?.links?.map(link => 
-              <Grid xs={6}><Link href={submission?.photos?.["2"]?.[1] ?? "#"} icon block color><Text span style={{ textTransform: 'none' }}>{link}</Text></Link></Grid>
-            )}
-            </Grid.Container>
-            <Grid.Container gap={1} justify="center" height="100px">
-              <>
-              <Grid>{submission?.photos?.["0"]?.[1] && <Card shadow width="100%"><Card.Content><Image width="500px" height="500px" src={submission?.photos?.["0"]?.[1] || placeholder} /></Card.Content></Card>}</Grid>
-              <Grid>{submission?.photos?.["1"]?.[1] && <Card shadow width="100%"><Card.Content><Image width="500px" height="500px" src={submission?.photos?.["1"]?.[1] || placeholder} /></Card.Content></Card>}</Grid>
-              <Grid>{submission?.photos?.["2"]?.[1] && <Card shadow width="100%"><Card.Content><Image width="500px" height="500px" src={submission?.photos?.["2"]?.[1] || placeholder} /></Card.Content></Card>}</Grid>
-              </>
-            </Grid.Container>
-            <Spacer h={1}/>
-            <Text span type="success">Video</Text>
-            {submission?.videoLink && <Display shadow><iframe title="VideoLinkPreview" src={videoLinkHandler(submission?.videoLink)}></iframe></Display>}
-            <Spacer h={1}/>
-            <Text span type="success">Description</Text>
-            <div dangerouslySetInnerHTML={{__html: marked(userMarkdown)}} />
-            <Spacer h={1}/>
-            {submission?.sourceCode?.[1] && <Display><Card title="Download the sourceCode"><Card.Content><Link href={submission?.sourceCode?.[1]} icon>{submission?.sourceCode?.[1]}</Link></Card.Content></Card></Display>}
+         ? <Modal.Content>
+            {submission?.discordTags?.length !== 0 && <>
+              <Text span type="success">Created by</Text>
+              <Grid.Container gap={1} justify="center" height="100px">
+                {submission?.discordTags?.map(discordTag => 
+                  <Grid xs={6}><Card shadow width="100%"><Card.Content><Text span style={{ textTransform: 'none' }}>{discordTag}</Text></Card.Content></Card></Grid>
+                )}
+                {(accolades?.length ?? 0) > 0 && 
+                  <Card title="Awards">
+                    <Card.Content>
+                      {accolades?.map((accolade: Accolade) =>
+                        <Note type="warning"><Text>{`${accolade?.emoji || "🏆"} `}</Text><Text type="secondary">{accolade?.name || ""}</Text></Note>
+                      )}
+                    </Card.Content>
+                  </Card>
+                }
+              </Grid.Container>
+            </>}
+            {submission?.tags?.length !== 0 && <>
+              <Spacer h={1}/>
+              <Text span type="success">Tags</Text>
+              <Grid.Container gap={1} justify="center" height="40px">
+              {submission?.tags?.map(tag => 
+                <Grid xs={6}><Badge type="secondary"><Text span style={{ textTransform: 'none' }}>{tag}</Text></Badge></Grid>
+              )}
+              </Grid.Container>
+            </>}
+            {submission?.links?.length !== 0 && <>
+              <Spacer h={1}/>
+              <Text span type="success">Links</Text>
+              <Grid.Container gap={1} justify="center" height="40px">
+              {submission?.links?.map(link => 
+                <Grid xs={6}><Link href={submission?.photos?.["2"]?.[1] ?? "#"} icon block color><Text span style={{ textTransform: 'none' }}>{link}</Text></Link></Grid>
+              )}
+              </Grid.Container>
+            </>}
+            {(submission?.photos?.["0"]?.[1] || submission?.photos?.["1"]?.[1] || submission?.photos?.["2"]?.[1]) &&
+              <Grid.Container gap={1} justify="center" height="100px">
+                <Grid>{submission?.photos?.["0"]?.[1] && <Card shadow width="100%"><Card.Content><Image width="500px" height="500px" src={submission?.photos?.["0"]?.[1] || placeholder} /></Card.Content></Card>}</Grid>
+                <Grid>{submission?.photos?.["1"]?.[1] && <Card shadow width="100%"><Card.Content><Image width="500px" height="500px" src={submission?.photos?.["1"]?.[1] || placeholder} /></Card.Content></Card>}</Grid>
+                <Grid>{submission?.photos?.["2"]?.[1] && <Card shadow width="100%"><Card.Content><Image width="500px" height="500px" src={submission?.photos?.["2"]?.[1] || placeholder} /></Card.Content></Card>}</Grid>
+              </Grid.Container>
+            }
+            {submission?.videoLink && <>
+              <Spacer h={1}/>
+              <Text span type="success">Video</Text>
+              <Display shadow><iframe title="VideoLinkPreview" src={videoLinkHandler(submission?.videoLink)}></iframe></Display>
+            </>}
+            {userMarkdown && <>
+              <Spacer h={1}/>
+              <Text span type="success">Description</Text>
+              <div dangerouslySetInnerHTML={{__html: marked(userMarkdown)}} />
+            </>}
+            {submission?.sourceCode?.[1] && <>
+                <Spacer h={1}/>
+                <Display>
+                  <Card title="Download the sourceCode">
+                    <Card.Content>
+                      <Link href={submission?.sourceCode?.[1]} icon>{submission?.sourceCode?.[1]}</Link>
+                    </Card.Content>
+                  </Card>
+                </Display>
+            </>}
           </Modal.Content>
         : <Spinner />
         }
