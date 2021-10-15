@@ -88,9 +88,6 @@ const addSubmission = async (req, res) => {
         if (!(await canAlterSubmission(token, _id)))
             throw new Error('📌you are not allowed to update this submission');
 
-        if (req.body.accoladeIds)
-            throw new Error('📌participants cannot add accolades to submissions');
-
         response.submissionId = await submissionService.addSubmission(req.body, eventId, _id, token);
         logger.info('📌submission successful');
         res.status(200).json(response);
@@ -271,14 +268,12 @@ const uploadSubmissionSourceCode = async (req, res) => {
     }
 };
 
-const uploadSubmissionMarkdown = async (req, res) => {
+const addSubmissionMarkdown = async (req, res) => {
     const response = {};
     try {
         const { eventId } = req.params;
-        const { buffer } = req.file;
         const { submissionId } = req.params;
-        const { originalname } = req.file;
-        await validateSubmissionFileUploads(req);
+        const { text } = req.body;
 
         // check submission time
         if (!(await isWithinEventTime(eventId)))
@@ -289,7 +284,7 @@ const uploadSubmissionMarkdown = async (req, res) => {
         if (!(await canAlterSubmission(token, submissionId)))
             throw new Error('📌you are not allowed to update this submission');
 
-        response.location = await submissionService.uploadSubmissionMarkdown(eventId, submissionId, originalname, buffer);
+        response.markdownId = await submissionService.addSubmissionMarkdown(eventId, submissionId, text);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -343,7 +338,7 @@ module.exports = {
     removeSubmission,
     uploadSubmissionPhoto,
     uploadSubmissionIcon,
-    uploadSubmissionMarkdown,
+    addSubmissionMarkdown,
     uploadSubmissionSourceCode,
     toggleLike,
     addComment,

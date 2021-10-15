@@ -8,7 +8,6 @@ const defaultConfig = {
         submission_upload_types: {
             sourceCode: 'sourceCode',
             icon: 'icon',
-            markdown: 'markdown',
         },
         max_tags: 12,
         max_links: 12,
@@ -25,6 +24,7 @@ const defaultConfig = {
             accolades: 'accolades',
             challenges: 'challenges',
             events: 'events',
+            markdown: 'markdown',
         },
         bucket_name: 'fs',
         entryID_length: 24,

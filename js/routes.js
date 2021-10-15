@@ -69,10 +69,10 @@ app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/sourcecode`
  * note: for the "add" endpoint, append /?submissionId=submissionId to upsert
  */
 app.post(`${BASE_PATH}/api/:eventId/submission/add`, bouncerMiddleware.checkIfLoggedIn(), submissionController.addSubmission);
+app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/markdown`, bouncerMiddleware.checkIfLoggedIn(), submissionController.addSubmissionMarkdown);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/remove`, bouncerMiddleware.checkIfLoggedIn(), submissionController.removeSubmission);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/photo/:index`, bouncerMiddleware.checkIfLoggedIn(), multerUtil.submissionPhotoOptions.single('file'), submissionController.uploadSubmissionPhoto);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/sourceCode`, bouncerMiddleware.checkIfLoggedIn(), multerUtil.submissionSourceCodeOptions.single('file'), submissionController.uploadSubmissionSourceCode);
-app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/markdown`, bouncerMiddleware.checkIfLoggedIn(), multerUtil.submissionMarkdownOptions.single('file'), submissionController.uploadSubmissionMarkdown);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/upload/icon`, bouncerMiddleware.checkIfLoggedIn(), multerUtil.submissionIconOptions.single('file'), submissionController.uploadSubmissionIcon);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/like`, bouncerMiddleware.checkIfLoggedIn(), submissionController.toggleLike);
 app.post(`${BASE_PATH}/api/:eventId/submission/:submissionId/comment/add`, bouncerMiddleware.checkIfLoggedIn(), submissionController.addComment);

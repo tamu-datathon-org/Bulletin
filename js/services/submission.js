@@ -7,6 +7,7 @@ const commentsModel = require('../models/comments');
 const userSubmissionLinksModel = require('../models/userSubmissionLinks');
 const challengesModel = require('../models/challenges');
 const eventsModel = require('../models/events');
+const markdownModel = require('../models/markdown');
 const submissionS3 = require('../utils/submissionsS3');
 const bouncerController = require('../middleware/bouncer');
 
@@ -43,6 +44,16 @@ const getSubmissionsByUserAuthId = async (eventId, userAuthId) => {
     return result;
 };
 
+const getSubmissionMarkdown = async (eventId, submissionId) => {
+    logger.info(submissionId);
+    const submissionObj = await getSubmission(eventId, submissionId);
+    if (!submissionObj)
+        throw new Error(`📌no submission with submissionId ${submissionId}`);
+    if (submissionObj.markdownId)
+        return await markdownModel.getMarkdown(submissionObj.markdownId);
+    return {};
+};
+
 // ======================================================== //
 // ======== 📌📌📌 Submission Modifiers 📌📌📌 ========= //
 // ======================================================== //
@@ -59,16 +70,21 @@ const getSubmissionsByUserAuthId = async (eventId, userAuthId) => {
 const addSubmission = async (requestBody, eventId, submissionId, token) => {
 
     // get discord Objects from harmonia
-    // const discordObjs = [{discordInfo:'dan#22', discordTag:'dan#22', userAuthId: "5efc0b99a37c4300032acbce"}];
+    let hasSelf = false;
+    const selfUserAuthId = await bouncerController.getAuthId(token);
     const discordObjs = await Promise.all(requestBody.discordTags.map(async (discordTag) => {
         const discordUser = await bouncerController.getDiscordUser(discordTag, null, token);
         if (discordUser.userAuthId) {
+            if (discordUser.userAuthId === selfUserAuthId) hasSelf = true;
+            await bouncerController.getUserRegistrationStatus(discordUser.userAuthId);
             return discordUser;
         }
         throw new Error(`📌discordTag ${discordTag} does not exist`);
     }));
     if (discordObjs.length === 0)
         throw new Error('📌no provided discordTag are in our server');
+    if (!hasSelf)
+        throw new Error('📌you did not provide your own discordTag');
     logger.info(JSON.stringify(discordObjs));
 
     // get valid challenge id
@@ -235,20 +251,16 @@ const uploadSubmissionIcon = async (eventId, submissionId, originalname, buffer)
     return data.Location;
 };
 
-const uploadSubmissionMarkdown = async (eventId, submissionId, originalname, buffer) => {
+const addSubmissionMarkdown = async (eventId, submissionId, text) => {
     const submissionObj = await submissionModel.getSubmission(eventId, submissionId);
     if (!submissionObj) throw new Error(`📌submission ${submissionId} does not exist`);
-    if ((submissionObj?.markdown?.length ?? 0) !== 0) {
-        logger.info('previous markdown existed so we\'re deleting it...');
-        logger.info(submissionObj.markdown[0]);
-        await removeFileByKey(submissionObj.markdown[0]);
-    }
-    logger.info('uploading markdown to s3...');
-    const data = await submissionS3.uploadFile(`${originalname}`, buffer);
-    logger.info('adding key and url to submission entry...');
-    await submissionModel.editSubmissionMarkdown(eventId, submissionId, data);
+    logger.info('adding markdown to submission entry...');
+    const markdownObj = await markdownModel.createMarkdown(submissionId, text);
+    const markdownId = submissionObj.markdownId ? submissionObj.markdownId : null;
+    const id = await markdownModel.addMarkdown(markdownObj, markdownId);
+    await submissionModel.addSubmissionMarkdownId(eventId, submissionId, id);
     logger.info('done');
-    return data.Location;
+    return id;
 };
 
 /**
@@ -287,10 +299,11 @@ module.exports = {
     getSubmission,
     getSubmissions,
     getSubmissionsByUserAuthId,
+    getSubmissionMarkdown,
     getSubmissionFile,
     uploadSubmissionPhoto,
     uploadSubmissionSourceCode,
-    uploadSubmissionMarkdown,
     uploadSubmissionIcon,
+    addSubmissionMarkdown,
     getUserSubmissionLinkBySubmissionIdAndUserAuthId,
 };

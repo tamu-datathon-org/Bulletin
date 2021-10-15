@@ -193,7 +193,7 @@ export const CUR_EVENT_ID = "616890dff283920c53877448"
    const emptyCurSubmission = () => setCurSubmission({
       _id: "",name: "",tags: [],links: [],discordTags: [],challengeId: "",
       videoLink: "",answer1: "",answer2: "",answer3: "",answer4: "",answer5: "",
-      sourceCode: "",photos: "",icon: "",markdown: "",accoladeIds: []
+      sourceCode: [],photos: {},icon: [],markdown: [],accoladeIds: []
     })
    const handleEditSubmission = (id:string) => {
     axios.get<SubmissionResponse>(`${BASE_URL}/api/${curEventId}/submission/${id}`)
