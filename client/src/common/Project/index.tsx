@@ -1,10 +1,10 @@
-import { Button, ButtonGroup, Textarea, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text, Collapse, Display, Image } from "@geist-ui/react";
+import { Button, ButtonGroup, Badge, Textarea, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text, Collapse, Display, Image } from "@geist-ui/react";
 import axios from 'axios';
-import { X, Eye } from '@geist-ui/react-icons';
+import { X, Eye, Youtube, Tag, Link2 } from '@geist-ui/react-icons';
 import Select from 'react-select'
 import { useCookies } from 'react-cookie';
 import React, { useEffect, useState } from 'react';
-import { BASE_URL, HARMONIA_URL, MAX_TEAMMATES } from "../../constants";
+import { BASE_URL, HARMONIA_URL, MAX_TEAMMATES, MAX_LINKS, MAX_TAGS } from "../../constants";
 import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse, HarmoniaResponse, MarkdownResponse } from '../interfaces';
 import { CUR_EVENT_ID } from "../Admin";
 import placeholder from '../Gallery/placeholder.jpg';
@@ -232,11 +232,10 @@ export const ProjectPage: React.FC = () => {
         sendNotification("Link is not valid.", "error");
         return;
       }
-      if (!value.includes('embed')) {
-        sendNotification("Can't preview, link is not an embed.", "error");
-        return;
-      }
-      setPreviewedLink(value);
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+      const match = value.match(regExp);
+      const videoId = (match && match[2].length === 11) ? match[2] : null;
+      setPreviewedLink(`//www.youtube.com/embed/${videoId}`);
     };
 
     const [sourceCode, setSourceCode] = useState<any>();
@@ -297,7 +296,8 @@ export const ProjectPage: React.FC = () => {
         <Spacer h={1}/>
         <Input width="100%" key="name" label="Name" value={submission?.name} id="name" onChange={submissionDataHandler} placeholder="Give your project a name" />
         <Spacer h={1}/>
-        <ButtonGroup type="success">
+        <Badge>{MAX_TEAMMATES - (discordTags?.length ?? 0)}</Badge>
+        <ButtonGroup type="success" width="100%">
         {discordTags?.map((item: any, idx:number) =>
           <Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button>
         )}
@@ -311,21 +311,23 @@ export const ProjectPage: React.FC = () => {
             isMulti={false}
         />
         <Spacer h={1}/>
-        <ButtonGroup type="success">
+        <Badge>{MAX_TAGS - (tags?.length ?? 0)}</Badge>
+        <ButtonGroup type="success" width="100%">
         {tags?.map((item: any, idx:number) =>
           <Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button>
         )}
         </ButtonGroup>
-        <Input width="100%" label="Tags" id="tags" onKeyDown={tagsHandler} placeholder="Enter tags related to your project, eg. Data"/>
+        <Input icon={<Tag />} width="100%" label="Tags" id="tags" onKeyDown={tagsHandler} placeholder="Enter tags related to your project, eg. Data"/>
         <Spacer h={1}/>
-        <ButtonGroup type="success">
+        <Badge>{MAX_LINKS - (links?.length ?? 0)}</Badge>
+        <ButtonGroup type="success" width="100%" >
         {links?.map((item: any, idx:number) =>
           <Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button>
         )}
         </ButtonGroup>
-        <Input width="100%" label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
+        <Input icon={<Link2 />} width="100%" label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
         <Spacer h={1}/>
-        <Input width="100%" key="videolink" label="Video Link" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="Link a youtube, vimeo, etc. video about your project" iconClickable iconRight={<Eye />} onIconClick={videoLinkHandler} />
+        <Input icon={<Youtube />} width="100%" key="videolink" label="Video Link" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="Link a YouTube video presenting your project" iconClickable iconRight={<Eye />} onIconClick={videoLinkHandler} />
         {previewedLink && <Display shadow><iframe title="VideoLinkPreview" src={previewedLink}></iframe></Display>} {/* potentially dangerous */}
         <Spacer h={1}/>
         <Divider />
