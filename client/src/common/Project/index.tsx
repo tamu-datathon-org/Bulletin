@@ -33,12 +33,14 @@ export const ProjectPage: React.FC = () => {
     const [markdownValue, setMarkdownValue] = useState("")
     const [markdownLoaded, setMarkdownLoaded] = useState(false);
     const retrieveMarkdown = () => {
-      axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/markdown`)
-      .then(res => {
-          setMarkdownValue(res.data.result.text)
-          setMarkdownLoaded(true);
-      })
-      .catch(errorHandler)
+      if (submission?._id) {
+        axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/markdown`)
+        .then(res => {
+            setMarkdownValue(res.data.result.text)
+            setMarkdownLoaded(true);
+        })
+        .catch(errorHandler)
+      }
     }
 
     // eslint-disable-next-line no-useless-escape
