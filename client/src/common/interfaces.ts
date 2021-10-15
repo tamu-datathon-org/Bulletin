@@ -89,6 +89,10 @@ export interface SubmissionsResponse {
 result: Submission[];
 }
 
+export interface MarkdownResponse {
+result: { text: string };
+}
+
 export interface SubmissionPhoto {
 [key: string]: Array<string>;  
 }

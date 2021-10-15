@@ -1,11 +1,12 @@
-import { Button, ButtonGroup, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text, Collapse, Display, Image } from "@geist-ui/react";
+import { Button, ButtonGroup, Textarea, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text, Collapse, Display, Image } from "@geist-ui/react";
 import axios from 'axios';
 import { X, XCircle } from '@geist-ui/react-icons';
 import Select from 'react-select'
 import React, { useEffect, useState } from 'react';
 import { BASE_URL, HARMONIA_URL, MAX_TEAMMATES } from "../../constants";
-import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse, HarmoniaResponse } from '../interfaces';
+import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse, HarmoniaResponse, MarkdownResponse } from '../interfaces';
 import { CUR_EVENT_ID } from "../Admin";
+const marked = require("marked");
 
 export const authRedirector = (res:any) => {
   if (res?.response?.status === 307) {
@@ -26,6 +27,8 @@ export const ProjectPage: React.FC = () => {
         sendNotification("Server Error!", 'error');
       }
     }
+
+    const [markdownValue, setMarkdownValue] = useState("")
 
     const urlRegex = "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)";
  
@@ -64,6 +67,13 @@ export const ProjectPage: React.FC = () => {
         })
         .catch(errorHandler)
       }
+      axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/markdown`)
+      .then(res => {
+        if (mounted){
+          setMarkdownValue(res.data.result.text)
+        }
+      })
+      .catch(errorHandler)
       return () => {
         mounted = false;
       }
@@ -95,6 +105,11 @@ export const ProjectPage: React.FC = () => {
       accoladeIds: []
     })
 
+    const uploadMarkdown = () => {
+      axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/markdown`, {text: markdownValue})
+      .catch(errorHandler)
+    }
+
     const handleUpdateSubmission = () => {
       submission!.discordTags = discordTags || [];
       submission!.tags = tags || [];
@@ -109,6 +124,7 @@ export const ProjectPage: React.FC = () => {
         sendNotification("Submission Failed!", "error");
         return;
       }
+      if (markdownValue) uploadMarkdown();
       if (sourceCode) uploadFile(FileType.sourceCode);
       if (icon) uploadFile(FileType.icon);
       if (photos) uploadPhotos();
@@ -306,6 +322,23 @@ export const ProjectPage: React.FC = () => {
         )}
         <Spacer h={1}/>
         <Collapse.Group>
+          <Collapse style={{display:'block'}} shadow title="Description" subtitle="Explain how you created your project">
+          <Card>
+          <Text>Input:</Text>
+          <Textarea width="100%"
+            value={markdownValue}
+            onChange={(e) => setMarkdownValue(e.target.value)}
+            placeholder="Input your Markdown Description here."
+            resize="vertical"
+          />
+            <Spacer h={1}/>
+            <Text>Preview:</Text>
+            <Card>
+              <div dangerouslySetInnerHTML={{__html: marked(markdownValue)}} />
+            </Card>
+          </Card>
+          </Collapse>
+          <Spacer h={1}/>
           <Collapse style={{display:'block'}} shadow title="Icon" subtitle="Upload an image that everyone will see in the Project Gallary">
           <Card>
             <Link href={submission?.icon?.[1] ?? "#"} icon block color>Project Cover Image (.jpg, .png)</Link>
