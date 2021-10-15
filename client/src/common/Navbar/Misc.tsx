@@ -17,7 +17,7 @@ export const Navbar: React.FC = () => {
       </UI.NavbarDropdownToggle>
       <Dropdown.Menu className="dropdown-menu-right">
         <Dropdown.Header>{user?.email}</Dropdown.Header>
-        <Dropdown.Item href="/auth/logout?r=/mailing">Logout</Dropdown.Item>
+        <Dropdown.Item href={`/auth/logout?r=${window.location.pathname}`}>Logout</Dropdown.Item>
       </Dropdown.Menu>
     </Dropdown>
   );

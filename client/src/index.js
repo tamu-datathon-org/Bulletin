@@ -3,12 +3,15 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import { GeistProvider, CssBaseline } from '@geist-ui/react';
+import { UserProvider } from './common/UserProvider'
 
 ReactDOM.render(
   <React.StrictMode>
     <GeistProvider>
-      <CssBaseline />
-      <App />
+      <UserProvider>
+        <CssBaseline />
+        <App />
+      </UserProvider>
     </GeistProvider>
   </React.StrictMode>,
   document.getElementById('root')

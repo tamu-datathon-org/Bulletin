@@ -276,7 +276,7 @@ const getSubmissionFile = async (eventId, submissionId, type) => {
     if (!config.submission_constraints.submission_upload_types[type]) {
         throw new Error(`📌type ${type} is invalid`);
     }
-    if (submissionObj[type]) return getFileByKey(submissionObj[type]);
+    if (submissionObj[type]) return getFileByKey(submissionObj[type][0]);
     throw new Error(`📌submissionId ${submissionId} does not have uploaded file(s) of ${type}`);
 };
 
