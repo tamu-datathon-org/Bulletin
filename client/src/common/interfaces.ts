@@ -98,5 +98,5 @@ export interface SubmissionPhoto {
 }
 
 export interface HarmoniaResponse {
-result: string[];    
+participants: string[];    
 }

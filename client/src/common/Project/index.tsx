@@ -73,10 +73,10 @@ export const ProjectPage: React.FC = () => {
           },
         };
         console.log(JSON.stringify(options));
-        axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/users`, options)
+        axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/participants`, options)
         .then(res => {
           if (mounted){
-            const result = res.data.result.map(discordUser => {
+            const result = res.data?.participants?.map(discordUser => {
               const d = {
                 value: discordUser,
                 label: discordUser.substr(0, discordUser.lastIndexOf('#')),
@@ -232,6 +232,10 @@ export const ProjectPage: React.FC = () => {
         sendNotification("Link is not valid.", "error");
         return;
       }
+      if (!value.includes('embed')) {
+        sendNotification("Can't preview, link is not an embed.", "error");
+        return;
+      }
       setPreviewedLink(value);
     };
 
@@ -284,29 +288,18 @@ export const ProjectPage: React.FC = () => {
     <>
       <Card>
         <Card.Content>
-        <Text b>Add/Update a Submission</Text>
+        <Text h2>Add/Update a Submission</Text>
         </Card.Content>
         <Divider />
         <Card.Content>
-        <Input width="100%" key="name" label="Name" autoCapitalize='none' value={submission?.name} id="name" onChange={submissionDataHandler} placeholder="Give your project a name" />
         <Spacer h={1}/>
-        <ButtonGroup type="success">
-        {tags?.map((item: any, idx:number) =>
-          <Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
-        )}
-        </ButtonGroup>
-        <Input width="100%" label="Tags" id="tags" autoCapitalize='none' onKeyDown={tagsHandler} placeholder="Enter tags related to your project, eg. Data"/>
+        <Text span type="success">Details</Text>
         <Spacer h={1}/>
-        <ButtonGroup type="success">
-        {links?.map((item: any, idx:number) =>
-          <Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
-        )}
-        </ButtonGroup>
-        <Input width="100%" label="Links" id="links" autoCapitalize='none' onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
+        <Input width="100%" key="name" label="Name" value={submission?.name} id="name" onChange={submissionDataHandler} placeholder="Give your project a name" />
         <Spacer h={1}/>
         <ButtonGroup type="success">
         {discordTags?.map((item: any, idx:number) =>
-          <Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
+          <Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button>
         )}
         </ButtonGroup>
         <Select placeholder="Add Teammates From Discord"
@@ -318,8 +311,26 @@ export const ProjectPage: React.FC = () => {
             isMulti={false}
         />
         <Spacer h={1}/>
-        <Input width="100%" key="videolink" label="Video Link" autoCapitalize='none' value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="Link a youtube, vimeo, etc. video about your project" iconClickable iconRight={<Eye />} onIconClick={videoLinkHandler} />
+        <ButtonGroup type="success">
+        {tags?.map((item: any, idx:number) =>
+          <Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button>
+        )}
+        </ButtonGroup>
+        <Input width="100%" label="Tags" id="tags" onKeyDown={tagsHandler} placeholder="Enter tags related to your project, eg. Data"/>
+        <Spacer h={1}/>
+        <ButtonGroup type="success">
+        {links?.map((item: any, idx:number) =>
+          <Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button>
+        )}
+        </ButtonGroup>
+        <Input width="100%" label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
+        <Spacer h={1}/>
+        <Input width="100%" key="videolink" label="Video Link" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="Link a youtube, vimeo, etc. video about your project" iconClickable iconRight={<Eye />} onIconClick={videoLinkHandler} />
         {previewedLink && <Display shadow><iframe title="VideoLinkPreview" src={previewedLink}></iframe></Display>} {/* potentially dangerous */}
+        <Spacer h={1}/>
+        <Divider />
+        <Spacer h={1}/>
+        <Text span type="success">Challenge Specific</Text>
         <Spacer h={1}/>
         <Text>Select a challenge to submit this project to:</Text>
         <Radio.Group useRow value={submission?.challengeId} onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
@@ -336,6 +347,10 @@ export const ProjectPage: React.FC = () => {
               {challenge.question5 && <Input width="100%" label={challenge?.question5} value={submission?.answer5} key="answer5" id="answer5" onChange={submissionDataHandler}/>}
             </>
         )}
+        <Spacer h={1}/>
+        <Divider />
+        <Spacer h={1}/>
+        <Text span type="success">Supporting Information</Text>
         <Spacer h={1}/>
         <Collapse.Group>
           <Collapse style={{display:'block'}} shadow title="Description" subtitle="Explain how you created your project">
@@ -395,7 +410,11 @@ export const ProjectPage: React.FC = () => {
           </Collapse>
         </Collapse.Group>
         <Spacer h={1}/>
-        <Button shadow type="secondary" onClick={handleUpdateSubmission}>{submission?._id ? "Update" : "Add"}</Button>
+        <Divider />
+        <Spacer h={1}/>
+        <Display>
+          <Button shadow type="secondary" onClick={handleUpdateSubmission}><Text b>{submission?._id ? "Update" : "Add"}</Text></Button>
+        </Display>
         </Card.Content>
       </Card>
       <Spacer h={0.5}/>
