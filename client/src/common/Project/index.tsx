@@ -1,13 +1,14 @@
-import { Button, ButtonGroup, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text } from "@geist-ui/react";
+import { Button, ButtonGroup, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text, Collapse, Display, Image } from "@geist-ui/react";
 import axios from 'axios';
 import { Upload, X } from '@geist-ui/react-icons';
+import Select from 'react-select'
 import React, { useEffect, useState } from 'react';
-import { BASE_URL } from "../../constants";
-import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse } from '../interfaces';
+import { BASE_URL, HARMONIA_URL, MAX_TEAMMATES } from "../../constants";
+import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse, HarmoniaResponse } from '../interfaces';
 import { CUR_EVENT_ID } from "../Admin";
 
 export const authRedirector = (res:any) => {
-  if (res.response.status === 307) {
+  if (res?.response?.status === 307) {
     window.location.replace(`https://tamudatathon.com${String(res.response.data.error)}`);
   }
 }
@@ -25,6 +26,8 @@ export const ProjectPage: React.FC = () => {
         sendNotification("Server Error!", 'error');
       }
     }
+
+    const urlRegex = "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)";
  
     const [allChalleges, setAllChallenges] = useState<Challenge[]>([])
     const [submissions, setSubmissions] = useState<Submission[]>([])
@@ -45,23 +48,32 @@ export const ProjectPage: React.FC = () => {
         }
       })
       .catch(errorHandler)
+      if (!discordUsers) {
+        axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/users`)
+        .then(res => {
+          if (mounted){
+            const result = res.data.result.map(discordUser => {
+              const d = {
+                value: discordUser,
+                label: discordUser.substr(0, discordUser.lastIndexOf('#')),
+              }
+              return d;
+            });
+            setDiscordUsers(result);
+          }
+        })
+        .catch(errorHandler)
+      }
       return () => {
         mounted = false;
       }
     },[]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const [submission, setSubmission] = useState<Submission>();
-    const submissionDataHandler = (e:any) => setSubmission((prev:any) => {
-      console.log(e);
-      console.log(e.target);
-      console.log(e.target.id);
-      return {
+    const submissionDataHandler = (e:any) => setSubmission((prev:any) => ({
         ...prev,
-        [e.target.id]: ((e.target.id === "name" || e.target.id === "videoLink") ? e.target.value : e.target.value.split(',')),
-        discordTags: discordTags,
-        tags: tags,
-        links: links,
-    }});
+        [e.target.id]: e.target.value,
+    }));
 
     const emptyCurSubmission = () => setSubmission({
       _id: "",
@@ -84,6 +96,9 @@ export const ProjectPage: React.FC = () => {
     })
 
     const handleUpdateSubmission = () => {
+      submission!.discordTags = discordTags || [];
+      submission!.tags = tags || [];
+      submission!.links = links || [];
       axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/add`, submission)
       .then(() => {
         sendNotification("Updated submission!", "success")
@@ -115,11 +130,9 @@ export const ProjectPage: React.FC = () => {
         e.target.value = "";
         setTags([...tags, value]);
       }
-      submissionDataHandler(e);
     }
     const handleDeleteTags = (e:any, item: string) => {
       setTags(tags?.filter((i:string) => i !== item) || []);
-      submissionDataHandler(e);
     };
 
     const [discordTags, setDiscordTags] = useState<any>();
@@ -139,12 +152,13 @@ export const ProjectPage: React.FC = () => {
         e.target.value = "";
         setDiscordTags([...discordTags, value]);
       }
-      submissionDataHandler(e);
     }
     const handleDeleteDiscordTags = (e:any, item: string) => {
       setDiscordTags(discordTags?.filter((i:string) => i !== item) || []);
-      submissionDataHandler(e);
     };
+
+    // show the user all the discord tags in a dropdown
+    const [discordUsers, setDiscordUsers] = useState<any>();
 
     const [links, setLinks] = useState<any>();
     const linksHandler = (e:any) => {
@@ -163,18 +177,22 @@ export const ProjectPage: React.FC = () => {
         e.target.value = "";
         setLinks([...links, value]);
       }
-      submissionDataHandler(e);
     }
     const handleDeleteLinks = (e:any, item: string) => {
       setLinks(links?.filter((i:string) => i !== item) || []);
-      submissionDataHandler(e);
     };
 
     const [sourceCode, setSourceCode] = useState<any>();
     const sourceCodeHandler = (e:any) => setSourceCode(e.target.files[0])
 
-    const [photo, setPhoto] = useState<any>();
-    const photoHandler = (e:any) => setPhoto(e.target.files[0])
+    const [photos, setPhotos] = useState<any>();
+    const photosHandler = (e:any, index:number) => {
+      if (!photos) {
+        setPhotos(new Array(3).fill(null));
+      }
+      photos[index] = e.target.files[0];
+      setPhotos(photos);
+    }
 
     const [icon, setIcon] = useState<any>();
     const iconHandler = (e:any) => setIcon(e.target.files[0])
@@ -195,12 +213,15 @@ export const ProjectPage: React.FC = () => {
       .catch(errorHandler)
     }
 
-    const uploadPhoto = (index:number) => {
-      const data = new FormData();
-      data.append('file', photo);
-      axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/photo/${index}`, data)
-      .then(() => sendNotification(`Uploaded Photo ${index}!`, "success"))
-      .catch(errorHandler)
+    const uploadPhotos = () => {
+      if (!photos) return;
+      photos.forEach((photo:Blob, index:number) => {
+        const data = new FormData();
+        data.append('file', photo);
+        axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/photo/${index}`, data)
+        .then(() => sendNotification(`Uploaded Photo ${index}!`, "success"))
+        .catch(errorHandler)
+      })
     }
 
     return (
@@ -214,33 +235,40 @@ export const ProjectPage: React.FC = () => {
         <Input width="100%" key="name" label="Name" value={submission?.name} id="name" onChange={submissionDataHandler} placeholder="Give your project a name" />
         <Spacer h={1}/>
         <ButtonGroup type="success">
-        {tags?.map((item: any) =>
+        {tags?.map((item: any, idx:number) =>
           <>
-            <Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item}>{item}</Button>
+            <Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
           </>
         )}
         </ButtonGroup>
         <Input width="100%" key="tags" label="Tags" id="tags" onKeyDown={tagsHandler} placeholder="Enter tags related to your project, eg. Data"/>
         <Spacer h={1}/>
         <ButtonGroup type="success">
-        {links?.map((item: any) =>
+        {links?.map((item: any, idx:number) =>
           <>
-            <Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item}>{item}</Button>
+            <Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
           </>
         )}
         </ButtonGroup>
-        <Input width="100%" key="links" label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
+        <Input width="100%" key="links" pattern={urlRegex} label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
         <Spacer h={1}/>
         <ButtonGroup type="success">
-        {discordTags?.map((item: any) =>
+        {discordTags?.map((item: any, idx:number) =>
           <>
-            <Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item}>{item}</Button>
+            <Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
           </>
         )}
         </ButtonGroup>
-        <Input width="100%" key="discordtags" label="Discord Tags" id="discordTags" onKeyDown={discordTagsHandler} placeholder="Enter your teammates discord tags here" />
+        <Select placeholder="Add Teammates From Discord"
+            options={
+              discordTags?.length >= MAX_TEAMMATES ? [] : discordUsers
+            }
+            onChange={discordTagsHandler}
+            closeMenuOnSelect={false}
+            isMulti={true}
+        />
         <Spacer h={1}/>
-        <Input width="100%" key="videolink" label="Video Link" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="Link a youtube, vimeo, etc. video about your project" />
+        <Input width="100%" key="videolink" pattern={urlRegex} label="Video Link" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="Link a youtube, vimeo, etc. video about your project" />
         <Spacer h={1}/>
         <Text>Select a challenge to submit this project to:</Text>
         <Radio.Group useRow value={submission?.challengeId} onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
@@ -260,39 +288,69 @@ export const ProjectPage: React.FC = () => {
         <Spacer h={1}/>
         <Button onClick={handleUpdateSubmission}>{submission?._id ? "Update" : "Add"}</Button>
         <Spacer h={1}/>
-        <Text>Upload an image that everyone will see in the Project Gallary:</Text>
-        <Card>
-          <Link href={submission?.icon?.[1] ?? "#"} icon block color>Project Cover Image (.jpg, .png)</Link>
-          <Input htmlType="file" accept=".jpg,.png" name="Icon" onChange={iconHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.icon)}/>
-        </Card>
-        <Spacer h={1}/>
-        <Text>Upload a markdown file to tell people about your project:</Text>
-        <Card>
-          <Link href={submission?.markdown?.[1] ?? "#"} icon block color>Description (.md)</Link>
-          <Input htmlType="file" accept=".md" name="Markdown" onChange={markdownHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.markdown)}/>
-        </Card>
-        <Spacer h={1}/>
-        <Text>Upload source code like a python notebook to show what you did:</Text>
-        <Card>
-          <Link href={submission?.sourceCode?.[1] ?? "#"} icon block color>Source Code (.tar, .tar.gz, .zip)</Link>
-          <Input htmlType="file" accept=".tar,.tar.gz,.zip" name="Source Code" onChange={sourceCodeHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.sourceCode)}/>
-        </Card>
-        <Spacer h={1}/>
-        <Text>Upload up to 3 photos about your project:</Text>
-        <Card>
-          <Link href={submission?.photos?.["0"]?.[1] ?? "#"} icon block color>Project Photo {0 + 1}</Link>
-          <Input htmlType="file" accept=".jpg,.png" name="Photo0" onChange={photoHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadPhoto(0)}/>
-        </Card>
-        <Spacer h={1}/>
-        <Card>
-          <Link href={submission?.photos?.["1"]?.[1] ?? "#"} icon block color>Project Photo {0 + 1}</Link>
-          <Input htmlType="file" accept=".jpg,.png" name="Photo1" onChange={photoHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadPhoto(1)}/>
-        </Card>
-        <Spacer h={1}/>
-        <Card>
-          <Link href={submission?.photos?.["2"]?.[1] ?? "#"} icon block color>Project Photo {0 + 1}</Link>
-          <Input htmlType="file" accept=".jpg,.png" name="Photo2" onChange={photoHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadPhoto(2)}/>
-        </Card>
+        <Collapse.Group>
+          <Collapse shadow title="Icon" subtitle="Upload an image that everyone will see in the Project Gallary">
+          <Card>
+            <Link href={submission?.icon?.[1] ?? "#"} icon block color>Project Cover Image (.jpg, .png)</Link>
+            <Input htmlType="file" accept=".jpg,.png" name="Icon" onChange={iconHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.icon)}/>
+            <Spacer h={1}/>
+            <Display shadow>
+              <Image width="500px" height="500px" src={icon || ""} />
+            </Display>
+          </Card>
+          </Collapse>
+          <Spacer h={1}/>
+          <Collapse shadow title="Markdown" subtitle="Upload a markdown file to tell people about your project">
+          <Card>
+            <Link href={submission?.markdown?.[1] ?? "#"} icon block color>Description (.md)</Link>
+            <Input htmlType="file" accept=".md" name="Markdown" onChange={markdownHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.markdown)}/>
+            <Spacer h={1}/>
+            <Display shadow>
+              <Image width="500px" height="500px" src={markdown || ""} />
+            </Display>
+          </Card>
+          </Collapse>
+          <Spacer h={1}/>
+          <Collapse shadow title="Source Code" subtitle="Upload source code like a python notebook to show what you did">
+          <Card>
+            <Link href={submission?.sourceCode?.[1] ?? "#"} icon block color>Source Code (.tar, .tar.gz, .zip)</Link>
+            <Input htmlType="file" accept=".tar,.tar.gz,.zip" name="Source Code" onChange={sourceCodeHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.sourceCode)}/>
+            <Spacer h={1}/>
+            <Display shadow>
+              <Image width="500px" height="500px" src={sourceCode || ""} />
+            </Display>
+          </Card>
+          </Collapse>
+          <Spacer h={1}/>
+          <Collapse shadow title="Images" subtitle="Upload up to 3 images concerning your project">
+            <Card>
+              <Text>Project Image 1</Text>
+              <Input htmlType="file" accept=".jpg,.png" name="Photo0" onChange={() => photosHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadPhotos}/>
+              <Spacer h={1}/>
+              <Display shadow>
+                <Image width="500px" height="500px" src={photos?.[0] || ""} />
+              </Display>
+            </Card>
+            <Spacer h={1}/>
+            <Card>
+              <Link href={submission?.photos?.["1"]?.[1] ?? "#"} icon block color>Project Image 2</Link>
+              <Input htmlType="file" accept=".jpg,.png" name="Photo1" onChange={() => photosHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadPhotos}/>
+              <Spacer h={1}/>
+              <Display shadow>
+                <Image width="500px" height="500px" src={photos?.[1] || ""} />
+              </Display>
+            </Card>
+            <Spacer h={1}/>
+            <Card>
+              <Link href={submission?.photos?.["2"]?.[1] ?? "#"} icon block color>Project Image 3</Link>
+              <Input htmlType="file" accept=".jpg,.png" name="Photo2" onChange={() => photosHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadPhotos}/>
+              <Spacer h={1}/>
+              <Display shadow>
+                <Image width="500px" height="500px" src={photos?.[2] || ""} />
+              </Display>
+            </Card>
+          </Collapse>
+        </Collapse.Group>
         </Card.Content>
       </Card>
       <Spacer h={0.5}/>

@@ -93,3 +93,7 @@ result: Submission[];
 export interface SubmissionPhoto {
 [key: string]: Array<string>;  
 }
+
+export interface HarmoniaResponse {
+result: string[];    
+}
