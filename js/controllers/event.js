@@ -284,8 +284,8 @@ const getSubmissionMarkdown = async (req, res) => {
         const { submissionId } = req.params;
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
         if ((submissionId?.length ?? 0) === 0) throw new Error('📌submissionId is a required parameter');
-        const readable = await submissionService.getSubmissionFile(eventId, submissionId, 'markdown');
-        readable.pipe(res);
+        response.result = await submissionService.getSubmissionMarkdown(eventId, submissionId);
+        res.status(200).json(response);
     } catch (err) {
         logger.info(err);
         response.error = err.message;

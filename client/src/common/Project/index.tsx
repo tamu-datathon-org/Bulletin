@@ -261,27 +261,21 @@ export const ProjectPage: React.FC = () => {
         <Spacer h={1}/>
         <ButtonGroup type="success">
         {tags?.map((item: any, idx:number) =>
-          <>
-            <Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
-          </>
+          <Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
         )}
         </ButtonGroup>
         <Input width="100%" label="Tags" id="tags" onKeyDown={tagsHandler} placeholder="Enter tags related to your project, eg. Data"/>
         <Spacer h={1}/>
         <ButtonGroup type="success">
         {links?.map((item: any, idx:number) =>
-          <>
-            <Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
-          </>
+          <Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
         )}
         </ButtonGroup>
         <Input width="100%" pattern={urlRegex} label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
         <Spacer h={1}/>
         <ButtonGroup type="success">
         {discordTags?.map((item: any, idx:number) =>
-          <>
-            <Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
-          </>
+          <Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
         )}
         </ButtonGroup>
         <Select placeholder="Add Teammates From Discord"
@@ -290,7 +284,7 @@ export const ProjectPage: React.FC = () => {
             }
             onChange={discordTagsHandler}
             closeMenuOnSelect={false}
-            isMulti={true}
+            isMulti={false}
         />
         <Spacer h={1}/>
         <Input width="100%" key="videolink" pattern={urlRegex} label="Video Link" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="Link a youtube, vimeo, etc. video about your project" />
@@ -312,7 +306,7 @@ export const ProjectPage: React.FC = () => {
         )}
         <Spacer h={1}/>
         <Collapse.Group>
-          <Collapse shadow title="Icon" subtitle="Upload an image that everyone will see in the Project Gallary">
+          <Collapse style={{display:'block'}} shadow title="Icon" subtitle="Upload an image that everyone will see in the Project Gallary">
           <Card>
             <Link href={submission?.icon?.[1] ?? "#"} icon block color>Project Cover Image (.jpg, .png)</Link>
             <Input htmlType="file" accept=".jpg,.png" name="Icon" onChange={(e) => iconHandler(e, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => iconHandler(e, false)}/>
@@ -323,7 +317,7 @@ export const ProjectPage: React.FC = () => {
           </Card>
           </Collapse>
           <Spacer h={1}/>
-          <Collapse shadow title="Source Code" subtitle="Upload source code like a python notebook to show what you did">
+          <Collapse style={{display:'block'}} shadow title="Source Code" subtitle="Upload source code like a python notebook to show what you did">
           <Card>
             <Link href={submission?.sourceCode?.[1] ?? "#"} icon block color>Source Code (.tar, .tar.gz, .zip)</Link>
             <Input htmlType="file" accept=".tar,.tar.gz,.zip" name="Source Code" onChange={(e) => sourceCodeHandler(e, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => sourceCodeHandler(e, false)}/>
@@ -334,7 +328,7 @@ export const ProjectPage: React.FC = () => {
           </Card>
           </Collapse>
           <Spacer h={1}/>
-          <Collapse shadow title="Images" subtitle="Upload up to 3 images concerning your project">
+          <Collapse style={{display:'block'}} shadow title="Images" subtitle="Upload up to 3 images concerning your project">
             <Card>
               <Text>Project Image 1</Text>
               <Input htmlType="file" accept=".jpg,.png" name="Photo0" onChange={(e) => photosHandler(e, 0, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => photosHandler(e, 0, false)}/>

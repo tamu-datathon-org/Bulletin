@@ -44,6 +44,16 @@ const getSubmissionsByUserAuthId = async (eventId, userAuthId) => {
     return result;
 };
 
+const getSubmissionMarkdown = async (eventId, submissionId) => {
+    logger.info(submissionId);
+    const submissionObj = await getSubmission(eventId, submissionId);
+    if (!submissionObj)
+        throw new Error(`📌no submission with submissionId ${submissionId}`);
+    if (submissionObj.markdownId)
+        return await markdownModel.getMarkdown(submissionObj.markdownId);
+    return {};
+};
+
 // ======================================================== //
 // ======== 📌📌📌 Submission Modifiers 📌📌📌 ========= //
 // ======================================================== //
@@ -289,6 +299,7 @@ module.exports = {
     getSubmission,
     getSubmissions,
     getSubmissionsByUserAuthId,
+    getSubmissionMarkdown,
     getSubmissionFile,
     uploadSubmissionPhoto,
     uploadSubmissionSourceCode,

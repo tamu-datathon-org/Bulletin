@@ -58,10 +58,11 @@ app.get(`${BASE_PATH}/api/:eventId/submission`, eventController.getSubmissions);
 app.get(`${BASE_PATH}/api/:eventId/submission/user`, eventController.getSubmissionsByUserAuthId);
 // ================== submission by submission id ======================
 app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId`, eventController.getSubmission);
+// ================== submission markdown ===================
+app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/markdown`, eventController.getSubmissionMarkdown);
 // ============ download submission files ================
 app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/photos`, eventController.getSubmissionIcon);
 app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/icon`, eventController.getSubmissionPhotos);
-app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/markdown`, eventController.getSubmissionMarkdown);
 app.get(`${BASE_PATH}/api/:eventId/submission/:submissionId/download/sourcecode`, eventController.getSubmissionSourceCode);
 
 /**
