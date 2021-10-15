@@ -266,7 +266,7 @@ export const ProjectPage: React.FC = () => {
           </>
         )}
         </ButtonGroup>
-        <Input width="100%" key="tags" label="Tags" id="tags" onKeyDown={tagsHandler} placeholder="Enter tags related to your project, eg. Data"/>
+        <Input width="100%" label="Tags" id="tags" onKeyDown={tagsHandler} placeholder="Enter tags related to your project, eg. Data"/>
         <Spacer h={1}/>
         <ButtonGroup type="success">
         {links?.map((item: any, idx:number) =>
@@ -275,7 +275,7 @@ export const ProjectPage: React.FC = () => {
           </>
         )}
         </ButtonGroup>
-        <Input width="100%" key="links" pattern={urlRegex} label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
+        <Input width="100%" pattern={urlRegex} label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
         <Spacer h={1}/>
         <ButtonGroup type="success">
         {discordTags?.map((item: any, idx:number) =>
@@ -302,7 +302,7 @@ export const ProjectPage: React.FC = () => {
         <Spacer h={1}/>
         {allChalleges.filter(challenge => challenge._id === submission?.challengeId).map(challenge =>
             <>
-              <Text>Challenge Specific Questions:</Text>
+              <Text>Challenge Specific Questions</Text>
               {challenge.question1 && <Input width="100%" label={challenge?.question1} value={submission?.answer1} key="answer1" id="answer1" onChange={submissionDataHandler}/>}
               {challenge.question2 && <Input width="100%" label={challenge?.question2} value={submission?.answer2} key="answer2" id="answer2" onChange={submissionDataHandler}/>}
               {challenge.question3 && <Input width="100%" label={challenge?.question3} value={submission?.answer3} key="answer3" id="answer3" onChange={submissionDataHandler}/>}
