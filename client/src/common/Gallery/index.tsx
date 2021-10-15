@@ -1,5 +1,4 @@
 import { Text, Spinner, Grid, Card, useToasts, Image, useModal, Modal, Display, Link, Spacer, Badge, Note } from "@geist-ui/react";
-import CardContent from "@geist-ui/react/dist/card/card-content";
 import axios from "axios";
 import React, { useState, useEffect } from 'react';
 import { BASE_URL } from "../../constants";
@@ -103,13 +102,13 @@ export const GalleryPage: React.FC = () => {
             <Text span type="success">Created by</Text>
             <Grid.Container gap={1} justify="center" height="100px">
             {submission?.discordTags?.map(discordTag => 
-              <Grid xs={6}><Card shadow width="100%"><CardContent><Text span style={{ textTransform: 'none' }}>{discordTag}</Text></CardContent></Card></Grid>
+              <Grid xs={6}><Card shadow width="100%"><Card.Content><Text span style={{ textTransform: 'none' }}>{discordTag}</Text></Card.Content></Card></Grid>
             )}
-            {(accolades?.length ?? 0) > 0 && <Card title="Awards"><CardContent>
+            {(accolades?.length ?? 0) > 0 && <Card title="Awards"><Card.Content>
             {accolades?.map((accolade: Accolade) =>
               <Note type="warning"><Text>{`${accolade?.emoji || "🏆"} `}</Text><Text type="secondary">{accolade?.name || ""}</Text></Note>
             )}
-            </CardContent></Card>}
+            </Card.Content></Card>}
             </Grid.Container>
             <Spacer h={1}/>
             <Text span type="success">Tags</Text>
@@ -127,9 +126,9 @@ export const GalleryPage: React.FC = () => {
             </Grid.Container>
             <Grid.Container gap={1} justify="center" height="100px">
               <>
-              <Grid>{submission?.photos?.["0"]?.[1] && <Card shadow width="100%"><CardContent><Image width="500px" height="500px" src={submission?.photos?.["0"]?.[1] || placeholder} /></CardContent></Card>}</Grid>
-              <Grid>{submission?.photos?.["1"]?.[1] && <Card shadow width="100%"><CardContent><Image width="500px" height="500px" src={submission?.photos?.["1"]?.[1] || placeholder} /></CardContent></Card>}</Grid>
-              <Grid>{submission?.photos?.["2"]?.[1] && <Card shadow width="100%"><CardContent><Image width="500px" height="500px" src={submission?.photos?.["2"]?.[1] || placeholder} /></CardContent></Card>}</Grid>
+              <Grid>{submission?.photos?.["0"]?.[1] && <Card shadow width="100%"><Card.Content><Image width="500px" height="500px" src={submission?.photos?.["0"]?.[1] || placeholder} /></Card.Content></Card>}</Grid>
+              <Grid>{submission?.photos?.["1"]?.[1] && <Card shadow width="100%"><Card.Content><Image width="500px" height="500px" src={submission?.photos?.["1"]?.[1] || placeholder} /></Card.Content></Card>}</Grid>
+              <Grid>{submission?.photos?.["2"]?.[1] && <Card shadow width="100%"><Card.Content><Image width="500px" height="500px" src={submission?.photos?.["2"]?.[1] || placeholder} /></Card.Content></Card>}</Grid>
               </>
             </Grid.Container>
             <Spacer h={1}/>
@@ -139,7 +138,7 @@ export const GalleryPage: React.FC = () => {
             <Text span type="success">Description</Text>
             <div dangerouslySetInnerHTML={{__html: marked(userMarkdown)}} />
             <Spacer h={1}/>
-            {submission?.sourceCode?.[1] && <Display><Card title="Download the sourceCode"><CardContent><Link href={submission?.sourceCode?.[1]} icon>{submission?.sourceCode?.[1]}</Link></CardContent></Card></Display>}
+            {submission?.sourceCode?.[1] && <Display><Card title="Download the sourceCode"><Card.Content><Link href={submission?.sourceCode?.[1]} icon>{submission?.sourceCode?.[1]}</Link></Card.Content></Card></Display>}
           </Modal.Content>
         : <Spinner />
         }
