@@ -45,7 +45,6 @@ export const GalleryPage: React.FC = () => {
     }
   }, [])
 
-  const [markdownLoaded, setMarkdownLoaded] = useState(false);
   const { visible, setVisible, bindings } = useModal() // eslint-disable-line
   const [userMarkdown, setUserMarkdown] = useState<string>("");
   const [submission, setSubmission] = useState<Submission>();
@@ -53,12 +52,11 @@ export const GalleryPage: React.FC = () => {
   const showSubmission = (id:string) => {
     axios.get<SubmissionResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}`)
       .then(res => {
-        setMarkdownLoaded(false)
         setVisible(true)
         setSubmission(res.data.result)
         axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}/markdown`)
         .then(res => setUserMarkdown(res.data.result.text))
-        .then(() => setMarkdownLoaded(true))
+        .catch()
         if ((submission?.accoladeIds?.length ?? 0) > 0) {
           const submissionAccolades: Accolade[] = [];
           // eslint-disable-next-line array-callback-return
@@ -97,7 +95,7 @@ export const GalleryPage: React.FC = () => {
       )}
       <Modal width="100%" {...bindings}>
         <Modal.Title>{submission?.name}</Modal.Title>
-        {markdownLoaded 
+        {submission?._id 
          ? <Modal.Content>
             {submission?.discordTags?.length !== 0 && <>
               <Text span type="success">Created by</Text>
