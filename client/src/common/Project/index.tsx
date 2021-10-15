@@ -217,9 +217,11 @@ export const ProjectPage: React.FC = () => {
 
     const uploadFile = (type:FileType) => {
       const data = new FormData();
-      if (type === 'sourceCode') data.append('file', sourceCode);
-      else if (type === 'icon') data.append('file', icon);
-      else {
+      if (type === 'sourceCode' && sourceCode) {
+        data.append('file', sourceCode);
+      } else if (type === 'icon' && icon) {
+        data.append('file', icon);
+      } else {
         sendNotification("Incompatible submission file upload detected. Please contact an organizer.", "error");
       }
       axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/${type}`, data)
@@ -230,6 +232,7 @@ export const ProjectPage: React.FC = () => {
     const uploadPhotos = () => {
       if (!photos) return;
       photos.forEach((photo:Blob, index:number) => {
+        if (!photo) return;
         const data = new FormData();
         data.append('file', photo);
         axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/photo/${index}`, data)
