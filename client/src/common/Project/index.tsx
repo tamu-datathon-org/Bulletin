@@ -1,11 +1,12 @@
 import { Button, ButtonGroup, Textarea, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text, Collapse, Display, Image } from "@geist-ui/react";
 import axios from 'axios';
-import { X, XCircle } from '@geist-ui/react-icons';
+import { X } from '@geist-ui/react-icons';
 import Select from 'react-select'
 import React, { useEffect, useState } from 'react';
 import { BASE_URL, HARMONIA_URL, MAX_TEAMMATES } from "../../constants";
 import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse, HarmoniaResponse, MarkdownResponse } from '../interfaces';
 import { CUR_EVENT_ID } from "../Admin";
+import placeholder from '../Gallery/placeholder.jpg';
 const marked = require("marked");
 
 export const authRedirector = (res:any) => {
@@ -29,11 +30,22 @@ export const ProjectPage: React.FC = () => {
     }
 
     const [markdownValue, setMarkdownValue] = useState("")
+    const [markdownLoaded, setMarkdownLoaded] = useState(false);
+    const retrieveMarkdown = () => {
+      axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/markdown`)
+      .then(res => {
+          setMarkdownValue(res.data.result.text)
+          setMarkdownLoaded(true);
+      })
+      .catch(errorHandler)
+    }
 
-    const urlRegex = "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)";
+    // eslint-disable-next-line no-useless-escape
+    const urlRegex = /https?:\/\/(www\\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi
  
     const [allChalleges, setAllChallenges] = useState<Challenge[]>([])
     const [submissions, setSubmissions] = useState<Submission[]>([])
+    const [discordUsers, setDiscordUsers] = useState<any>([]);
     useEffect(() => {
       let mounted = true
       axios.get<ChallengesResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/challenge`)
@@ -67,13 +79,7 @@ export const ProjectPage: React.FC = () => {
         })
         .catch(errorHandler)
       }
-      axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/markdown`)
-      .then(res => {
-        if (mounted){
-          setMarkdownValue(res.data.result.text)
-        }
-      })
-      .catch(errorHandler)
+      retrieveMarkdown();
       return () => {
         mounted = false;
       }
@@ -124,7 +130,7 @@ export const ProjectPage: React.FC = () => {
         sendNotification("Submission Failed!", "error");
         return;
       }
-      if (markdownValue) uploadMarkdown();
+      if (markdownLoaded) uploadMarkdown();
       if (sourceCode) uploadFile(FileType.sourceCode);
       if (icon) uploadFile(FileType.icon);
       if (photos) uploadPhotos();
@@ -134,6 +140,10 @@ export const ProjectPage: React.FC = () => {
       axios.get<SubmissionResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}`)
       .then(res => setSubmission(res.data.result))
       .catch(errorHandler);
+      setDiscordTags(submission?.discordTags || []);
+      setTags(submission?.tags || []);
+      setLinks(submission?.links || []);
+      retrieveMarkdown();
     }
 
     const [tags, setTags] = useState<any>();
@@ -180,14 +190,15 @@ export const ProjectPage: React.FC = () => {
       setDiscordTags(discordTags?.filter((i:string) => i !== item) || []);
     };
 
-    // show the user all the discord tags in a dropdown
-    const [discordUsers, setDiscordUsers] = useState<any>();
-
     const [links, setLinks] = useState<any>();
     const linksHandler = (e:any) => {
       if (["Enter", "Tab", ","].includes(e.key)) {
         e.preventDefault();
         const value = e.target.value.trim();
+        if (!urlRegex.test(value)) {
+          sendNotification("Link is not valid.", "error");
+          return;
+        }
         if (!links) {
           setLinks([value]);
           e.target.value = "";
@@ -206,40 +217,22 @@ export const ProjectPage: React.FC = () => {
     };
 
     const [sourceCode, setSourceCode] = useState<any>();
-    const sourceCodeHandler = (e:any, add:boolean) => {
-      if (!(add ?? true)) {
-        setSourceCode(null);
-        e.target.files = [];
-        e.target.value = "";
-      } else {
-        setSourceCode(e.target.files[0]);
-      }
+    const sourceCodeHandler = (e:any) => {
+      setSourceCode(e.target.files[0]);
     }
 
     const [photos, setPhotos] = useState<any>();
-    const photosHandler = (e:any, index:number, add:boolean) => {
+    const photosHandler = (e:any, index:number) => {
       if (!photos) {
         setPhotos(new Array(3).fill(null));
       }
-      if (!(add ?? true)) {
-        photos[index] = null;
-        e.target.files = [];
-        e.target.value = "";
-      } else {
-        photos[index] = e.target.files[0];
-      }
+      photos[index] = e.target.files[0];
       setPhotos(photos);
     }
 
     const [icon, setIcon] = useState<any>();
-    const iconHandler = (e:any, add:boolean) => {
-      if (!(add ?? true)) {
-        setIcon(null);
-        e.target.files = [];
-        e.target.value = "";
-      } else {
-        setIcon(e.target.files[0]);
-      }
+    const iconHandler = (e:any) => {
+      setIcon(e.target.files[0]);
     }
 
     const uploadFile = (type:FileType) => {
@@ -287,7 +280,7 @@ export const ProjectPage: React.FC = () => {
           <Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item} key={idx}>{item}</Button>
         )}
         </ButtonGroup>
-        <Input width="100%" pattern={urlRegex} label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
+        <Input width="100%" label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
         <Spacer h={1}/>
         <ButtonGroup type="success">
         {discordTags?.map((item: any, idx:number) =>
@@ -303,7 +296,7 @@ export const ProjectPage: React.FC = () => {
             isMulti={false}
         />
         <Spacer h={1}/>
-        <Input width="100%" key="videolink" pattern={urlRegex} label="Video Link" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="Link a youtube, vimeo, etc. video about your project" />
+        <Input width="100%" key="videolink" label="Video Link" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="Link a youtube, vimeo, etc. video about your project" />
         <Spacer h={1}/>
         <Text>Select a challenge to submit this project to:</Text>
         <Radio.Group useRow value={submission?.challengeId} onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
@@ -342,10 +335,10 @@ export const ProjectPage: React.FC = () => {
           <Collapse style={{display:'block'}} shadow title="Icon" subtitle="Upload an image that everyone will see in the Project Gallary">
           <Card>
             <Link href={submission?.icon?.[1] ?? "#"} icon block color>Project Cover Image (.jpg, .png)</Link>
-            <Input htmlType="file" accept=".jpg,.png" name="Icon" onChange={(e) => iconHandler(e, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => iconHandler(e, false)}/>
+            <Input htmlType="file" accept=".jpg,.png" name="Icon" onChange={iconHandler} />
             <Spacer h={1}/>
             <Display shadow>
-              <Image width="500px" height="500px" src={icon || ""} />
+              <Image width="300px" height="300px" src={submission?.icon?.[1] || placeholder} />
             </Display>
           </Card>
           </Collapse>
@@ -353,39 +346,35 @@ export const ProjectPage: React.FC = () => {
           <Collapse style={{display:'block'}} shadow title="Source Code" subtitle="Upload source code like a python notebook to show what you did">
           <Card>
             <Link href={submission?.sourceCode?.[1] ?? "#"} icon block color>Source Code (.tar, .tar.gz, .zip)</Link>
-            <Input htmlType="file" accept=".tar,.tar.gz,.zip" name="Source Code" onChange={(e) => sourceCodeHandler(e, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => sourceCodeHandler(e, false)}/>
-            <Spacer h={1}/>
-            <Display shadow>
-              <Image width="500px" height="500px" src={sourceCode || ""} />
-            </Display>
+            <Input htmlType="file" accept=".tar,.tar.gz,.zip" name="Source Code" onChange={sourceCodeHandler} />
           </Card>
           </Collapse>
           <Spacer h={1}/>
           <Collapse style={{display:'block'}} shadow title="Images" subtitle="Upload up to 3 images concerning your project">
             <Card>
               <Text>Project Image 1</Text>
-              <Input htmlType="file" accept=".jpg,.png" name="Photo0" onChange={(e) => photosHandler(e, 0, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => photosHandler(e, 0, false)}/>
+              <Input htmlType="file" accept=".jpg,.png" name="Photo0" onChange={(e) => photosHandler(e, 0)} />
               <Spacer h={1}/>
               <Display shadow>
-                <Image width="500px" height="500px" src={photos?.[0] || ""} />
+                <Image width="500px" height="500px" src={submission?.photos?.["0"]?.[1] || placeholder} />
               </Display>
             </Card>
             <Spacer h={1}/>
             <Card>
               <Link href={submission?.photos?.["1"]?.[1] ?? "#"} icon block color>Project Image 2</Link>
-              <Input htmlType="file" accept=".jpg,.png" name="Photo1" onChange={(e) => photosHandler(e, 1, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => photosHandler(e, 1, false)}/>
+              <Input htmlType="file" accept=".jpg,.png" name="Photo1" onChange={(e) => photosHandler(e, 1)} />
               <Spacer h={1}/>
               <Display shadow>
-                <Image width="500px" height="500px" src={photos?.[1] || ""} />
+                <Image width="500px" height="500px" src={submission?.photos?.["1"]?.[1] || placeholder} />
               </Display>
             </Card>
             <Spacer h={1}/>
             <Card>
               <Link href={submission?.photos?.["2"]?.[1] ?? "#"} icon block color>Project Image 3</Link>
-              <Input htmlType="file" accept=".jpg,.png" name="Photo2" onChange={(e) => photosHandler(e, 2, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => photosHandler(e, 2, false)}/>
+              <Input htmlType="file" accept=".jpg,.png" name="Photo2" onChange={(e) => photosHandler(e, 2)} />
               <Spacer h={1}/>
               <Display shadow>
-                <Image width="500px" height="500px" src={photos?.[2] || ""} />
+                <Image width="500px" height="500px" src={submission?.photos?.["2"]?.[1] || placeholder} />
               </Display>
             </Card>
           </Collapse>
