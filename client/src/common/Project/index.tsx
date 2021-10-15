@@ -302,7 +302,7 @@ export const ProjectPage: React.FC = () => {
           <Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button>
         )}
         </ButtonGroup>
-        <Select placeholder="Add Teammates From Discord"
+        <Select placeholder="Add Teammates From Discord 👾"
             options={
               discordTags?.length >= MAX_TEAMMATES ? [] : discordUsers
             }
@@ -328,7 +328,7 @@ export const ProjectPage: React.FC = () => {
         <Input icon={<Link2 />} width="100%" label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
         <Spacer h={1}/>
         <Input icon={<Youtube />} width="100%" key="videolink" label="Video Link" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="Link a YouTube video presenting your project" iconClickable iconRight={<Eye />} onIconClick={videoLinkHandler} />
-        {previewedLink && <Display shadow><iframe title="VideoLinkPreview" src={previewedLink}></iframe></Display>} {/* potentially dangerous */}
+        {previewedLink && <Display shadow><iframe title="VideoLinkPreview" src={previewedLink}></iframe></Display>}
         <Spacer h={1}/>
         <Divider />
         <Spacer h={1}/>
