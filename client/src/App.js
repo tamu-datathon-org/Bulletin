@@ -1,5 +1,6 @@
 import './App.css';
 import {Page, Tabs, Spacer} from '@geist-ui/react';  
+import { CookiesProvider } from 'react-cookie';
 import {Navbar} from './common/Navbar';
 import './common/globals.css';
 import {AdminPage} from './common/Admin'
@@ -13,6 +14,7 @@ config.autoAddCss = false;
 function App() {
   return (
     <>
+      <CookiesProvider>
       <Navbar />
       <Spacer h={3}/>
       <Page>
@@ -28,6 +30,7 @@ function App() {
           </Tabs.Item>
         </Tabs>
       </Page>
+      </CookiesProvider>
     </>
   );
 }
