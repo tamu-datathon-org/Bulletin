@@ -59,7 +59,6 @@ result: Event[];
 export enum FileType {
 sourceCode = 'sourceCode',
 icon = 'icon',
-markdown = 'markdown',
 }
 
 export interface Submission {

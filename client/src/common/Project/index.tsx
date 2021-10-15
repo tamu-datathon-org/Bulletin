@@ -1,6 +1,6 @@
 import { Button, ButtonGroup, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text, Collapse, Display, Image } from "@geist-ui/react";
 import axios from 'axios';
-import { Upload, X } from '@geist-ui/react-icons';
+import { X, XCircle } from '@geist-ui/react-icons';
 import Select from 'react-select'
 import React, { useEffect, useState } from 'react';
 import { BASE_URL, HARMONIA_URL, MAX_TEAMMATES } from "../../constants";
@@ -105,6 +105,13 @@ export const ProjectPage: React.FC = () => {
         emptyCurSubmission();
       })
       .catch(errorHandler)
+      if (!submission?._id) {
+        sendNotification("Submission Failed!", "error");
+        return;
+      }
+      if (sourceCode) uploadFile(FileType.sourceCode);
+      if (icon) uploadFile(FileType.icon);
+      if (photos) uploadPhotos();
     };
 
     const handleEditSubmission = (id:string) => {
@@ -146,7 +153,7 @@ export const ProjectPage: React.FC = () => {
           return;
         }
         if (discordTags.includes(value)) {
-          sendNotification("Discord Tags is already present.", "error");
+          sendNotification("Discord tag is already present.", "error");
           return;
         }
         e.target.value = "";
@@ -183,28 +190,46 @@ export const ProjectPage: React.FC = () => {
     };
 
     const [sourceCode, setSourceCode] = useState<any>();
-    const sourceCodeHandler = (e:any) => setSourceCode(e.target.files[0])
+    const sourceCodeHandler = (e:any, add:boolean) => {
+      if (!(add ?? true)) {
+        setSourceCode(null);
+        e.target.files = [];
+        e.target.value = "";
+      } else {
+        setSourceCode(e.target.files[0]);
+      }
+    }
 
     const [photos, setPhotos] = useState<any>();
-    const photosHandler = (e:any, index:number) => {
+    const photosHandler = (e:any, index:number, add:boolean) => {
       if (!photos) {
         setPhotos(new Array(3).fill(null));
       }
-      photos[index] = e.target.files[0];
+      if (!(add ?? true)) {
+        photos[index] = null;
+        e.target.files = [];
+        e.target.value = "";
+      } else {
+        photos[index] = e.target.files[0];
+      }
       setPhotos(photos);
     }
 
     const [icon, setIcon] = useState<any>();
-    const iconHandler = (e:any) => setIcon(e.target.files[0])
-
-    const [markdown, setMarkdown] = useState<any>();
-    const markdownHandler = (e:any) => setMarkdown(e.target.files[0])
+    const iconHandler = (e:any, add:boolean) => {
+      if (!(add ?? true)) {
+        setIcon(null);
+        e.target.files = [];
+        e.target.value = "";
+      } else {
+        setIcon(e.target.files[0]);
+      }
+    }
 
     const uploadFile = (type:FileType) => {
       const data = new FormData();
       if (type === 'sourceCode') data.append('file', sourceCode);
       else if (type === 'icon') data.append('file', icon);
-      else if (type === 'markdown') data.append('file', markdown);
       else {
         sendNotification("Incompatible submission file upload detected. Please contact an organizer.", "error");
       }
@@ -286,13 +311,11 @@ export const ProjectPage: React.FC = () => {
             </>
         )}
         <Spacer h={1}/>
-        <Button onClick={handleUpdateSubmission}>{submission?._id ? "Update" : "Add"}</Button>
-        <Spacer h={1}/>
         <Collapse.Group>
           <Collapse shadow title="Icon" subtitle="Upload an image that everyone will see in the Project Gallary">
           <Card>
             <Link href={submission?.icon?.[1] ?? "#"} icon block color>Project Cover Image (.jpg, .png)</Link>
-            <Input htmlType="file" accept=".jpg,.png" name="Icon" onChange={iconHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.icon)}/>
+            <Input htmlType="file" accept=".jpg,.png" name="Icon" onChange={(e) => iconHandler(e, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => iconHandler(e, false)}/>
             <Spacer h={1}/>
             <Display shadow>
               <Image width="500px" height="500px" src={icon || ""} />
@@ -300,21 +323,10 @@ export const ProjectPage: React.FC = () => {
           </Card>
           </Collapse>
           <Spacer h={1}/>
-          <Collapse shadow title="Markdown" subtitle="Upload a markdown file to tell people about your project">
-          <Card>
-            <Link href={submission?.markdown?.[1] ?? "#"} icon block color>Description (.md)</Link>
-            <Input htmlType="file" accept=".md" name="Markdown" onChange={markdownHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.markdown)}/>
-            <Spacer h={1}/>
-            <Display shadow>
-              <Image width="500px" height="500px" src={markdown || ""} />
-            </Display>
-          </Card>
-          </Collapse>
-          <Spacer h={1}/>
           <Collapse shadow title="Source Code" subtitle="Upload source code like a python notebook to show what you did">
           <Card>
             <Link href={submission?.sourceCode?.[1] ?? "#"} icon block color>Source Code (.tar, .tar.gz, .zip)</Link>
-            <Input htmlType="file" accept=".tar,.tar.gz,.zip" name="Source Code" onChange={sourceCodeHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadFile(FileType.sourceCode)}/>
+            <Input htmlType="file" accept=".tar,.tar.gz,.zip" name="Source Code" onChange={(e) => sourceCodeHandler(e, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => sourceCodeHandler(e, false)}/>
             <Spacer h={1}/>
             <Display shadow>
               <Image width="500px" height="500px" src={sourceCode || ""} />
@@ -325,7 +337,7 @@ export const ProjectPage: React.FC = () => {
           <Collapse shadow title="Images" subtitle="Upload up to 3 images concerning your project">
             <Card>
               <Text>Project Image 1</Text>
-              <Input htmlType="file" accept=".jpg,.png" name="Photo0" onChange={() => photosHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadPhotos}/>
+              <Input htmlType="file" accept=".jpg,.png" name="Photo0" onChange={(e) => photosHandler(e, 0, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => photosHandler(e, 0, false)}/>
               <Spacer h={1}/>
               <Display shadow>
                 <Image width="500px" height="500px" src={photos?.[0] || ""} />
@@ -334,7 +346,7 @@ export const ProjectPage: React.FC = () => {
             <Spacer h={1}/>
             <Card>
               <Link href={submission?.photos?.["1"]?.[1] ?? "#"} icon block color>Project Image 2</Link>
-              <Input htmlType="file" accept=".jpg,.png" name="Photo1" onChange={() => photosHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadPhotos}/>
+              <Input htmlType="file" accept=".jpg,.png" name="Photo1" onChange={(e) => photosHandler(e, 1, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => photosHandler(e, 1, false)}/>
               <Spacer h={1}/>
               <Display shadow>
                 <Image width="500px" height="500px" src={photos?.[1] || ""} />
@@ -343,7 +355,7 @@ export const ProjectPage: React.FC = () => {
             <Spacer h={1}/>
             <Card>
               <Link href={submission?.photos?.["2"]?.[1] ?? "#"} icon block color>Project Image 3</Link>
-              <Input htmlType="file" accept=".jpg,.png" name="Photo2" onChange={() => photosHandler} iconClickable iconRight={<Upload />} onIconClick={() => uploadPhotos}/>
+              <Input htmlType="file" accept=".jpg,.png" name="Photo2" onChange={(e) => photosHandler(e, 2, true)} iconClickable iconRight={<XCircle />} onIconClick={(e) => photosHandler(e, 2, false)}/>
               <Spacer h={1}/>
               <Display shadow>
                 <Image width="500px" height="500px" src={photos?.[2] || ""} />
@@ -351,6 +363,8 @@ export const ProjectPage: React.FC = () => {
             </Card>
           </Collapse>
         </Collapse.Group>
+        <Spacer h={1}/>
+        <Button onClick={handleUpdateSubmission}>{submission?._id ? "Update" : "Add"}</Button>
         </Card.Content>
       </Card>
       <Spacer h={0.5}/>
