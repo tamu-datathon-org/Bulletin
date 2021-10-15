@@ -19,7 +19,7 @@ const submission = {
     answer4: null,
     answer5: null,
     sourceCode: null,
-    markdown: null,
+    markdownId: null,
     icon: null,
     photos: {},
     submission_time: null,
@@ -351,26 +351,6 @@ const editSubmissionPhoto = async (eventId, submissionId, index, data) => {
     }
 };
 
-const editSubmissionMarkdown = async (eventId, submissionId, data) => {
-    let client = null;
-    try {
-        client = await mongoUtil.getClient();
-        const docs = await client.db(config.database.name)
-            .collection(config.database.collections.submissions)
-            .updateOne({
-                _id: await mongoUtil.ObjectId(submissionId),
-                eventId: await mongoUtil.ObjectId(eventId),
-            }, { $set: { markdown: [data.Key, data.Location] },
-            });
-        await mongoUtil.closeClient(client);
-        logger.info(JSON.stringify(docs));
-        return docs;
-    } catch (err) {
-        await mongoUtil.closeClient(client);
-        throw new Error(`📌Error getting all event submissions ${err.message}`);
-    }
-};
-
 const editSubmissionIcon = async (eventId, submissionId, data) => {
     let client = null;
     try {
@@ -411,6 +391,48 @@ const editSubmissionSourceCode = async (eventId, submissionId, data) => {
     }
 };
 
+// ======================================================== //
+// ======== 📌📌📌 Submission Markdown 📌📌📌 ========== //
+// ======================================================== //
+
+const addSubmissionMarkdownId = async (eventId, submissionId, markdownId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const docs = await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .updateOne({
+                _id: await mongoUtil.ObjectId(submissionId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            }, { $set: { markdownId: await mongoUtil.ObjectId(markdownId) } });
+        await mongoUtil.closeClient(client);
+        logger.info(JSON.stringify(docs));
+        return docs;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error adding submission markdown ${err.message}`);
+    }
+};
+
+const removeSubmissionMarkdownId = async (eventId, submissionId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const docs = await client.db(config.database.name)
+            .collection(config.database.collections.submissions)
+            .updateOne({
+                _id: await mongoUtil.ObjectId(submissionId),
+                eventId: await mongoUtil.ObjectId(eventId),
+            }, { $set: { markdownId: '' } });
+        await mongoUtil.closeClient(client);
+        logger.info(JSON.stringify(docs));
+        return docs;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error removing submission markdown ${err.message}`);
+    }
+};
+
 module.exports = {
     submission,
     createSubmission,
@@ -430,6 +452,7 @@ module.exports = {
     removeSubmissionUserSubmissionLinkId,
     editSubmissionPhoto,
     editSubmissionIcon,
-    editSubmissionMarkdown,
     editSubmissionSourceCode,
+    addSubmissionMarkdownId,
+    removeSubmissionMarkdownId,
 };

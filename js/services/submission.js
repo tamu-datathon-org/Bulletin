@@ -7,6 +7,7 @@ const commentsModel = require('../models/comments');
 const userSubmissionLinksModel = require('../models/userSubmissionLinks');
 const challengesModel = require('../models/challenges');
 const eventsModel = require('../models/events');
+const markdownModel = require('../models/markdown');
 const submissionS3 = require('../utils/submissionsS3');
 const bouncerController = require('../middleware/bouncer');
 
@@ -240,20 +241,16 @@ const uploadSubmissionIcon = async (eventId, submissionId, originalname, buffer)
     return data.Location;
 };
 
-const uploadSubmissionMarkdown = async (eventId, submissionId, originalname, buffer) => {
+const addSubmissionMarkdown = async (eventId, submissionId, text) => {
     const submissionObj = await submissionModel.getSubmission(eventId, submissionId);
     if (!submissionObj) throw new Error(`📌submission ${submissionId} does not exist`);
-    if ((submissionObj?.markdown?.length ?? 0) !== 0) {
-        logger.info('previous markdown existed so we\'re deleting it...');
-        logger.info(submissionObj.markdown[0]);
-        await removeFileByKey(submissionObj.markdown[0]);
-    }
-    logger.info('uploading markdown to s3...');
-    const data = await submissionS3.uploadFile(`${originalname}`, buffer);
-    logger.info('adding key and url to submission entry...');
-    await submissionModel.editSubmissionMarkdown(eventId, submissionId, data);
+    logger.info('adding markdown to submission entry...');
+    const markdownObj = await markdownModel.createMarkdown(submissionId, text);
+    const markdownId = submissionObj.markdownId ? submissionObj.markdownId : null;
+    const id = await markdownModel.addMarkdown(markdownObj, markdownId);
+    await submissionModel.addSubmissionMarkdownId(eventId, submissionId, id);
     logger.info('done');
-    return data.Location;
+    return id;
 };
 
 /**
@@ -295,7 +292,7 @@ module.exports = {
     getSubmissionFile,
     uploadSubmissionPhoto,
     uploadSubmissionSourceCode,
-    uploadSubmissionMarkdown,
     uploadSubmissionIcon,
+    addSubmissionMarkdown,
     getUserSubmissionLinkBySubmissionIdAndUserAuthId,
 };
