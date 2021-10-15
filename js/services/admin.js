@@ -1,4 +1,6 @@
 const path = require('path');
+const { json2csvAsync } = require('json-2-csv');
+const stream = require('stream');
 let accoladeModel = require('../models/accolades');
 let challengeModel = require('../models/challenges');
 let eventsModel = require('../models/events');
@@ -228,6 +230,13 @@ const removeImageByKey = async (fileKey) => {
     return frontendS3.removeFile(fileKey);
 };
 
+const downloadSubmissions = async (eventId) => {
+    const jsonData = await eventsModel.getAllSubmissions(eventId);
+    const readStream = new stream.PassThrough();
+    readStream.end(await json2csvAsync(jsonData));
+    return readStream;
+};
+
 /* for testing only */
 const setEventModel = (testModel) => {
     eventsModel = testModel;
@@ -250,6 +259,7 @@ module.exports = {
     uploadChallengeImage,
     removeSubmission,
     addAccoladesToSubmission,
+    downloadSubmissions,
     // testing
     setEventModel,
     setChallengeModel,
