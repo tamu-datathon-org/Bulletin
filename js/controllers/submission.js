@@ -88,9 +88,6 @@ const addSubmission = async (req, res) => {
         if (!(await canAlterSubmission(token, _id)))
             throw new Error('📌you are not allowed to update this submission');
 
-        if (req.body.accoladeIds)
-            throw new Error('📌participants cannot add accolades to submissions');
-
         response.submissionId = await submissionService.addSubmission(req.body, eventId, _id, token);
         logger.info('📌submission successful');
         res.status(200).json(response);

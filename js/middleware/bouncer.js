@@ -78,8 +78,20 @@ const getDiscordUser = async (discordTag, userAuthId, accessToken) => {
     }
 };
 
+const getUserRegistrationStatus = async (userAuthId) => {
+    try {
+        const response = await fetch(`https://tamudatathon.com/apply/application/byuser/${userAuthId}`);
+        const res = await response.json();
+        if (!res.status != 'C') throw new Error('');
+        return res;
+    } catch (err) {
+        throw new Error('📌getUserRegistrationStatus:: user is not an authorized participant');
+    }
+};
+
 module.exports = {
     checkIfLoggedIn,
     getAuthId,
     getDiscordUser,
+    getUserRegistrationStatus,
 };
