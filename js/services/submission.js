@@ -107,6 +107,8 @@ const addSubmission = async (requestBody, eventId, submissionId, token) => {
         return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj, userSubmissionLink?._id) || userSubmissionLink._id;
     }));
 
+    logger.info(userSubmissionLinkIds);
+
     // create the submission
     const discordTags = discordObjs.map((d) => d.discordInfo);
     const submissionObj = await submissionModel

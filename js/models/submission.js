@@ -30,6 +30,7 @@ const createSubmission = async (eventId, name, discordTags,
     answer1, answer2, answer3, answer4, answer5) => {
     if (!eventId) throw new Error('submission eventId is required');
     if (!name) throw new Error('submission name is required');
+    logger.info(userSubmissionLinkIds);
     const submissionObj = {
         eventId: await mongoUtil.ObjectId(eventId),
         name: name,
