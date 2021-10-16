@@ -36,7 +36,7 @@ export const ProjectPage: React.FC = () => {
     const retrieveMarkdown = (submissionId: string) => {
       axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submissionId}/markdown`)
       .then(res => {
-          setMarkdownValue(res.data.result.text)
+          setMarkdownValue(res.data.result?.text || "")
           setMarkdownLoaded(true);
       })
       .catch((e:any) => {
