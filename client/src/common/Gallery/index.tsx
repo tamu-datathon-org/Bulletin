@@ -88,12 +88,12 @@ export const GalleryPage: React.FC = () => {
       {curEvent?.submissions.map(submission => 
         <Grid key={submission._id} xs={24} sm={12} md={8} lg={6} xl={4}>
           <Card onClick={() => showSubmission(submission._id)} shadow width="100%">
-          <Badge style={{ backgroundColor: palette.background, border: 1, borderColor: palette.accents_8 }}>{"Winner 🏆"}</Badge>
           <Image
             src={submission?.icon?.[1] ? submission.icon[1] : placeholder}
           />
           <Text b>{submission.name}</Text>
           </Card>
+          {((submission?.accoladeIds?.length ?? 0) > 0) && <Badge style={{ backgroundColor: palette.background, border: 1, borderColor: palette.accents_8, color: palette.foreground }}>{"Winner 🏆"}</Badge>}
         </Grid>
       )}
       <Modal width="100%" {...bindings}>
