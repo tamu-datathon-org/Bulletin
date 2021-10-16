@@ -2,6 +2,7 @@ import './App.css';
 import {Page, Spacer} from '@geist-ui/react';  
 import { CookiesProvider } from 'react-cookie';
 import {Navbar} from './common/Navbar';
+import {ProjectView} from './common/ProjectView';
 import './common/globals.css';
 import Switcher from './Switcher'
 import {
@@ -23,9 +24,9 @@ function App() {
         <Spacer h={3}/>
         <Page>
         <Switch>
+          <Route path="/bulletin/project/:id" children={<ProjectView />} />
           <Route path="/bulletin/:id" children={<Switcher />} />
           <Route path="/bulletin" children={<Switcher />} />
-          {/* <Route path="/bulletin/project/:id" children={<ProjectView />} /> */}
         </Switch>
         </Page>
         </CookiesProvider>
