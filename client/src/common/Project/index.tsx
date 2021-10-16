@@ -137,6 +137,7 @@ export const ProjectPage: React.FC = () => {
       .then(() => {
         sendNotification("Updated submission!", "success")
         emptyCurSubmission();
+        sendNotification("This page contains changes, please refresh.", "success");
       })
       .catch(errorHandler)
       if (!(submission?._id ?? null)) {
@@ -147,7 +148,6 @@ export const ProjectPage: React.FC = () => {
       if (sourceCode) uploadFile(FileType.sourceCode);
       if (icon) uploadFile(FileType.icon);
       if (photos) uploadPhotos();
-      sendNotification("This page contains changes, please refresh.", "success");
     };
 
     const handleEditSubmission = (id:string) => {
