@@ -6,7 +6,7 @@ import Select from 'react-select'
 // import { useCookies } from 'react-cookie';
 import React, { useEffect, useState } from 'react';
 import { BASE_URL, HARMONIA_URL, MAX_TEAMMATES, MAX_LINKS, MAX_TAGS } from "../../constants";
-import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse, HarmoniaResponse, MarkdownResponse } from '../interfaces';
+import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse, HarmoniaResponse, MarkdownResponse } from "../interfaces";
 import { CUR_EVENT_ID } from "../Admin";
 import placeholder from '../Gallery/placeholder.jpg';
 const marked = require("marked");
@@ -34,14 +34,12 @@ export const ProjectPage: React.FC = () => {
     const [markdownValue, setMarkdownValue] = useState("")
     const [markdownLoaded, setMarkdownLoaded] = useState(false);
     const retrieveMarkdown = () => {
-      if (submission?._id) {
-        axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/markdown`)
-        .then(res => {
-            setMarkdownValue(res.data.result.text)
-            setMarkdownLoaded(true);
-        })
-        .catch(errorHandler)
-      }
+      axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/markdown`)
+      .then(res => {
+          setMarkdownValue(res.data.result.text)
+          setMarkdownLoaded(true);
+      })
+      .catch(errorHandler)
     }
 
     // eslint-disable-next-line no-useless-escape
@@ -54,6 +52,15 @@ export const ProjectPage: React.FC = () => {
     const [discordUsers, setDiscordUsers] = useState<any>([]);
     useEffect(() => {
       let mounted = true
+      axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/users`)
+      .then(res => {
+        if (mounted) {
+          console.log(res.data?.discordUsers);
+          setDiscordUsers(res.data?.discordUsers || []);
+        }
+      })
+      .catch(errorHandler)
+  
       axios.get<ChallengesResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/challenge`)
       .then(res => {
         if (mounted){
@@ -66,13 +73,6 @@ export const ProjectPage: React.FC = () => {
       .then(res => {
         if (mounted){
           setSubmissions(res.data.result)
-        }
-      })
-      .catch(errorHandler)
-      axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/users`)
-      .then(res => {
-        if (mounted) {
-          setDiscordUsers(res.data?.discordUsers || []);
         }
       })
       .catch(errorHandler)
@@ -297,7 +297,7 @@ export const ProjectPage: React.FC = () => {
             <Spacer h={1}/>
             <Select placeholder="Add Teammates From Discord 👾"
                 options={
-                  discordTags?.length >= MAX_TEAMMATES ? [] : discordUsers
+                  discordTags?.length >= MAX_TEAMMATES ? [] : [discordUsers]
                 }
                 onChange={discordTagsHandler}
                 closeMenuOnSelect={false}
