@@ -121,7 +121,7 @@ export const ProjectPage: React.FC = () => {
       setIcon(null);
       setSourceCode(null);
       setMarkdownValue("");
-      setPhotos([]);
+      setPhotos(new Array(3).fill(null));
     }
 
     const uploadMarkdown = () => {
