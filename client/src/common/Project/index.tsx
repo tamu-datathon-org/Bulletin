@@ -55,8 +55,13 @@ export const ProjectPage: React.FC = () => {
       axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/users`)
       .then(res => {
         if (mounted) {
-          console.log(res.data?.discordUsers);
-          setDiscordUsers(res.data?.discordUsers || []);
+          setDiscordUsers(res?.data?.discordUsers?.map(d => {
+            const dObj = {
+              value: d,
+              label: d.substr(0, d.lastIndexOf('#')),
+            };
+            return dObj;
+          }));
         }
       })
       .catch(errorHandler)
@@ -182,8 +187,8 @@ export const ProjectPage: React.FC = () => {
         setDiscordTags([...discordTags, value]);
       }
     }
-    const handleDeleteDiscordTags = (e:any, item: string) => {
-      setDiscordTags(discordTags?.filter((i:string) => i !== item) || []);
+    const handleDeleteDiscordTags = (e:any, item: any) => {
+      setDiscordTags(discordTags?.filter((i:string) => i !== item?.value) || []);
     };
 
     const [links, setLinks] = useState<any>();
@@ -291,13 +296,13 @@ export const ProjectPage: React.FC = () => {
             </Grid.Container>
             <Grid.Container gap={1}>
             {discordTags?.map((item: any, idx:number) =>
-              <Grid><Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button></Grid>
+              <Grid><Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item.value} key={idx}><Text span style={{ textTransform: 'none' }}>{item.label}</Text></Button></Grid>
             )}
             </Grid.Container>
             <Spacer h={1}/>
             <Select placeholder="Add Teammates From Discord 👾"
                 options={
-                  discordTags?.length >= MAX_TEAMMATES ? [] : [discordUsers]
+                  discordTags?.length >= MAX_TEAMMATES ? [] : discordUsers
                 }
                 onChange={discordTagsHandler}
                 closeMenuOnSelect={false}
