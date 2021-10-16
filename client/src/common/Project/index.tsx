@@ -6,7 +6,7 @@ import Select from 'react-select'
 // import { useCookies } from 'react-cookie';
 import React, { useEffect, useState } from 'react';
 import { BASE_URL, HARMONIA_URL, MAX_TEAMMATES, MAX_LINKS, MAX_TAGS } from "../../constants";
-import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse, HarmoniaResponse, MarkdownResponse } from '../interfaces';
+import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse, HarmoniaResponse, MarkdownResponse } from "../interfaces";
 import { CUR_EVENT_ID } from "../Admin";
 import placeholder from '../Gallery/placeholder.jpg';
 const marked = require("marked");
