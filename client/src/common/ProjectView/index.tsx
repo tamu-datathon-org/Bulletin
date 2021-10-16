@@ -40,10 +40,10 @@ export const ProjectView: React.FC = () => {
       axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}/markdown`)
       .then(res => setUserMarkdown(res.data.result.text))
       .catch()
-      if ((submission?.accoladeIds?.length ?? 0) > 0) {
+      if ((res.data.result?.accoladeIds?.length ?? 0) > 0) {
         const submissionAccolades: Accolade[] = [];
         // eslint-disable-next-line array-callback-return
-        submission?.accoladeIds?.map(accoladeId => {
+        res.data.result?.accoladeIds?.map(accoladeId => {
           axios.get<AccoladeResp>(`${BASE_URL}/api/${CUR_EVENT_ID}/accolade/${accoladeId}`)
           .then(res => {
             if (res?.data?.result) submissionAccolades.push(res?.data?.result);
@@ -55,7 +55,7 @@ export const ProjectView: React.FC = () => {
       }
     })
     .catch(errorHandler);
-  },[id, submission?.accoladeIds]) // eslint-disable-line
+  },[id]) // eslint-disable-line
 
   // eslint-disable-next-line
   const videoLinkHandler = (videoLink:string) => {
