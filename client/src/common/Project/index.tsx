@@ -95,26 +95,35 @@ export const ProjectPage: React.FC = () => {
         [e.target.id]: e.target.value,
     }));
 
-    const emptyCurSubmission = () => setSubmission({
-      _id: "",
-      name: "",
-      tags: [],
-      links: [],
-      discordTags: [],
-      challengeId: "",
-      videoLink: "",
-      answer1: "",
-      answer2: "",
-      answer3: "",
-      answer4: "",
-      answer5: "",
-      sourceCode: [],
-      photos: {},
-      icon: [],
-      markdown: [],
-      accoladeIds: [],
-      submission_time: new Date(),
-    })
+    const emptyCurSubmission = () => {
+      setSubmission({
+        _id: "",
+        name: "",
+        tags: [],
+        links: [],
+        discordTags: [],
+        challengeId: "",
+        videoLink: "",
+        answer1: "",
+        answer2: "",
+        answer3: "",
+        answer4: "",
+        answer5: "",
+        sourceCode: [],
+        photos: {},
+        icon: [],
+        markdown: [],
+        accoladeIds: [],
+        submission_time: new Date(),
+      })
+      setDiscordTags([]);
+      setLinks([]);
+      setTags([]);
+      setIcon(null);
+      setSourceCode(null);
+      setMarkdownValue("");
+      setPhotos([]);
+    }
 
     const uploadMarkdown = () => {
       axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/markdown`, {text: markdownValue})
@@ -143,12 +152,14 @@ export const ProjectPage: React.FC = () => {
 
     const handleEditSubmission = (id:string) => {
       axios.get<SubmissionResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}`)
-      .then(res => setSubmission(res.data.result))
+      .then(res => {
+        setSubmission(res.data.result)
+        setDiscordTags(submission?.discordTags || []);
+        setTags(submission?.tags || []);
+        setLinks(submission?.links || []);
+        retrieveMarkdown();
+      })
       .catch(errorHandler);
-      setDiscordTags(submission?.discordTags || []);
-      setTags(submission?.tags || []);
-      setLinks(submission?.links || []);
-      retrieveMarkdown();
     }
 
     const [tags, setTags] = useState<any>();
@@ -279,7 +290,7 @@ export const ProjectPage: React.FC = () => {
     return (
     <>
       {((submissions?.length ?? 0) > 0) && <Card title="Edit Submissions">
-      <Text h2>Edit Submissions</Text>
+      <Text h2>Choose a Submission to Edit</Text>
       {submissions?.filter(submission => (submission && submission._id)).map(submission => (
           <React.Fragment key={submission._id}>
             <Card>
