@@ -57,6 +57,7 @@ export const ProjectView: React.FC = () => {
     .catch(errorHandler);
   },[id, submission?.accoladeIds]) // eslint-disable-line
 
+  // eslint-disable-next-line
   const videoLinkHandler = (videoLink:string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = videoLink.match(regExp);
@@ -65,12 +66,9 @@ export const ProjectView: React.FC = () => {
 
   return (submission?._id 
          ? <>
-            <Text>{submission?.name}</Text>
+            <Text h2>{submission?.name}</Text>
             {submission?.discordTags?.length !== 0 && <>
-              <Text span type="secondary">Created by:</Text>
-                {submission?.discordTags?.map(discordTag => 
-                  <Text>{discordTag}</Text>
-                )}
+              <Text span type="secondary">Created by: {submission?.discordTags?.join(', ')}</Text>
             </>}
             {/* {submission?.submission_time && <Text small>{`Last Update: ${(new Date(submission?.submission_time).toLocaleString('en-US'), "dddd, mmmm dS, yyyy, h:MM:ss TT")}`}</Text>} */}
             {(accolades?.length ?? 0) > 0 && 
@@ -86,7 +84,7 @@ export const ProjectView: React.FC = () => {
               <Text span type="secondary">Tags</Text>
               <Grid.Container gap={1} justify="center" height="40px">
               {submission?.tags?.map(tag => 
-                <Grid xs={6}><Badge type="secondary"><Text span style={{ textTransform: 'none' }}>{tag}</Text></Badge></Grid>
+                <Badge type="secondary">{tag}</Badge>
               )}
               </Grid.Container>
             </>}
