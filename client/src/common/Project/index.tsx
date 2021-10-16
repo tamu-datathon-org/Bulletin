@@ -145,10 +145,6 @@ export const ProjectPage: React.FC = () => {
         sendNotification("This page contains changes, please refresh.", "success");
       })
       .catch(errorHandler)
-      if (!(submission?._id ?? null)) {
-        sendNotification("Submission Failed!", "error");
-        return;
-      }
     };
 
     const handleEditSubmission = (id:string) => {
@@ -256,7 +252,7 @@ export const ProjectPage: React.FC = () => {
         setPhoto0(e.target.files[0]);
       } else if (index === 1) {
         setPhoto1(e.target.files[0]);
-      } else if (index === 0) {
+      } else if (index === 2) {
         setPhoto2(e.target.files[0]);
       }
     }
@@ -302,7 +298,6 @@ export const ProjectPage: React.FC = () => {
         .then(() => sendNotification(`Uploaded Photo ${3}!`, "success"))
         .catch(errorHandler)
       }
-      emptyCurSubmission();
     }
 
     return (
@@ -491,6 +486,9 @@ export const ProjectPage: React.FC = () => {
         <Spacer h={1}/>
         <Display>
           <Button shadow type="secondary" onClick={handleUpdateSubmission}><Text b>{submission?._id ? "Update" : "Add"}</Text></Button>
+        </Display>
+        <Display>
+          <Button shadow onClick={() => emptyCurSubmission}><Text b>{"Clear"}</Text></Button>
         </Display>
         </Card.Content>
       </Card>
