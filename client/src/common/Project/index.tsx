@@ -172,8 +172,9 @@ export const ProjectPage: React.FC = () => {
     };
 
     const [discordTags, setDiscordTags] = useState<any>();
-    const discordTagsHandler = (e:any) => {
-      const value = e.target.value.trim();
+    const discordTagsHandler = (selectedOption:any) => {
+      console.log(selectedOption);
+      const value = selectedOption.value.trim();
       console.log(value);
       if (!discordTags) {
         setDiscordTags([value]);
