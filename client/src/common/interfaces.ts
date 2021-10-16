@@ -79,7 +79,7 @@ photos: SubmissionPhoto,
 icon: string[],
 markdown: string[],
 accoladeIds: string[],
-submission_time: any,
+submission_time: Date,
 }
 
 export interface SubmissionResponse {

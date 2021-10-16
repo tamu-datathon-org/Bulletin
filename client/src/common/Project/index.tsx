@@ -1,4 +1,4 @@
-import { Button, ButtonGroup, Badge, Textarea, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text, Collapse, Display, Image } from "@geist-ui/react";
+import { Button, Textarea, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text, Collapse, Display, Image, Grid } from "@geist-ui/react";
 import axios from 'axios';
 import { X, Eye, Youtube, Tag, Link2 } from '@geist-ui/react-icons';
 import Select from 'react-select'
@@ -111,7 +111,7 @@ export const ProjectPage: React.FC = () => {
       icon: [],
       markdown: [],
       accoladeIds: [],
-      submission_time: null,
+      submission_time: new Date(),
     })
 
     const uploadMarkdown = () => {
@@ -227,7 +227,7 @@ export const ProjectPage: React.FC = () => {
       const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
       const match = value.match(regExp);
       const videoId = (match && match[2].length === 11) ? match[2] : null;
-      setPreviewedLink(`//www.youtube.com/embed/${videoId}`);
+      setPreviewedLink(`https://www.youtube.com/embed/${videoId}`);
     };
 
     const [sourceCode, setSourceCode] = useState<any>();
@@ -279,72 +279,104 @@ export const ProjectPage: React.FC = () => {
     <>
       <Card>
         <Card.Content>
-        <Text h2>Add/Update a Submission</Text>
-        </Card.Content>
-        <Divider />
-        <Card.Content>
-        <Spacer h={1}/>
-        <Text span type="secondary">Details</Text>
-        <Spacer h={1}/>
-        <Input width="100%" key="name" label="Name" value={submission?.name} id="name" onChange={submissionDataHandler} placeholder="Give your project a name" />
-        <Spacer h={1}/>
-        <Badge>{MAX_TEAMMATES - (discordTags?.length ?? 0)}</Badge>
-        <ButtonGroup type="success" width="100%">
-        {discordTags?.map((item: any, idx:number) =>
-          <Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button>
-        )}
-        </ButtonGroup>
-        <Select placeholder="Add Teammates From Discord 👾"
-            options={
-              discordTags?.length >= MAX_TEAMMATES ? [] : discordUsers
-            }
-            onChange={discordTagsHandler}
-            closeMenuOnSelect={false}
-            isMulti={false}
-        />
-        <Spacer h={1}/>
-        <Badge>{MAX_TAGS - (tags?.length ?? 0)}</Badge>
-        <ButtonGroup type="secondary" width="100%">
-        {tags?.map((item: any, idx:number) =>
-          <Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button>
-        )}
-        </ButtonGroup>
-        <Input icon={<Tag />} width="100%" label="Tags" id="tags" onKeyDown={tagsHandler} placeholder="Enter tags related to your project, eg. Data"/>
-        <Spacer h={1}/>
-        <Badge>{MAX_LINKS - (links?.length ?? 0)}</Badge>
-        <ButtonGroup type="success" width="100%" >
-        {links?.map((item: any, idx:number) =>
-          <Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button>
-        )}
-        </ButtonGroup>
-        <Input icon={<Link2 />} width="100%" label="Links" id="links" onKeyDown={linksHandler} placeholder="Enter relevant project links here, eg. https://github.com/..." />
-        <Spacer h={1}/>
-        <Input icon={<Youtube />} width="100%" key="videolink" label="Video Link" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="Link a YouTube video presenting your project" iconClickable iconRight={<Eye />} onIconClick={videoLinkHandler} />
-        {previewedLink && <Display shadow><iframe title="VideoLinkPreview" src={previewedLink}></iframe></Display>}
-        <Spacer h={1}/>
+        <Text h2>Add or Update a Submission</Text>
         <Divider />
         <Spacer h={1}/>
-        <Text span type="secondary">Challenge Specific</Text>
+        <Text type="secondary" h3>Details</Text>
         <Spacer h={1}/>
-        <Text>Select a challenge to submit this project to:</Text>
-        <Radio.Group useRow value={submission?.challengeId} onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
-          {allChalleges.map(challenge => <Radio key={challenge._id} value={challenge._id}>{challenge.name}</Radio>)}
-        </Radio.Group>
+        <Text>{"Name"}</Text>
+        <Input width="100%" key="name" value={submission?.name} id="name" onChange={submissionDataHandler} placeholder="Give your project a name" />
         <Spacer h={1}/>
-        {allChalleges.filter(challenge => challenge._id === submission?.challengeId).map(challenge =>
-            <>
-              <Text>Challenge Specific Questions</Text>
-              {challenge.question1 && <Input width="100%" label={challenge?.question1} value={submission?.answer1} key="answer1" id="answer1" onChange={submissionDataHandler}/>}
-              {challenge.question2 && <Input width="100%" label={challenge?.question2} value={submission?.answer2} key="answer2" id="answer2" onChange={submissionDataHandler}/>}
-              {challenge.question3 && <Input width="100%" label={challenge?.question3} value={submission?.answer3} key="answer3" id="answer3" onChange={submissionDataHandler}/>}
-              {challenge.question4 && <Input width="100%" label={challenge?.question4} value={submission?.answer4} key="answer4" id="answer4" onChange={submissionDataHandler}/>}
-              {challenge.question5 && <Input width="100%" label={challenge?.question5} value={submission?.answer5} key="answer5" id="answer5" onChange={submissionDataHandler}/>}
-            </>
-        )}
+        <Card title="Teammates">
+          <Card.Content>
+            <Text>{"Teammates"}</Text>
+            <Grid.Container>
+              <Grid xs><Text small width="100%">{"Who worked on this project?"}</Text></Grid>
+              <Grid><Text type="secondary" small={true} width="200px">{`Remaining: ${MAX_TEAMMATES - (discordTags?.length ?? 0)}`}</Text></Grid>
+            </Grid.Container>
+            <Grid.Container gap={1}>
+            {discordTags?.map((item: any, idx:number) =>
+              <Grid><Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button></Grid>
+            )}
+            </Grid.Container>
+            <Select placeholder="Add Teammates From Discord 👾"
+                options={
+                  discordTags?.length >= MAX_TEAMMATES ? [] : discordUsers
+                }
+                onChange={discordTagsHandler}
+                closeMenuOnSelect={false}
+                isMulti={false}
+            />
+          </Card.Content>
+        </Card>
+        <Spacer h={1}/>
+        <Card title="Tags">
+          <Card.Content>
+            <Text>{"Tags"}</Text>
+            <Grid.Container>
+              <Grid xs><Text small width="100%">{"Keywords related to the project"}</Text></Grid>
+              <Grid><Text type="secondary" small={true} width="200px">{`Remaining: ${MAX_TAGS - (tags?.length ?? 0)}`}</Text></Grid>
+            </Grid.Container>
+            <Grid.Container gap={1}>
+            {tags?.map((item: any, idx:number) =>
+              <Grid><Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button></Grid>
+            )}
+            </Grid.Container>
+            <Input icon={<Tag />} width="100%" id="tags" onKeyDown={tagsHandler} placeholder="eg. Python, ML, etc."/>
+          </Card.Content>
+        </Card>
+        <Spacer h={1}/>
+        <Card title="Video Link">
+          <Card.Content>
+            <Text>{"Links"}</Text>
+            <Grid.Container>
+              <Grid xs><Text small width="100%">{"Enter relevant project links"}</Text></Grid>
+              <Grid><Text type="secondary" small={true} width="200px">{`Remaining: ${MAX_LINKS - (links?.length ?? 0)}`}</Text></Grid>
+            </Grid.Container>
+            <Grid.Container gap={1}>
+            {links?.map((item: any, idx:number) =>
+              <Grid><Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item} key={idx} type="success"><Text span style={{ textTransform: 'none' }}>{item}</Text></Button></Grid>
+            )}
+            </Grid.Container>
+            <Input icon={<Link2 />} width="100%" id="links" onKeyDown={linksHandler} placeholder="eg. https://github.com/tamu-datathon-org/bulletin" />
+          </Card.Content>
+        </Card>
+        <Spacer h={1}/>
+        <Card title="Video Link">
+          <Card.Content>
+            <Text>{"Video Link"}</Text>
+            <Text small>{"Link a YouTube video presenting the project"}</Text>
+            <Input icon={<Youtube />} width="100%" key="videolink" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="eg. https://www.youtube.com/watch?v=vJ7vuQ2hYzw" iconClickable iconRight={<Eye />} onIconClick={videoLinkHandler} />
+            {previewedLink && <Display shadow><iframe title="VideoLinkPreview" src={previewedLink}></iframe></Display>}
+          </Card.Content>
+        </Card>
         <Spacer h={1}/>
         <Divider />
         <Spacer h={1}/>
-        <Text span type="secondary">Supporting Information</Text>
+        <Card title="Challenge Specific">
+          <Card.Content>
+            <Text>{"Challenge Specific"}</Text>
+            <Text small>Select a challenge to submit this project to</Text>
+            <Radio.Group useRow value={submission?.challengeId} onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
+              {allChalleges.map(challenge => <Radio key={challenge._id} value={challenge._id}>{challenge.name}</Radio>)}
+            </Radio.Group>
+            <Spacer h={1}/>
+            {allChalleges.filter(challenge => challenge._id === submission?.challengeId).map(challenge =>
+                <>
+                  <Text>Challenge Specific Questions</Text>
+                  {challenge.question1 && <Input width="100%" label={challenge?.question1} value={submission?.answer1} key="answer1" id="answer1" onChange={submissionDataHandler}/>}
+                  {challenge.question2 && <Input width="100%" label={challenge?.question2} value={submission?.answer2} key="answer2" id="answer2" onChange={submissionDataHandler}/>}
+                  {challenge.question3 && <Input width="100%" label={challenge?.question3} value={submission?.answer3} key="answer3" id="answer3" onChange={submissionDataHandler}/>}
+                  {challenge.question4 && <Input width="100%" label={challenge?.question4} value={submission?.answer4} key="answer4" id="answer4" onChange={submissionDataHandler}/>}
+                  {challenge.question5 && <Input width="100%" label={challenge?.question5} value={submission?.answer5} key="answer5" id="answer5" onChange={submissionDataHandler}/>}
+                </>
+            )}
+          </Card.Content>
+        </Card>
+        <Spacer h={1}/>
+        <Divider />
+        <Spacer h={1}/>
+        <Text type="secondary" h3>Supporting Information</Text>
         <Spacer h={1}/>
         <Collapse.Group>
           <Collapse style={{display:'block'}} shadow title="Description" subtitle="Explain how you created your project">

@@ -1,4 +1,4 @@
-import { Text, Spinner, Grid, Card, useToasts, Image, useModal, Modal, Display, Link, Spacer, Badge, Note } from "@geist-ui/react";
+import { Text, Spinner, Grid, Card, useToasts, Image, useModal, Modal, Display, Link, Spacer, Badge, Note, useTheme } from "@geist-ui/react";
 import axios from "axios";
 import React, { useState, useEffect } from 'react';
 import { BASE_URL } from "../../constants";
@@ -7,13 +7,12 @@ import {EventResponse, Event, Submission, SubmissionResponse, AccoladeResp, Acco
 import { authRedirector } from "../Project";
 import placeholder from './placeholder.jpg';
 const marked = require("marked");
-const dateFormat = require('dateformat');
-
 
 /**
  * Entire Gallery page
  */
 export const GalleryPage: React.FC = () => {
+  const { palette } = useTheme();
   const [, setToast] = useToasts();
     const sendNotification = (msg:string, intent: any) => {
       setToast({ text: msg, type: intent, delay: 8000 });
@@ -88,6 +87,7 @@ export const GalleryPage: React.FC = () => {
   ? <Grid.Container gap={2} justify="center" height="100px">
       {curEvent?.submissions.map(submission => 
         <Grid key={submission._id} xs={24} sm={12} md={8} lg={6} xl={4}>
+          <Badge style={{ backgroundColor: palette.background, borderColor: palette.accents_8 }}>{"Winner 🏆"}</Badge>
           <Card onClick={() => showSubmission(submission._id)} shadow width="100%">
           <Image
             src={submission?.icon?.[1] ? submission.icon[1] : placeholder}
@@ -108,7 +108,7 @@ export const GalleryPage: React.FC = () => {
                 )}
               </Grid.Container>
             </>}
-            {submission?.submission_time && <Text small>{`Last Update: ${dateFormat(new Date(submission?.submission_time), "dddd, mmmm dS, yyyy, h:MM:ss TT")}`}</Text>}
+            {submission?.submission_time && <Text small>{`Last Update: ${(new Date(submission?.submission_time).toLocaleString('en-US'), "dddd, mmmm dS, yyyy, h:MM:ss TT")}`}</Text>}
             {(accolades?.length ?? 0) > 0 && 
             <Card title="Awards">
               <Card.Content>
