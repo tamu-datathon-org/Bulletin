@@ -278,7 +278,7 @@ export const ProjectPage: React.FC = () => {
 
     return (
     <>
-      <Card title="Edit Submissions">
+      {((submissions?.length ?? 0) > 0) && <Card title="Edit Submissions">
       <Text h2>Edit Submissions</Text>
       {submissions?.filter(submission => (submission && submission._id)).map(submission => (
           <React.Fragment key={submission._id}>
@@ -290,7 +290,7 @@ export const ProjectPage: React.FC = () => {
           </React.Fragment>
         )
       )}
-      </Card>
+      </Card>}
       <Spacer h={1}/>
       <Card>
         <Card.Content>
