@@ -33,8 +33,8 @@ export const ProjectPage: React.FC = () => {
 
     const [markdownValue, setMarkdownValue] = useState("")
     const [markdownLoaded, setMarkdownLoaded] = useState(false);
-    const retrieveMarkdown = () => {
-      axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/markdown`)
+    const retrieveMarkdown = (submissionId: string) => {
+      axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submissionId}/markdown`)
       .then(res => {
           setMarkdownValue(res.data.result.text)
           setMarkdownLoaded(true);
@@ -83,7 +83,6 @@ export const ProjectPage: React.FC = () => {
         }
       })
       .catch(errorHandler)
-      retrieveMarkdown();
       return () => {
         mounted = false;
       }
@@ -144,10 +143,11 @@ export const ProjectPage: React.FC = () => {
         sendNotification("Submission Failed!", "error");
         return;
       }
-      if (markdownLoaded) uploadMarkdown();
+      if (markdownLoaded || markdownValue) uploadMarkdown();
       if (sourceCode) uploadFile(FileType.sourceCode);
       if (icon) uploadFile(FileType.icon);
       if (photos) uploadPhotos();
+      sendNotification("This page contains changes, please refresh.", "success");
     };
 
     const handleEditSubmission = (id:string) => {
@@ -157,7 +157,7 @@ export const ProjectPage: React.FC = () => {
         setDiscordTags(res.data.result?.discordTags || []);
         setTags(res.data.result?.tags || []);
         setLinks(res.data.result?.links || []);
-        retrieveMarkdown();
+        retrieveMarkdown(id);
       })
       .catch(errorHandler);
     }
