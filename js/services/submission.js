@@ -76,7 +76,7 @@ const addSubmission = async (requestBody, eventId, submissionId, token) => {
         const discordUser = await bouncerController.getDiscordUser(discordTag, null, token);
         if (discordUser.userAuthId) {
             if (discordUser.userAuthId === selfUserAuthId) hasSelf = true;
-            await bouncerController.getUserRegistrationStatus(discordUser.userAuthId);
+            // await bouncerController.getUserRegistrationStatus(discordUser.userAuthId);
             return discordUser;
         }
         throw new Error(`📌discordTag ${discordTag} does not exist`);
