@@ -173,19 +173,17 @@ export const ProjectPage: React.FC = () => {
 
     const [discordTags, setDiscordTags] = useState<any>();
     const discordTagsHandler = (e:any) => {
-      if (["Enter", "Tab", ","].includes(e.key)) {
-        e.preventDefault();
-        const value = e.target.value.trim();
-        if (!discordTags) {
-          setDiscordTags([value]);
-          return;
-        }
-        if (discordTags.includes(value)) {
-          sendNotification("Discord tag is already present.", "error");
-          return;
-        }
-        setDiscordTags([...discordTags, value]);
+      const value = e.target.value.trim();
+      console.log(value);
+      if (!discordTags) {
+        setDiscordTags([value]);
+        return;
       }
+      if (discordTags.includes(value)) {
+        sendNotification("Discord tag is already present.", "error");
+        return;
+      }
+      setDiscordTags([...discordTags, value]);
     }
     const handleDeleteDiscordTags = (e:any, item: any) => {
       setDiscordTags(discordTags?.filter((i:string) => i !== item?.value) || []);
