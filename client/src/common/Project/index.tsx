@@ -278,6 +278,20 @@ export const ProjectPage: React.FC = () => {
 
     return (
     <>
+      <Card title="Edit Submissions">
+      <Text h2>Edit Submissions</Text>
+      {submissions?.filter(submission => (submission && submission._id)).map(submission => (
+          <React.Fragment key={submission._id}>
+            <Card>
+              <Text>{submission.name}</Text>
+              <Button auto scale={0.5} value={submission._id} onClick={() => handleEditSubmission(submission._id)}>Edit</Button>
+            </Card>
+            <Spacer h={0.5}/>
+          </React.Fragment>
+        )
+      )}
+      </Card>
+      <Spacer h={1}/>
       <Card>
         <Card.Content>
         <Text h2>Add or Update a Submission</Text>
@@ -452,16 +466,6 @@ export const ProjectPage: React.FC = () => {
         </Card.Content>
       </Card>
       <Spacer h={0.5}/>
-      {submissions?.filter(submission => (submission && submission._id)).map(submission => (
-          <React.Fragment key={submission._id}>
-            <Card>
-              <Text>{submission.name}</Text>
-              <Button auto scale={0.5} value={submission._id} onClick={() => handleEditSubmission(submission._id)}>Edit</Button>
-            </Card>
-            <Spacer h={0.5}/>
-          </React.Fragment>
-        )
-      )}
     </>
     );
 };
