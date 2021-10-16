@@ -78,7 +78,8 @@ sourceCode: string[],
 photos: SubmissionPhoto,
 icon: string[],
 markdown: string[],
-accoladeIds: string[]
+accoladeIds: string[],
+submission_time: any,
 }
 
 export interface SubmissionResponse {
@@ -98,5 +99,5 @@ export interface SubmissionPhoto {
 }
 
 export interface HarmoniaResponse {
-participants: string[];    
+discordUsers: string[];    
 }

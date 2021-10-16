@@ -73,20 +73,14 @@ export const ProjectPage: React.FC = () => {
           },
         };
         console.log(JSON.stringify(options));
-        axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/participants`, options)
+        axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/users`, options)
         .then(res => {
-          if (mounted){
-            const result = res.data?.participants?.map(discordUser => {
-              const d = {
-                value: discordUser,
-                label: discordUser.substr(0, discordUser.lastIndexOf('#')),
-              }
-              return d;
-            });
-            setDiscordUsers(result);
+          if (mounted) {
+            setDiscordUsers(res.data?.discordUsers || []);
           }
         })
         .catch(errorHandler)
+        setDiscordUsers(['testuser1', 'testuser2']);
       }
       retrieveMarkdown();
       return () => {
@@ -117,7 +111,8 @@ export const ProjectPage: React.FC = () => {
       photos: {},
       icon: [],
       markdown: [],
-      accoladeIds: []
+      accoladeIds: [],
+      submission_time: null,
     })
 
     const uploadMarkdown = () => {
@@ -184,14 +179,12 @@ export const ProjectPage: React.FC = () => {
         const value = e.target.value.trim();
         if (!discordTags) {
           setDiscordTags([value]);
-          e.target.value = "";
           return;
         }
         if (discordTags.includes(value)) {
           sendNotification("Discord tag is already present.", "error");
           return;
         }
-        e.target.value = "";
         setDiscordTags([...discordTags, value]);
       }
     }
@@ -292,7 +285,7 @@ export const ProjectPage: React.FC = () => {
         <Divider />
         <Card.Content>
         <Spacer h={1}/>
-        <Text span type="success">Details</Text>
+        <Text span type="secondary">Details</Text>
         <Spacer h={1}/>
         <Input width="100%" key="name" label="Name" value={submission?.name} id="name" onChange={submissionDataHandler} placeholder="Give your project a name" />
         <Spacer h={1}/>
@@ -312,7 +305,7 @@ export const ProjectPage: React.FC = () => {
         />
         <Spacer h={1}/>
         <Badge>{MAX_TAGS - (tags?.length ?? 0)}</Badge>
-        <ButtonGroup type="success" width="100%">
+        <ButtonGroup type="secondary" width="100%">
         {tags?.map((item: any, idx:number) =>
           <Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button>
         )}
@@ -332,7 +325,7 @@ export const ProjectPage: React.FC = () => {
         <Spacer h={1}/>
         <Divider />
         <Spacer h={1}/>
-        <Text span type="success">Challenge Specific</Text>
+        <Text span type="secondary">Challenge Specific</Text>
         <Spacer h={1}/>
         <Text>Select a challenge to submit this project to:</Text>
         <Radio.Group useRow value={submission?.challengeId} onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
@@ -352,7 +345,7 @@ export const ProjectPage: React.FC = () => {
         <Spacer h={1}/>
         <Divider />
         <Spacer h={1}/>
-        <Text span type="success">Supporting Information</Text>
+        <Text span type="secondary">Supporting Information</Text>
         <Spacer h={1}/>
         <Collapse.Group>
           <Collapse style={{display:'block'}} shadow title="Description" subtitle="Explain how you created your project">
