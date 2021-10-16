@@ -23,7 +23,6 @@ function App() {
         <Spacer h={3}/>
         <Page>
         <Switch>
-          <Route path="/bulletin" children={<Switcher />} />
           <Route path="/bulletin/:id" children={<Switcher />} />
           {/* <Route path="/bulletin/project/:id" children={<ProjectView />} /> */}
         </Switch>
