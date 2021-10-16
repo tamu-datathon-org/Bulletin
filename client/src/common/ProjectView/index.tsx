@@ -1,4 +1,4 @@
-import { Text, Spinner, Grid, Card, useToasts, Image, Link, Spacer, Note } from "@geist-ui/react";
+import { Text, Spinner, Grid, Display, Card, useToasts, Image, Link, Spacer, Note } from "@geist-ui/react";
 import axios from "axios";
 import React, { useState, useEffect } from 'react';
 import { BASE_URL } from "../../constants";
@@ -53,15 +53,17 @@ export const ProjectView: React.FC = () => {
         });
         setSubmissionAccolades(submissionAccolades);
       }
+      videoLinkHandler(res.data.result?.videoLink);
     })
     .catch(errorHandler);
   },[id]) // eslint-disable-line
 
   // eslint-disable-next-line
+  const [embeddedVideoLink, setEmbeddedVideoLink] = useState<any>();
   const videoLinkHandler = (videoLink:string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = videoLink.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : "";
+    setEmbeddedVideoLink(`https://www.youtube.com/embed/${(match && match[2].length === 11) ? match[2] : ""}`);
   };
 
   return (submission?._id 
@@ -108,8 +110,7 @@ export const ProjectView: React.FC = () => {
             {submission?.videoLink && <>
               <Spacer h={1}/>
               <Text>Video:</Text>
-              <Link target="_blank" icon block color href={submission?.videoLink}>Video Link</Link>
-              {/* <Display shadow><iframe title="VideoLinkPreview" src={videoLinkHandler(submission?.videoLink)}></iframe></Display> */}
+              {embeddedVideoLink && <Display shadow><iframe title="VideoLinkPreview" src={embeddedVideoLink}></iframe></Display>}
             </>}
             {userMarkdown && <>
               <Spacer h={1}/>
