@@ -80,7 +80,6 @@ export const ProjectPage: React.FC = () => {
           }
         })
         .catch(errorHandler)
-        setDiscordUsers(['testuser1', 'testuser2']);
       }
       retrieveMarkdown();
       return () => {
