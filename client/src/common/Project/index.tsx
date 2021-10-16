@@ -279,7 +279,7 @@ export const ProjectPage: React.FC = () => {
     const uploadPhotos = () => {
       if (photo0) {
         const data = new FormData();
-        data.append('file', photo1);
+        data.append('file', photo0);
         axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/photo/${0}`, data)
         .then(() => sendNotification(`Uploaded Photo ${1}!`, "success"))
         .catch(errorHandler)
@@ -293,7 +293,7 @@ export const ProjectPage: React.FC = () => {
       }
       if (photo2) {
         const data = new FormData();
-        data.append('file', photo1);
+        data.append('file', photo2);
         axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/photo/${2}`, data)
         .then(() => sendNotification(`Uploaded Photo ${3}!`, "success"))
         .catch(errorHandler)
@@ -488,7 +488,7 @@ export const ProjectPage: React.FC = () => {
           <Button shadow type="secondary" onClick={handleUpdateSubmission}><Text b>{submission?._id ? "Update" : "Add"}</Text></Button>
         </Display>
         <Display>
-          <Button shadow onClick={() => emptyCurSubmission}><Text b>{"Clear"}</Text></Button>
+          <Button shadow onClick={() => { emptyCurSubmission(); window.location.reload(); }}><Text b>{"Clear"}</Text></Button>
         </Display>
         </Card.Content>
       </Card>
