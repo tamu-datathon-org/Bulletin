@@ -1,4 +1,4 @@
-import { Text, Spinner, Grid, Card, useToasts, Image, useModal, Modal, Display, Link, Spacer, Badge, Note } from "@geist-ui/react";
+import { Text, Spinner, Grid, Card, useToasts, Image, useModal, Modal, Display, Link, Spacer, Badge, Note, useTheme } from "@geist-ui/react";
 import axios from "axios";
 import React, { useState, useEffect } from 'react';
 import { BASE_URL } from "../../constants";
@@ -8,11 +8,11 @@ import { authRedirector } from "../Project";
 import placeholder from './placeholder.jpg';
 const marked = require("marked");
 
-
 /**
  * Entire Gallery page
  */
 export const GalleryPage: React.FC = () => {
+  const { palette } = useTheme();
   const [, setToast] = useToasts();
     const sendNotification = (msg:string, intent: any) => {
       setToast({ text: msg, type: intent, delay: 8000 });
@@ -91,6 +91,7 @@ export const GalleryPage: React.FC = () => {
           />
           <Text b>{submission.name}</Text>
           </Card>
+          {((submission?.accoladeIds?.length ?? 0) > 0) && <Badge style={{ backgroundColor: palette.background, border: 1, borderColor: palette.accents_8, color: palette.foreground }}>{"Winner 🏆"}</Badge>}
         </Grid>
       )}
       <Modal width="100%" {...bindings}>
@@ -98,25 +99,25 @@ export const GalleryPage: React.FC = () => {
         {submission?._id 
          ? <Modal.Content>
             {submission?.discordTags?.length !== 0 && <>
-              <Text span type="success">Created by</Text>
+              <Text span type="secondary">Created by</Text>
               <Grid.Container gap={1} justify="center" height="100px">
                 {submission?.discordTags?.map(discordTag => 
                   <Grid xs={6}><Card shadow width="100%"><Card.Content><Text span style={{ textTransform: 'none' }}>{discordTag}</Text></Card.Content></Card></Grid>
                 )}
-                {(accolades?.length ?? 0) > 0 && 
-                  <Card title="Awards">
-                    <Card.Content>
-                      {accolades?.map((accolade: Accolade) =>
-                        <Note type="warning"><Text>{`${accolade?.emoji || "🏆"} `}</Text><Text type="secondary">{accolade?.name || ""}</Text></Note>
-                      )}
-                    </Card.Content>
-                  </Card>
-                }
               </Grid.Container>
             </>}
+            {submission?.submission_time && <Text small>{`Last Update: ${(new Date(submission?.submission_time).toLocaleString('en-US'), "dddd, mmmm dS, yyyy, h:MM:ss TT")}`}</Text>}
+            {(accolades?.length ?? 0) > 0 && 
+            <Card title="Awards">
+              <Card.Content>
+                {accolades?.map((accolade: Accolade) =>
+                  <Note type="warning"><Text>{`${accolade?.emoji || "🏆"} `}</Text><Text type="secondary">{accolade?.name || ""}</Text></Note>
+                )}
+              </Card.Content>
+            </Card>}
             {submission?.tags?.length !== 0 && <>
               <Spacer h={1}/>
-              <Text span type="success">Tags</Text>
+              <Text span type="secondary">Tags</Text>
               <Grid.Container gap={1} justify="center" height="40px">
               {submission?.tags?.map(tag => 
                 <Grid xs={6}><Badge type="secondary"><Text span style={{ textTransform: 'none' }}>{tag}</Text></Badge></Grid>
@@ -125,7 +126,7 @@ export const GalleryPage: React.FC = () => {
             </>}
             {submission?.links?.length !== 0 && <>
               <Spacer h={1}/>
-              <Text span type="success">Links</Text>
+              <Text span type="secondary">Links</Text>
               <Grid.Container gap={1} justify="center" height="40px">
               {submission?.links?.map(link => 
                 <Grid xs={6}><Link href={submission?.photos?.["2"]?.[1] ?? "#"} icon block color><Text span style={{ textTransform: 'none' }}>{link}</Text></Link></Grid>
@@ -141,12 +142,12 @@ export const GalleryPage: React.FC = () => {
             }
             {submission?.videoLink && <>
               <Spacer h={1}/>
-              <Text span type="success">Video</Text>
+              <Text span type="secondary">Video</Text>
               <Display shadow><iframe title="VideoLinkPreview" src={videoLinkHandler(submission?.videoLink)}></iframe></Display>
             </>}
             {userMarkdown && <>
               <Spacer h={1}/>
-              <Text span type="success">Description</Text>
+              <Text span type="secondary">Description</Text>
               <div dangerouslySetInnerHTML={{__html: marked(userMarkdown)}} />
             </>}
             {submission?.sourceCode?.[1] && <>
@@ -154,7 +155,7 @@ export const GalleryPage: React.FC = () => {
                 <Display>
                   <Card title="Download the sourceCode">
                     <Card.Content>
-                      <Link href={submission?.sourceCode?.[1]} icon>{submission?.sourceCode?.[1]}</Link>
+                      <Link type="sucess" href={submission?.sourceCode?.[1]} icon>{submission?.sourceCode?.[1]}</Link>
                     </Card.Content>
                   </Card>
                 </Display>
