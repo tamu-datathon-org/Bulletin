@@ -52,6 +52,15 @@ export const ProjectPage: React.FC = () => {
     const [discordUsers, setDiscordUsers] = useState<any>([]);
     useEffect(() => {
       let mounted = true
+      axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/users`)
+      .then(res => {
+        if (mounted) {
+          console.log(res.data?.discordUsers);
+          setDiscordUsers(res.data?.discordUsers || []);
+        }
+      })
+      .catch(errorHandler)
+  
       axios.get<ChallengesResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/challenge`)
       .then(res => {
         if (mounted){
@@ -64,13 +73,6 @@ export const ProjectPage: React.FC = () => {
       .then(res => {
         if (mounted){
           setSubmissions(res.data.result)
-        }
-      })
-      .catch(errorHandler)
-      axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/users`)
-      .then(res => {
-        if (mounted) {
-          setDiscordUsers(res.data?.discordUsers || []);
         }
       })
       .catch(errorHandler)
