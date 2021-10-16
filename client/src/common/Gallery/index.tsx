@@ -87,8 +87,8 @@ export const GalleryPage: React.FC = () => {
   ? <Grid.Container gap={2} justify="center" height="100px">
       {curEvent?.submissions.map(submission => 
         <Grid key={submission._id} xs={24} sm={12} md={8} lg={6} xl={4}>
-          <Badge style={{ backgroundColor: palette.background, borderColor: palette.accents_8 }}>{"Winner 🏆"}</Badge>
           <Card onClick={() => showSubmission(submission._id)} shadow width="100%">
+          <Badge style={{ backgroundColor: palette.background, border: 1, borderColor: palette.accents_8 }}>{"Winner 🏆"}</Badge>
           <Image
             src={submission?.icon?.[1] ? submission.icon[1] : placeholder}
           />

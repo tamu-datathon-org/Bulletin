@@ -1,4 +1,5 @@
-import { Button, Textarea, Link, Card, Divider, Input, Radio, Spacer, useToasts, Text, Collapse, Display, Image, Grid } from "@geist-ui/react";
+import { Button, Textarea, Link, Card, Divider, Input, Spacer, useToasts, Text, Collapse, Display, Image, Grid } from "@geist-ui/react";
+import { Select as Select2 } from "@geist-ui/react";
 import axios from 'axios';
 import { X, Eye, Youtube, Tag, Link2 } from '@geist-ui/react-icons';
 import Select from 'react-select'
@@ -46,7 +47,7 @@ export const ProjectPage: React.FC = () => {
 
     const [cookies] = useCookies(['accessToken']);
  
-    const [allChalleges, setAllChallenges] = useState<Challenge[]>([])
+    const [allChallenges, setAllChallenges] = useState<Challenge[]>([])
     const [submissions, setSubmissions] = useState<Submission[]>([])
     const [discordUsers, setDiscordUsers] = useState<any>([]);
     useEffect(() => {
@@ -299,6 +300,7 @@ export const ProjectPage: React.FC = () => {
               <Grid><Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button></Grid>
             )}
             </Grid.Container>
+            <Spacer h={1}/>
             <Select placeholder="Add Teammates From Discord 👾"
                 options={
                   discordTags?.length >= MAX_TEAMMATES ? [] : discordUsers
@@ -322,6 +324,7 @@ export const ProjectPage: React.FC = () => {
               <Grid><Button onClick={(e) => handleDeleteTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button></Grid>
             )}
             </Grid.Container>
+            <Spacer h={1}/>
             <Input icon={<Tag />} width="100%" id="tags" onKeyDown={tagsHandler} placeholder="eg. Python, ML, etc."/>
           </Card.Content>
         </Card>
@@ -335,9 +338,10 @@ export const ProjectPage: React.FC = () => {
             </Grid.Container>
             <Grid.Container gap={1}>
             {links?.map((item: any, idx:number) =>
-              <Grid><Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item} key={idx} type="success"><Text span style={{ textTransform: 'none' }}>{item}</Text></Button></Grid>
+              <Grid><Button onClick={(e) => handleDeleteLinks(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button></Grid>
             )}
             </Grid.Container>
+            <Spacer h={1}/>
             <Input icon={<Link2 />} width="100%" id="links" onKeyDown={linksHandler} placeholder="eg. https://github.com/tamu-datathon-org/bulletin" />
           </Card.Content>
         </Card>
@@ -346,6 +350,7 @@ export const ProjectPage: React.FC = () => {
           <Card.Content>
             <Text>{"Video Link"}</Text>
             <Text small>{"Link a YouTube video presenting the project"}</Text>
+            <Spacer h={1}/>
             <Input icon={<Youtube />} width="100%" key="videolink" value={submission?.videoLink} id="videoLink" onChange={submissionDataHandler} placeholder="eg. https://www.youtube.com/watch?v=vJ7vuQ2hYzw" iconClickable iconRight={<Eye />} onIconClick={videoLinkHandler} />
             {previewedLink && <Display shadow><iframe title="VideoLinkPreview" src={previewedLink}></iframe></Display>}
           </Card.Content>
@@ -357,13 +362,16 @@ export const ProjectPage: React.FC = () => {
           <Card.Content>
             <Text>{"Challenge Specific"}</Text>
             <Text small>Select a challenge to submit this project to</Text>
-            <Radio.Group useRow value={submission?.challengeId} onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
-              {allChalleges.map(challenge => <Radio key={challenge._id} value={challenge._id}>{challenge.name}</Radio>)}
-            </Radio.Group>
             <Spacer h={1}/>
-            {allChalleges.filter(challenge => challenge._id === submission?.challengeId).map(challenge =>
+            <Select2 placeholder="Challenges ⚖️" onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
+            {allChallenges?.map(c =>
+              <Select2.Option value={c._id}>{c.name}</Select2.Option>
+            )}
+            </Select2>
+            <Spacer h={1}/>
+            {allChallenges.filter(challenge => challenge._id === submission?.challengeId).map(challenge =>
                 <>
-                  <Text>Challenge Specific Questions</Text>
+                  <Text small>Challenge Specific Questions</Text>
                   {challenge.question1 && <Input width="100%" label={challenge?.question1} value={submission?.answer1} key="answer1" id="answer1" onChange={submissionDataHandler}/>}
                   {challenge.question2 && <Input width="100%" label={challenge?.question2} value={submission?.answer2} key="answer2" id="answer2" onChange={submissionDataHandler}/>}
                   {challenge.question3 && <Input width="100%" label={challenge?.question3} value={submission?.answer3} key="answer3" id="answer3" onChange={submissionDataHandler}/>}
