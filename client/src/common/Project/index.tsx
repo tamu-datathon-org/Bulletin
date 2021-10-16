@@ -120,7 +120,7 @@ export const ProjectPage: React.FC = () => {
     }
 
     const handleUpdateSubmission = () => {
-      submission!.discordTags = discordTags || [];
+      submission!.discordTags = discordTags?.map((d: any) => d.value) || [];
       submission!.tags = tags || [];
       submission!.links = links || [];
       axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/add`, submission)
