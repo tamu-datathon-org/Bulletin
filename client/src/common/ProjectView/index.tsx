@@ -1,4 +1,4 @@
-import { Text, Spinner, Grid, Card, useToasts, Image, Display, Link, Spacer, Badge, Note } from "@geist-ui/react";
+import { Text, Spinner, Grid, Card, useToasts, Image, Link, Spacer, Note } from "@geist-ui/react";
 import axios from "axios";
 import React, { useState, useEffect } from 'react';
 import { BASE_URL } from "../../constants";
@@ -38,7 +38,7 @@ export const ProjectView: React.FC = () => {
     .then(res => {
       setSubmission(res.data.result)
       axios.get<MarkdownResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}/markdown`)
-      .then(res => setUserMarkdown(res.data.result.text))
+      .then(res => setUserMarkdown(res.data.result?.text))
       .catch()
       if ((res.data.result?.accoladeIds?.length ?? 0) > 0) {
         const submissionAccolades: Accolade[] = [];
@@ -81,21 +81,22 @@ export const ProjectView: React.FC = () => {
             </Card>}
             {submission?.tags?.length !== 0 && <>
               <Spacer h={1}/>
-              <Text span type="secondary">Tags</Text>
-              <Grid.Container gap={1} justify="center" height="40px">
+              <Text>Tags:</Text>
+              <Text span type="secondary">{submission?.tags?.join(', ')}</Text>
+              {/* <Grid.Container gap={1} justify="center" height="40px">
               {submission?.tags?.map(tag => 
                 <Badge type="secondary">{tag}</Badge>
               )}
-              </Grid.Container>
+              </Grid.Container> */}
             </>}
             {submission?.links?.length !== 0 && <>
               <Spacer h={1}/>
-              <Text span type="secondary">Links</Text>
-              <Grid.Container gap={1} justify="center" height="40px">
+              <Text>Links:</Text>
+              {/* <Grid.Container gap={1} justify="center" height="40px"> */}
               {submission?.links?.map(link => 
-                <Grid xs={6}><Link href={submission?.photos?.["2"]?.[1] ?? "#"} icon block color><Text span style={{ textTransform: 'none' }}>{link}</Text></Link></Grid>
+                <Grid xs={6}><Link target="_blank" href={link ?? "#"} icon block color><Text span style={{ textTransform: 'none' }}>{link}</Text></Link></Grid>
               )}
-              </Grid.Container>
+              {/* </Grid.Container> */}
             </>}
             {(submission?.photos?.["0"]?.[1] || submission?.photos?.["1"]?.[1] || submission?.photos?.["2"]?.[1]) &&
               <Grid.Container gap={1} justify="center" height="100px">
@@ -106,25 +107,19 @@ export const ProjectView: React.FC = () => {
             }
             {submission?.videoLink && <>
               <Spacer h={1}/>
-              <Text span type="secondary">Video</Text>
-              <Spacer h={1}/>
-              <Link href={submission?.videoLink}>Video Link</Link>
+              <Text>Video:</Text>
+              <Link target="_blank" icon block color href={submission?.videoLink}>Video Link</Link>
               {/* <Display shadow><iframe title="VideoLinkPreview" src={videoLinkHandler(submission?.videoLink)}></iframe></Display> */}
             </>}
             {userMarkdown && <>
               <Spacer h={1}/>
-              <Text span type="secondary">Description</Text>
+              <Text>Project Description:</Text>
               <div dangerouslySetInnerHTML={{__html: marked(userMarkdown)}} />
             </>}
             {submission?.sourceCode?.[1] && <>
                 <Spacer h={1}/>
-                <Display>
-                  <Card title="Download the sourceCode">
-                    <Card.Content>
-                      <Link type="sucess" href={submission?.sourceCode?.[1]} icon>{submission?.sourceCode?.[1]}</Link>
-                    </Card.Content>
-                  </Card>
-                </Display>
+                <Text>Download the Project Source Code:</Text>
+                <Link target="_blank" icon block color type="sucess" href={submission?.sourceCode?.[1]}>{submission?.sourceCode?.[1]}</Link>
             </>}
           </>
         : <Spinner />
