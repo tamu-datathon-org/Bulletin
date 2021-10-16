@@ -39,7 +39,9 @@ export const ProjectPage: React.FC = () => {
           setMarkdownValue(res.data.result.text)
           setMarkdownLoaded(true);
       })
-      .catch(errorHandler)
+      .catch((e:any) => {
+        // do nothing
+      })
     }
 
     // eslint-disable-next-line no-useless-escape
