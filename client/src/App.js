@@ -24,6 +24,7 @@ function App() {
         <Page>
         <Switch>
           <Route path="/bulletin/:id" children={<Switcher />} />
+          <Route path="/bulletin" children={<Switcher />} />
           {/* <Route path="/bulletin/project/:id" children={<ProjectView />} /> */}
         </Switch>
         </Page>
