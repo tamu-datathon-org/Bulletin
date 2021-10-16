@@ -131,7 +131,7 @@ export const ProjectPage: React.FC = () => {
         emptyCurSubmission();
       })
       .catch(errorHandler)
-      if (!submission?._id) {
+      if (!(submission?._id ?? null)) {
         sendNotification("Submission Failed!", "error");
         return;
       }
@@ -363,9 +363,9 @@ export const ProjectPage: React.FC = () => {
             <Text>{"Challenge Specific"}</Text>
             <Text small>Select a challenge to submit this project to</Text>
             <Spacer h={1}/>
-            <Select2 placeholder="Challenges ⚖️" onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
+            <Select2 value={submission?.challengeId} placeholder="Challenges ⚖️" onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
             {allChallenges?.map(c =>
-              <Select2.Option value={c._id}>{c.name}</Select2.Option>
+              <Select2.Option id={c._id} value={c._id}>{c.name}</Select2.Option>
             )}
             </Select2>
             <Spacer h={1}/>
