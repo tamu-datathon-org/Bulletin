@@ -120,7 +120,7 @@ export const ProjectPage: React.FC = () => {
     }
 
     const handleUpdateSubmission = () => {
-      submission!.discordTags = discordTags?.map((d: any) => d.value) || [];
+      submission!.discordTags = discordTags || [];
       submission!.tags = tags || [];
       submission!.links = links || [];
       axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/add`, submission)
@@ -187,7 +187,7 @@ export const ProjectPage: React.FC = () => {
       setDiscordTags([...discordTags, value]);
     }
     const handleDeleteDiscordTags = (e:any, item: any) => {
-      setDiscordTags(discordTags?.filter((i:string) => i !== item?.value) || []);
+      setDiscordTags(discordTags?.filter((i:string) => i !== item) || []);
     };
 
     const [links, setLinks] = useState<any>();
@@ -295,7 +295,7 @@ export const ProjectPage: React.FC = () => {
             </Grid.Container>
             <Grid.Container gap={1}>
             {discordTags?.map((item: any, idx:number) =>
-              <Grid><Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item.value} key={idx}><Text span style={{ textTransform: 'none' }}>{item.label}</Text></Button></Grid>
+              <Grid><Button onClick={(e) => handleDeleteDiscordTags(e, item)} icon={<X />} auto id={item} key={idx}><Text span style={{ textTransform: 'none' }}>{item}</Text></Button></Grid>
             )}
             </Grid.Container>
             <Spacer h={1}/>
