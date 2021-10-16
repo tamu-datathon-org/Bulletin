@@ -121,7 +121,9 @@ export const ProjectPage: React.FC = () => {
       setIcon(null);
       setSourceCode(null);
       setMarkdownValue("");
-      setPhotos(new Array(3).fill(null));
+      setPhoto0(null);
+      setPhoto1(null);
+      setPhoto2(null);
     }
 
     const uploadMarkdown = () => {
@@ -136,7 +138,10 @@ export const ProjectPage: React.FC = () => {
       axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/add`, submission)
       .then(() => {
         sendNotification("Updated submission!", "success")
-        emptyCurSubmission();
+        if (markdownLoaded || markdownValue) uploadMarkdown();
+        if (sourceCode) uploadFile(FileType.sourceCode);
+        if (icon) uploadFile(FileType.icon);
+        uploadPhotos();
         sendNotification("This page contains changes, please refresh.", "success");
       })
       .catch(errorHandler)
@@ -144,10 +149,6 @@ export const ProjectPage: React.FC = () => {
         sendNotification("Submission Failed!", "error");
         return;
       }
-      if (markdownLoaded || markdownValue) uploadMarkdown();
-      if (sourceCode) uploadFile(FileType.sourceCode);
-      if (icon) uploadFile(FileType.icon);
-      if (photos) uploadPhotos();
     };
 
     const handleEditSubmission = (id:string) => {
@@ -247,13 +248,17 @@ export const ProjectPage: React.FC = () => {
       setSourceCode(e.target.files[0]);
     }
 
-    const [photos, setPhotos] = useState<any>();
+    const [photo0, setPhoto0] = useState<any>();
+    const [photo1, setPhoto1] = useState<any>();
+    const [photo2, setPhoto2] = useState<any>();
     const photosHandler = (e:any, index:number) => {
-      if ((photos?.length ?? 0) !== 3) {
-        setPhotos(new Array(3).fill(null));
+      if (index === 0) {
+        setPhoto0(e.target.files[0]);
+      } else if (index === 1) {
+        setPhoto1(e.target.files[0]);
+      } else if (index === 0) {
+        setPhoto2(e.target.files[0]);
       }
-      photos[index] = e.target.files[0];
-      setPhotos(photos);
     }
 
     const [icon, setIcon] = useState<any>();
@@ -276,15 +281,28 @@ export const ProjectPage: React.FC = () => {
     }
 
     const uploadPhotos = () => {
-      if (!photos) return;
-      photos.forEach((photo:Blob, index:number) => {
-        if (!photo) return;
+      if (photo0) {
         const data = new FormData();
-        data.append('file', photo);
-        axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/photo/${index}`, data)
-        .then(() => sendNotification(`Uploaded Photo ${index}!`, "success"))
+        data.append('file', photo1);
+        axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/photo/${0}`, data)
+        .then(() => sendNotification(`Uploaded Photo ${1}!`, "success"))
         .catch(errorHandler)
-      })
+      }
+      if (photo1) {
+        const data = new FormData();
+        data.append('file', photo1);
+        axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/photo/${1}`, data)
+        .then(() => sendNotification(`Uploaded Photo ${2}!`, "success"))
+        .catch(errorHandler)
+      }
+      if (photo2) {
+        const data = new FormData();
+        data.append('file', photo1);
+        axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/upload/photo/${2}`, data)
+        .then(() => sendNotification(`Uploaded Photo ${3}!`, "success"))
+        .catch(errorHandler)
+      }
+      emptyCurSubmission();
     }
 
     return (
