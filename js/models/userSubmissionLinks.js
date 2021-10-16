@@ -11,8 +11,8 @@ const createUserSubmissionLink = async (userAuthId, submissionId, discordTag) =>
     if (!userAuthId) throw new Error('📌userSubmissionLink userAuthId is required');
     if (!discordTag) throw new Error('📌userSubmissionLink discordTag is required');
     const submission_link = {
-        userAuthId: userAuthId,
-        submissionId: submissionId || '',
+        userAuthId: await mongoUtil.ObjectId(userAuthId),
+        submissionId: await mongoUtil.ObjectId(submissionId),
         discordTag: discordTag || '',
     };
     return submission_link;
@@ -65,10 +65,24 @@ const removeUserSubmissionLinks = async (userSubmissionLinkIds) => {
     let client = null;
     try {
         client = await mongoUtil.getClient();
-        const doc = await client.db(config.database.name)
-            .collection(config.database.collections.userSubmissionLinks).deleteMany({ _id: userSubmissionLinkIds });
+        await client.db(config.database.name)
+            .collection(config.database.collections.userSubmissionLinks)
+            .deleteMany({ _id: { $in: userSubmissionLinkIds } });
         await mongoUtil.closeClient(client);
-        return doc;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error removing userSubmissionLink:: ${err.message}`);
+    }
+};
+
+const removeAllUserSubmissionLinksOfSubmissionId = async (submissionId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        await client.db(config.database.name)
+            .collection(config.database.collections.userSubmissionLinks)
+            .deleteMany({ submissionId: await mongoUtil.ObjectId(submissionId) });
+        await mongoUtil.closeClient(client);
     } catch (err) {
         await mongoUtil.closeClient(client);
         throw new Error(`📌Error removing userSubmissionLink:: ${err.message}`);
@@ -90,6 +104,22 @@ const getUserSubmissionLink = async (userSubmissionLinkId) => {
     }
 };
 
+const getUserSubmissionLinksByUserAuthId = async (userAuthId) => {
+    let client = null;
+    try {
+        client = await mongoUtil.getClient();
+        const docs = await client.db(config.database.name)
+            .collection(config.database.collections.userSubmissionLinks).find({
+                userAuthId: await mongoUtil.ObjectId(userAuthId),
+            }).toArray();
+        await mongoUtil.closeClient(client);
+        return docs;
+    } catch (err) {
+        await mongoUtil.closeClient(client);
+        throw new Error(`📌Error getting userSubmissionLink:: ${err.message}`);
+    }
+};
+
 /**
  * @function getUserSubmissionLinkBySubmissionIdAndUserAuthId
  * @param {String} userAuthId 
@@ -102,7 +132,7 @@ const getUserSubmissionLinkBySubmissionIdAndUserAuthId = async (userAuthId, subm
         client = await mongoUtil.getClient();
         const doc = await client.db(config.database.name)
             .collection(config.database.collections.userSubmissionLinks).findOne({
-                userAuthId: userAuthId,
+                userAuthId: await mongoUtil.ObjectId(userAuthId),
                 submissionId: await mongoUtil.ObjectId(submissionId),
             });
         await mongoUtil.closeClient(client);
@@ -160,8 +190,10 @@ module.exports = {
     addUserSubmissionLink,
     removeUserSubmissionLink,
     removeUserSubmissionLinks,
+    removeAllUserSubmissionLinksOfSubmissionId,
     getUserSubmissionLink,
     getUserSubmissionLinkBySubmissionIdAndUserAuthId,
+    getUserSubmissionLinksByUserAuthId,
     updateUserSubmissionLink,
     addSubmissionIdToLinks,
 };

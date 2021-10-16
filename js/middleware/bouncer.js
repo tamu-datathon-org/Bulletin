@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 const { StatusCodes } = require('http-status-codes');
 
 const gatekeeperUrl = process.env.GATEKEEPER_URL || 'https://tamudatathon.com/auth';
-const harmoniaUrl = process.env.HARMONIA_URL || 'https://tamudatathon.com/discord';
+const harmoniaUrl = process.env.HARMONIA_URL || 'https://tamudatathon.com/guild';
 
 /**
  * Gatekeeper Authentication middleware generator
@@ -10,7 +10,7 @@ const harmoniaUrl = process.env.HARMONIA_URL || 'https://tamudatathon.com/discor
  */
 const checkIfLoggedIn = (onlyAllowIfAdminstrator) => async (req, res, next) => {
     const token = req.cookies.accessToken || '';
-    const redirectUrl = `${req.baseUrl}${req.path}`;
+    const redirectUrl = '/auth/login?r=/bulletin'; // `${req.baseUrl}${req.path}`;
     const user = req.user;
 
     // check if the auth middleware has already happened in this request before
@@ -24,7 +24,7 @@ const checkIfLoggedIn = (onlyAllowIfAdminstrator) => async (req, res, next) => {
 
     // if there is no auth token cookie then they are definetely not logged in
     if (!token) 
-        return res.redirect(`/auth/login?r=${redirectUrl}`); 
+        return res.status(StatusCodes.TEMPORARY_REDIRECT).send({error:redirectUrl}); 
 
     // there is an auth token cookie, ask gatekeeper if it is valid
     const authRes = await fetch(`${gatekeeperUrl}/user`, {
@@ -36,7 +36,7 @@ const checkIfLoggedIn = (onlyAllowIfAdminstrator) => async (req, res, next) => {
 
     // if gatekeeper says user token is invalid send to login page
     if (authRes.status != StatusCodes.OK)
-        return res.redirect(`/auth/login?r=${redirectUrl}`); 
+        return res.status(StatusCodes.TEMPORARY_REDIRECT).send({error:redirectUrl});  
     
     const json = await authRes.json();
     
@@ -59,18 +59,39 @@ const getAuthId = async (token) => {
     return authId;
 };
 
-const getDiscordUser = async (discordTag, userAuthId) => {
-    let response = null;
-    if (discordTag) {
-        response = await fetch(`${harmoniaUrl}/api/users/?discordInfo=${discordTag}`);
-    } else if (userAuthId) {
-        response = await fetch(`${harmoniaUrl}/api/users/?userAuthId=${userAuthId}`);
+const getDiscordUser = async (discordTag, userAuthId, accessToken) => {
+    try {
+        let response = null;
+        const options = {
+            headers: {
+                cookie: `accessToken=${accessToken};`,
+            },
+        };
+        if (discordTag) {
+            response = await fetch(`${harmoniaUrl}/api/user/?discordInfo=${discordTag}`, options);
+        } else if (userAuthId) {
+            response = await fetch(`${harmoniaUrl}/api/user/?userAuthId=${userAuthId}`, options);
+        }
+        return response.json();
+    } catch (err) {
+        throw new Error('📌getDiscordUser:: you are not logged in!');
     }
-    return response.json();
+};
+
+const getUserRegistrationStatus = async (userAuthId) => {
+    try {
+        const response = await fetch(`https://tamudatathon.com/apply/application/byuser/${userAuthId}`);
+        const res = await response.json();
+        if (!res.status != 'A') throw new Error('');
+        return res;
+    } catch (err) {
+        throw new Error('📌getUserRegistrationStatus:: user is not an authorized participant');
+    }
 };
 
 module.exports = {
     checkIfLoggedIn,
     getAuthId,
     getDiscordUser,
+    getUserRegistrationStatus,
 };

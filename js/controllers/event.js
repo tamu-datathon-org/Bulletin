@@ -1,6 +1,7 @@
-const eventsService = require('../services/events');
-const submissionService = require('../services/submission');
+let eventsService = require('../services/events');
+let submissionService = require('../services/submission');
 const logger = require('../utils/logger');
+let bouncer = require('../middleware/bouncer');
 
 /**
  * @function getEvent
@@ -35,7 +36,7 @@ const getAllEvents = async (req, res) => {
     try {
         let full = req.query.full || false;
         if (typeof full === 'string') full = full.toLowerCase() === 'true' ? true : false;
-        response.result = await eventsService.getAllEvents(full);
+        response.result = await eventsService.getEvents(full);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -77,7 +78,7 @@ const getAccolades = async (req, res) => {
     try {
         const { eventId } = req.params;
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
-        response.result = await eventsService.getAccoladesByEvent(eventId);
+        response.result = await eventsService.getAccolades(eventId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -133,9 +134,9 @@ const getChallenges = async (req, res) => {
  */
 const getEventImage = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
     try {
-        if (!eventId) throw new Error('📌eventId is a required parameter');
+        const { eventId } = req.params;
+        if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
         const readable = await eventsService.getEventImage(eventId);
         readable.pipe(res);
     } catch (err) {
@@ -152,9 +153,9 @@ const getEventImage = async (req, res) => {
  */
 const getChallengeImage = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { challengeId } = req.params;
     try {
+        const { eventId } = req.params;
+        const { challengeId } = req.params;
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
         if ((challengeId?.length ?? 0) === 0) throw new Error('📌challengeId is a required parameter');
         const readable = await eventsService.getChallengeImage(eventId, challengeId);
@@ -173,9 +174,9 @@ const getChallengeImage = async (req, res) => {
  */
 const getSubmission = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { submissionId } = req.params;
     try {
+        const { eventId } = req.params;
+        const { submissionId } = req.params;
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
         if ((submissionId?.length ?? 0) === 0) throw new Error('📌submissionId is a required parameter');
         response.result = await submissionService.getSubmission(eventId, submissionId);
@@ -194,10 +195,33 @@ const getSubmission = async (req, res) => {
  */
 const getSubmissions = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
     try {
+        const { eventId } = req.params;
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
         response.result = await submissionService.getSubmissions(eventId);
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+/**
+ * @function getSubmissionsByUserAuthId
+ * @param {Object} req 
+ * @param {Object} res 
+ */
+const getSubmissionsByUserAuthId = async (req, res) => {
+    const response = {};
+    try {
+        const { eventId } = req.params;
+        if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
+        const token = req.cookies.accessToken || '';
+        const userAuthId = await bouncer.getAuthId(token); // "5efc0b99a37c4300032acbce"
+        if ((userAuthId?.length ?? 0) === 0)
+            throw new Error('📌you are not logged in!');
+        response.result = await submissionService.getSubmissionsByUserAuthId(eventId, userAuthId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -213,9 +237,9 @@ const getSubmissions = async (req, res) => {
  */
 const getSubmissionIcon = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { submissionId } = req.params;
     try {
+        const { eventId } = req.params;
+        const { submissionId } = req.params;
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
         if ((submissionId?.length ?? 0) === 0) throw new Error('📌submissionId is a required parameter');
         const readable = await submissionService.getSubmissionFile(eventId, submissionId, 'icon');
@@ -234,9 +258,9 @@ const getSubmissionIcon = async (req, res) => {
  */
 const getSubmissionPhotos = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { submissionId } = req.params;
     try {
+        const { eventId } = req.params;
+        const { submissionId } = req.params;
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
         if ((submissionId?.length ?? 0) === 0) throw new Error('📌submissionId is a required parameter');
         const readable = await submissionService.getSubmissionFile(eventId, submissionId, 'photos');
@@ -255,13 +279,13 @@ const getSubmissionPhotos = async (req, res) => {
  */
 const getSubmissionMarkdown = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { submissionId } = req.params;
     try {
+        const { eventId } = req.params;
+        const { submissionId } = req.params;
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
         if ((submissionId?.length ?? 0) === 0) throw new Error('📌submissionId is a required parameter');
-        const readable = await submissionService.getSubmissionFile(eventId, submissionId, 'markdown');
-        readable.pipe(res);
+        response.result = await submissionService.getSubmissionMarkdown(eventId, submissionId);
+        res.status(200).json(response);
     } catch (err) {
         logger.info(err);
         response.error = err.message;
@@ -276,9 +300,9 @@ const getSubmissionMarkdown = async (req, res) => {
  */
 const getSubmissionSourceCode = async (req, res) => {
     const response = {};
-    const { eventId } = req.params;
-    const { submissionId } = req.params;
     try {
+        const { eventId } = req.params;
+        const { submissionId } = req.params;
         if ((eventId?.length ?? 0) === 0) throw new Error('📌eventId is a required parameter');
         if ((submissionId?.length ?? 0) === 0) throw new Error('📌submissionId is a required parameter');
         const readable = await submissionService.getSubmissionFile(eventId, submissionId, 'sourceCode');
@@ -288,6 +312,15 @@ const getSubmissionSourceCode = async (req, res) => {
         response.error = err.message;
         res.status(400).json(response);
     }
+};
+
+/* testing */
+const setSubmissionService = (mockSubmissionService) => {
+    submissionService = mockSubmissionService;
+};
+
+const setEventService = (mockEventService) => {
+    eventsService = mockEventService;
 };
 
 module.exports = {
@@ -301,8 +334,12 @@ module.exports = {
     getChallengeImage,
     getSubmission,
     getSubmissions,
+    getSubmissionsByUserAuthId,
     getSubmissionIcon,
     getSubmissionPhotos,
     getSubmissionMarkdown,
     getSubmissionSourceCode,
+    // for testing
+    setSubmissionService,
+    setEventService,
 };

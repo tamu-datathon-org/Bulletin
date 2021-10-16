@@ -6,7 +6,7 @@ const frontendS3 = require('../utils/frontendS3');
 
 const getEventFull = async (eventObj) => {
     const eventCopy = eventObj;
-    eventCopy.accolades = await accoladeModel.getAccolades(eventObj.accoladeIds);
+    eventCopy.accolades = await accoladeModel.getAccoladesByAccoladeIds(eventObj.accoladeIds);
     eventCopy.challenges = await challengeModel.getChallenges(eventObj.challengeIds);
     eventCopy.submissions = await submissionModel.getSubmissions(eventObj.submissionIds);
     return eventObj;
@@ -45,7 +45,7 @@ const getEventByName = async (eventName, full = false) => {
  *          just the accoladeId
  * @returns {List<Object>} events
  */
-const getAllEvents = async (full = false) => {
+const getEvents = async (full = false) => {
     const eventObjs = await eventsModel.getAllEvents();
     if (full) return Promise.all(eventObjs.map(async (eventObj) => getEventFull(eventObj)));
     return eventObjs;
@@ -66,8 +66,8 @@ const getAccolade = async (eventId, accoladeId) => {
  * @param {String} eventId 
  * @returns {List<Object>} accolades
  */
-const getAccoladesByEvent = async (eventId) => {
-    return accoladeModel.getAccoladesByEvent(eventId);
+const getAccolades = async (eventId) => {
+    return accoladeModel.getAccoladesByEventId(eventId);
 };
 
 /**
@@ -120,10 +120,10 @@ const getImageByKey = async (fileKey) => {
 
 module.exports = {
     getEventByName,
-    getAllEvents,
+    getEvents,
     getEvent,
     getAccolade,
-    getAccoladesByEvent,
+    getAccolades,
     getChallenge,
     getChallenges,
     getEventImage,

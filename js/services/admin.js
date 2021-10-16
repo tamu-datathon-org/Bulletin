@@ -1,4 +1,6 @@
 const path = require('path');
+const { json2csvAsync } = require('json-2-csv');
+const stream = require('stream');
 let accoladeModel = require('../models/accolades');
 let challengeModel = require('../models/challenges');
 let eventsModel = require('../models/events');
@@ -20,6 +22,25 @@ const ordinalSuffixOf = (i) => {
         return i + 'rd';
     }
     return i + 'th';
+};
+
+const removeSubmission = async (eventId, submissionId) => {
+    const eventObj = await eventsModel.getEventById(eventId);
+    logger.info(JSON.stringify(eventObj));
+    if (!eventObj) throw new Error(`📌event ${eventId} does not exist`);
+    return submissionService.removeSubmission(eventId, submissionId)._id;
+};
+
+const addAccoladesToSubmission = async (eventId, submissionId, accoladeIds) => {
+    logger.info('validating accolades...');
+    await Promise.all(accoladeIds.map(async id => {
+        const accoladeObj = await accoladeModel.getAccolade(eventId, id);
+        if (!accoladeObj)
+            throw new Error(`📌accolade ${id} does not exist`);
+    }));
+    logger.info('adding accolades to submission');
+    await submissionService.addAccoladesToSubmission(submissionId, accoladeIds);
+    logger.info('done.');
 };
 
 /**
@@ -86,21 +107,21 @@ const removeEvent = async (eventId) => {
     const eventObj = await eventsModel.removeEventById(eventId);
     await Promise.all(eventObj.accoladeIds.map(async (accoladeId) => {
         try {
-            await accoladeModel.removeAccolade(accoladeId);
+            await accoladeModel.removeAccolade(eventId, accoladeId);
         } catch (err) { 
             // do nothing
         }
     }));
     await Promise.all(eventObj.challengeIds.map(async (challengeId) => {
         try {
-            await challengeModel.removeChallenge(challengeId);
+            await challengeModel.removeChallenge(eventId, challengeId);
         } catch (err) {
             // do nothing
         }
     }));
     await Promise.all(eventObj.submissionIds.map(async (submissionId) => {
         try {
-            await submissionService.removeSubmission(submissionId);
+            await submissionService.removeSubmission(eventId, submissionId);
         } catch (err) {
             // do nothing
         }
@@ -117,17 +138,25 @@ const removeEvent = async (eventId) => {
  * @param {String} _id
  * @returns {String} challenge id
  */
-const addChallenge = async (eventId, name, questions, places, _id = null) => {
-    const accoladeIds = [];
+const addChallenge = async (eventId, name, places, _id, question1, question2, question3, question4, question5) => {
     const existingChallengeObj = await challengeModel.getChallenge(eventId, _id);
-    let startingPlace = 1;
-    if (existingChallengeObj) startingPlace = (existingChallengeObj.places || 0) + 1;
-    while (startingPlace <= places) {
-        const emoji = config.challenges.place_emojis[startingPlace] || config.challenges.place_emojis[3];
-        accoladeIds.push(await addAccolade(eventId, `${ordinalSuffixOf(startingPlace)} in ${name}`, null, emoji));
-        startingPlace += 1;
+    // just delete the accolades (its easier)
+    if (existingChallengeObj) {
+        await Promise.all(existingChallengeObj.accoladeIds.map(async accoladeId => {
+            await accoladeModel.removeAccolade(eventId, accoladeId);
+        }));
     }
-    const challengeObj = await challengeModel.createChallenge(name, places, accoladeIds, questions, eventId);
+    // add new accolades
+    let i = 1;
+    const accoladeIds = [];
+    while (i <= places) {
+        const emoji = config.challenges.place_emojis[i];
+        accoladeIds.push(await addAccolade(eventId, `${ordinalSuffixOf(i)} in ${name}`, null, emoji));
+        i += 1;
+    }
+    const challengeObj = await challengeModel.createChallenge(name, places, accoladeIds, 
+        eventId, question1, question2, question3, question4, question5);
+    logger.info(JSON.stringify(challengeObj));
     const id = await challengeModel.addChallenge(challengeObj, _id);
     await Promise.all(accoladeIds.map(async (accoladeId) => {
         await accoladeModel.addAccoladeChallengeId(accoladeId, id || _id);
@@ -152,7 +181,7 @@ const removeChallenge = async (eventId, challengeId) => {
         await eventsModel.removeEventChallengeId(eventId, challengeId);
         return challengeId;
     }
-    throw new Error(`📌challenge ${challengeId} does not exist`)
+    throw new Error(`📌challenge ${challengeId} does not exist`);
 };
 
 /**
@@ -171,8 +200,7 @@ const uploadEventImage = async (eventId, filename, buffer) => {
     const data = await frontendS3.uploadFile(`${config.event.imagePrefix}${path.extname(filename)}`, buffer);
     eventObj.image = data.Location;
     eventObj.imageKey = data.Key;
-    delete eventObj._id;
-    await eventsModel.addEvent(eventObj._id, eventObj);
+    await eventsModel.addEvent(eventObj, eventObj._id);
     return data.Location;
 };
 
@@ -202,6 +230,13 @@ const removeImageByKey = async (fileKey) => {
     return frontendS3.removeFile(fileKey);
 };
 
+const downloadSubmissions = async (eventId) => {
+    const jsonData = await eventsModel.getAllSubmissions(eventId);
+    const readStream = new stream.PassThrough();
+    readStream.end(await json2csvAsync(jsonData));
+    return readStream;
+};
+
 /* for testing only */
 const setEventModel = (testModel) => {
     eventsModel = testModel;
@@ -222,6 +257,9 @@ module.exports = {
     removeChallenge,
     uploadEventImage,
     uploadChallengeImage,
+    removeSubmission,
+    addAccoladesToSubmission,
+    downloadSubmissions,
     // testing
     setEventModel,
     setChallengeModel,

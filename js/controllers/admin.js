@@ -1,6 +1,7 @@
 const logger = require('../utils/logger');
 const config = require('../utils/config');
 let adminService = require('../services/admin');
+let eventsService = require('../services/events');
 
 const validateAddEvent = (requestBody) => {
     const { name } = requestBody;
@@ -24,17 +25,15 @@ const validateAddAccolade = async (eventId, requestBody) => {
     if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
     if ((name?.length ?? 0) === 0 || typeof name !== 'string') throw new Error('📌name is a required field');
     if (description && typeof description !== 'string') throw new Error('📌description must be a string');
-    if (challengeId && typeof challenge !== 'string') throw new Error('📌challengeId must be a string');
+    if (challengeId && typeof challengeId !== 'string') throw new Error('📌challengeId must be a string');
     if (emoji && typeof emoji !== 'string') throw new Error('📌emoji must be a string');
 };
 
 const validateAddChallenge = async (eventId, requestBody) => {
     const { name } = requestBody;
     const { description } = requestBody;
-    const { questions } = requestBody;
     if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
     if ((name?.length ?? 0) === 0 || typeof name !== 'string') throw new Error('📌name is a required field');
-    if (questions && !Array.isArray(questions)) throw new Error('📌questions must be an array');
     if (description && typeof description !== 'string') throw new Error('📌description must be a string');
 };
 
@@ -67,8 +66,8 @@ const removeAccolade = async (req, res) => {
         const { eventId } = req.params;
         const { accoladeId } = req.params;
         if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
-        if ((accoladeId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌accoladeId is a required field');
-        response.accoladeIds = await adminService.removeAccolade(eventId, accoladeId);
+        if ((accoladeId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌accoladeId is a required parameter');
+        response.accoladeId = await adminService.removeAccolade(eventId, accoladeId);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -127,8 +126,12 @@ const addChallenge = async (req, res) => {
         const { eventId } = req.params;
         const { _id } = req.body;
         const { name } = req.body;
-        const { questions } = req.body;
         const { places } = req.body;
+        const { question1 } = req.body;
+        const { question2 } = req.body;
+        const { question3 } = req.body;
+        const { question4 } = req.body;
+        const { question5 } = req.body;
         await validateAddChallenge(eventId, req.body);
         let numPlaces = null;
         if (places) {
@@ -138,8 +141,8 @@ const addChallenge = async (req, res) => {
                 throw new Error(`📌places must be <= ${config.challenges.max_places} and > 0`);
             }
         }
-        response.challengeId = await adminService
-            .addChallenge(eventId, name, questions, numPlaces, _id);
+        response.challengeId = await adminService.addChallenge(eventId, name, numPlaces, _id, 
+            question1, question2, question3, question4, question5);
         res.status(200).json(response);
     } catch (err) {
         logger.info(err);
@@ -175,7 +178,7 @@ const uploadEventImage = async (req, res) => {
         const { buffer } = req.file;
         const { originalname } = req.file;
         if (!eventId || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
-        if (!originalname || typeof event !== 'string') throw new Error('📌originalname is a required field');
+        if (!originalname || typeof originalname !== 'string') throw new Error('📌originalname is a required field');
         response.location = await adminService.uploadEventImage(eventId, originalname, buffer);
         res.status(200).json(response);
     } catch (err) {
@@ -204,10 +207,84 @@ const uploadChallengeImage = async (req, res) => {
     }
 };
 
+// ======================================================== //
+// === 📌📌📌 Altering Submissions Section 📌📌📌 ====== //
+// ======================================================== //
+
+/**
+ * @function removeSubmission
+ * @param {Object} req 
+ * @param {Object} res 
+ */
+
+const removeSubmission = async (req, res) => {
+    const response = {};
+    try {
+        const { eventId } = req.params;
+        const { submissionId } = req.params;
+        if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌eventId is a required parameter');
+        if ((submissionId?.length ?? 0) === 0 || typeof eventId !== 'string') throw new Error('📌submissionId is a required parameter');
+        response.submissionId = await adminService.removeSubmission(eventId, submissionId);
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+const addAccoladesToSubmission = async (req, res) => {
+    const response = {};
+    try {
+        const { accoladeIds } = req.body;
+        const { submissionId } = req.params;
+        const { eventId } = req.params;
+        response.submissionId = await adminService.addAccoladesToSubmission(eventId, submissionId, accoladeIds);
+        res.status(200).json(response);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
+// ======================================================== //
+// =========== 📌📌📌 Gavel Section 📌📌📌 ============= //
+// ======================================================== //
+
+const downloadSubmissions = async (req, res) => {
+    const response = {};
+    const { eventId } = req.params;
+    try {
+        if ((eventId?.length ?? 0) === 0 || typeof eventId !== 'string')
+            throw new Error('📌eventId is a required parameter');
+        
+        const eventObj = await eventsService.getEvent(eventId, false);
+        if (!eventObj)
+            throw new Error(`📌event ${eventId} does not exist`);
+
+        const fileName = `${eventObj.name}_submission_dump.csv`;
+        logger.info('downloading making query to get all submissions...');
+        const readStream = await adminService.downloadSubmissions(eventId);
+        logger.info('sending data to csv download...');
+        res.set('Content-disposition', 'attachment; filename=' + fileName);
+        res.set('Content-Type', 'text/plain');
+        readStream.pipe(res);
+    } catch (err) {
+        logger.info(err);
+        response.error = err.message;
+        res.status(400).json(response);
+    }
+};
+
 /* for testing only */
 
 const setAdminService = (testAdminService) => {
     adminService = testAdminService;
+};
+
+const setEventsService = (testEventsService) => {
+    eventsService = testEventsService;
 };
 
 module.exports = {
@@ -219,6 +296,10 @@ module.exports = {
     removeChallenge,
     uploadEventImage,
     uploadChallengeImage,
+    removeSubmission,
+    addAccoladesToSubmission,
+    downloadSubmissions,
     // testing
     setAdminService,
+    setEventsService,
 };
