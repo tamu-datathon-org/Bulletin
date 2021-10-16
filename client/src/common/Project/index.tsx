@@ -230,7 +230,7 @@ export const ProjectPage: React.FC = () => {
     };
 
     const [previewedLink, setPreviewedLink] = useState<any>();
-    const videoLinkHandler = () => {
+    const videoLinkHandler = (e:any) => {
       const value = submission?.videoLink || "";
       if (!urlRegex.test(value)) {
         sendNotification("Link is not valid.", "error");
