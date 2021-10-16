@@ -154,10 +154,9 @@ export const ProjectPage: React.FC = () => {
       axios.get<SubmissionResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}`)
       .then(res => {
         setSubmission(res.data.result)
-      }).then(() => {
-        setDiscordTags(submission?.discordTags || []);
-        setTags(submission?.tags || []);
-        setLinks(submission?.links || []);
+        setDiscordTags(res.data.result?.discordTags || []);
+        setTags(res.data.result?.tags || []);
+        setLinks(res.data.result?.links || []);
         retrieveMarkdown();
       })
       .catch(errorHandler);
