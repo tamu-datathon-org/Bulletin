@@ -3,7 +3,7 @@ import { Select as Select2 } from "@geist-ui/react";
 import axios from 'axios';
 import { X, Eye, Youtube, Tag, Link2 } from '@geist-ui/react-icons';
 import Select from 'react-select'
-import { useCookies } from 'react-cookie';
+// import { useCookies } from 'react-cookie';
 import React, { useEffect, useState } from 'react';
 import { BASE_URL, HARMONIA_URL, MAX_TEAMMATES, MAX_LINKS, MAX_TAGS } from "../../constants";
 import { ChallengesResponse, Challenge, Submission, SubmissionResponse, FileType, SubmissionsResponse, HarmoniaResponse, MarkdownResponse } from '../interfaces';
@@ -45,7 +45,7 @@ export const ProjectPage: React.FC = () => {
     // eslint-disable-next-line no-useless-escape
     const urlRegex = /https?:\/\/(www\\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi
 
-    const [cookies] = useCookies(['accessToken']);
+    // const [cookies] = useCookies(['accessToken']);
  
     const [allChallenges, setAllChallenges] = useState<Challenge[]>([])
     const [submissions, setSubmissions] = useState<Submission[]>([])
@@ -67,21 +67,13 @@ export const ProjectPage: React.FC = () => {
         }
       })
       .catch(errorHandler)
-      if (!discordUsers) {
-        const options = {
-          headers: {
-            cookie: `accessToken=${cookies?.accessToken || ""}`,
-          },
-        };
-        console.log(JSON.stringify(options));
-        axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/users`, options)
-        .then(res => {
-          if (mounted) {
-            setDiscordUsers(res.data?.discordUsers || []);
-          }
-        })
-        .catch(errorHandler)
-      }
+      axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/users`)
+      .then(res => {
+        if (mounted) {
+          setDiscordUsers(res.data?.discordUsers || []);
+        }
+      })
+      .catch(errorHandler)
       retrieveMarkdown();
       return () => {
         mounted = false;
