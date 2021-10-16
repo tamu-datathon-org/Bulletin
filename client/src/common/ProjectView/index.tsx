@@ -67,14 +67,12 @@ export const ProjectView: React.FC = () => {
          ? <>
             <Text>{submission?.name}</Text>
             {submission?.discordTags?.length !== 0 && <>
-              <Text span type="secondary">Created by</Text>
-              <Grid.Container gap={1} justify="center" height="100px">
+              <Text span type="secondary">Created by:</Text>
                 {submission?.discordTags?.map(discordTag => 
-                  <Grid xs={6}><Card shadow width="100%"><Card.Content><Text span style={{ textTransform: 'none' }}>{discordTag}</Text></Card.Content></Card></Grid>
+                  <Text>{discordTag}</Text>
                 )}
-              </Grid.Container>
             </>}
-            {submission?.submission_time && <Text small>{`Last Update: ${(new Date(submission?.submission_time).toLocaleString('en-US'), "dddd, mmmm dS, yyyy, h:MM:ss TT")}`}</Text>}
+            {/* {submission?.submission_time && <Text small>{`Last Update: ${(new Date(submission?.submission_time).toLocaleString('en-US'), "dddd, mmmm dS, yyyy, h:MM:ss TT")}`}</Text>} */}
             {(accolades?.length ?? 0) > 0 && 
             <Card title="Awards">
               <Card.Content>
@@ -111,7 +109,9 @@ export const ProjectView: React.FC = () => {
             {submission?.videoLink && <>
               <Spacer h={1}/>
               <Text span type="secondary">Video</Text>
-              <Display shadow><iframe title="VideoLinkPreview" src={videoLinkHandler(submission?.videoLink)}></iframe></Display>
+              <Spacer h={1}/>
+              <Link href={submission?.videoLink}>Video Link</Link>
+              {/* <Display shadow><iframe title="VideoLinkPreview" src={videoLinkHandler(submission?.videoLink)}></iframe></Display> */}
             </>}
             {userMarkdown && <>
               <Spacer h={1}/>
