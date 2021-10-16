@@ -31,7 +31,7 @@ const addUserSubmissionLink = async (userSubmissionLinkObj, userSubmissionLinkId
         const { upsertedId } = await client.db(config.database.name)
             .collection(config.database.collections.userSubmissionLinks)
             .updateOne(
-                { _id: await mongoUtil.ObjectId(userSubmissionLinkId)  },
+                { _id: await mongoUtil.ObjectId(userSubmissionLinkId) },
                 { $set: userSubmissionLinkObj },
                 { upsert: true },
             );

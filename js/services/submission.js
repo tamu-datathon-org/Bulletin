@@ -76,7 +76,7 @@ const addSubmission = async (requestBody, eventId, submissionId, token) => {
         const discordUser = await bouncerController.getDiscordUser(discordTag, null, token);
         if (discordUser.userAuthId) {
             if (discordUser.userAuthId === selfUserAuthId) hasSelf = true;
-            await bouncerController.getUserRegistrationStatus(discordUser.userAuthId);
+            // await bouncerController.getUserRegistrationStatus(discordUser.userAuthId);
             return discordUser;
         }
         throw new Error(`📌discordTag ${discordTag} does not exist`);
@@ -95,7 +95,8 @@ const addSubmission = async (requestBody, eventId, submissionId, token) => {
     }
     
     // get/create the user submission links
-    const userSubmissionLinkIds = await Promise.all(discordObjs.map(async (discordObj) => {
+    const userSubmissionLinkIds = [];
+    await Promise.all(discordObjs.map(async (discordObj) => {
         const userSubmissionLink = await userSubmissionLinksModel.getUserSubmissionLinkBySubmissionIdAndUserAuthId(
             discordObj.userAuthId,
             submissionId, 
@@ -104,8 +105,10 @@ const addSubmission = async (requestBody, eventId, submissionId, token) => {
             .createUserSubmissionLink(discordObj.userAuthId, submissionId, discordObj.discordInfo); // no submissionId yet
         logger.info(`user submission link obj ${JSON.stringify(userSubmissionLinkObj)}`);
         logger.info(`user submission link id ${userSubmissionLink?._id}`);
-        return userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj, userSubmissionLink?._id) || userSubmissionLink._id;
+        userSubmissionLinkIds.push(userSubmissionLink?._id ?? (await userSubmissionLinksModel.addUserSubmissionLink(userSubmissionLinkObj, userSubmissionLink?._id)));
     }));
+
+    logger.info(userSubmissionLinkIds);
 
     // create the submission
     const discordTags = discordObjs.map((d) => d.discordInfo);

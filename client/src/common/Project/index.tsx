@@ -39,7 +39,9 @@ export const ProjectPage: React.FC = () => {
           setMarkdownValue(res.data.result.text)
           setMarkdownLoaded(true);
       })
-      .catch(errorHandler)
+      .catch((e:any) => {
+        // do nothing
+      })
     }
 
     // eslint-disable-next-line no-useless-escape
@@ -55,8 +57,13 @@ export const ProjectPage: React.FC = () => {
       axios.get<HarmoniaResponse>(`${HARMONIA_URL}/api/users`)
       .then(res => {
         if (mounted) {
-          console.log(res.data?.discordUsers);
-          setDiscordUsers(res.data?.discordUsers || []);
+          setDiscordUsers(res?.data?.discordUsers?.map(d => {
+            const dObj = {
+              value: d,
+              label: d.substr(0, d.lastIndexOf('#')),
+            };
+            return dObj;
+          }));
         }
       })
       .catch(errorHandler)
@@ -88,26 +95,35 @@ export const ProjectPage: React.FC = () => {
         [e.target.id]: e.target.value,
     }));
 
-    const emptyCurSubmission = () => setSubmission({
-      _id: "",
-      name: "",
-      tags: [],
-      links: [],
-      discordTags: [],
-      challengeId: "",
-      videoLink: "",
-      answer1: "",
-      answer2: "",
-      answer3: "",
-      answer4: "",
-      answer5: "",
-      sourceCode: [],
-      photos: {},
-      icon: [],
-      markdown: [],
-      accoladeIds: [],
-      submission_time: new Date(),
-    })
+    const emptyCurSubmission = () => {
+      setSubmission({
+        _id: "",
+        name: "",
+        tags: [],
+        links: [],
+        discordTags: [],
+        challengeId: "",
+        videoLink: "",
+        answer1: "",
+        answer2: "",
+        answer3: "",
+        answer4: "",
+        answer5: "",
+        sourceCode: [],
+        photos: {},
+        icon: [],
+        markdown: [],
+        accoladeIds: [],
+        submission_time: new Date(),
+      })
+      setDiscordTags([]);
+      setLinks([]);
+      setTags([]);
+      setIcon(null);
+      setSourceCode(null);
+      setMarkdownValue("");
+      setPhotos([]);
+    }
 
     const uploadMarkdown = () => {
       axios.post(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${submission?._id}/markdown`, {text: markdownValue})
@@ -124,7 +140,7 @@ export const ProjectPage: React.FC = () => {
         emptyCurSubmission();
       })
       .catch(errorHandler)
-      if (!submission?._id) {
+      if (!(submission?._id ?? null)) {
         sendNotification("Submission Failed!", "error");
         return;
       }
@@ -136,12 +152,14 @@ export const ProjectPage: React.FC = () => {
 
     const handleEditSubmission = (id:string) => {
       axios.get<SubmissionResponse>(`${BASE_URL}/api/${CUR_EVENT_ID}/submission/${id}`)
-      .then(res => setSubmission(res.data.result))
+      .then(res => {
+        setSubmission(res.data.result)
+        setDiscordTags(res.data.result?.discordTags || []);
+        setTags(res.data.result?.tags || []);
+        setLinks(res.data.result?.links || []);
+        retrieveMarkdown();
+      })
       .catch(errorHandler);
-      setDiscordTags(submission?.discordTags || []);
-      setTags(submission?.tags || []);
-      setLinks(submission?.links || []);
-      retrieveMarkdown();
     }
 
     const [tags, setTags] = useState<any>();
@@ -167,22 +185,21 @@ export const ProjectPage: React.FC = () => {
     };
 
     const [discordTags, setDiscordTags] = useState<any>();
-    const discordTagsHandler = (e:any) => {
-      if (["Enter", "Tab", ","].includes(e.key)) {
-        e.preventDefault();
-        const value = e.target.value.trim();
-        if (!discordTags) {
-          setDiscordTags([value]);
-          return;
-        }
-        if (discordTags.includes(value)) {
-          sendNotification("Discord tag is already present.", "error");
-          return;
-        }
-        setDiscordTags([...discordTags, value]);
+    const discordTagsHandler = (selectedOption:any) => {
+      console.log(selectedOption);
+      const value = selectedOption.value.trim();
+      console.log(value);
+      if (!discordTags) {
+        setDiscordTags([value]);
+        return;
       }
+      if (discordTags.includes(value)) {
+        sendNotification("Discord tag is already present.", "error");
+        return;
+      }
+      setDiscordTags([...discordTags, value]);
     }
-    const handleDeleteDiscordTags = (e:any, item: string) => {
+    const handleDeleteDiscordTags = (e:any, item: any) => {
       setDiscordTags(discordTags?.filter((i:string) => i !== item) || []);
     };
 
@@ -272,6 +289,20 @@ export const ProjectPage: React.FC = () => {
 
     return (
     <>
+      {((submissions?.length ?? 0) > 0) && <Card title="Edit Submissions">
+      <Text h2>Choose a Submission to Edit</Text>
+      {submissions?.filter(submission => (submission && submission._id)).map(submission => (
+          <React.Fragment key={submission._id}>
+            <Card>
+              <Text>{submission.name}</Text>
+              <Button auto scale={0.5} value={submission._id} onClick={() => handleEditSubmission(submission._id)}>Edit</Button>
+            </Card>
+            <Spacer h={0.5}/>
+          </React.Fragment>
+        )
+      )}
+      </Card>}
+      <Spacer h={1}/>
       <Card>
         <Card.Content>
         <Text h2>Add or Update a Submission</Text>
@@ -297,7 +328,7 @@ export const ProjectPage: React.FC = () => {
             <Spacer h={1}/>
             <Select placeholder="Add Teammates From Discord 👾"
                 options={
-                  discordTags?.length >= MAX_TEAMMATES ? [] : [discordUsers]
+                  discordTags?.length >= MAX_TEAMMATES ? [] : discordUsers
                 }
                 onChange={discordTagsHandler}
                 closeMenuOnSelect={false}
@@ -357,9 +388,9 @@ export const ProjectPage: React.FC = () => {
             <Text>{"Challenge Specific"}</Text>
             <Text small>Select a challenge to submit this project to</Text>
             <Spacer h={1}/>
-            <Select2 placeholder="Challenges ⚖️" onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
+            <Select2 value={submission?.challengeId} placeholder="Challenges ⚖️" onChange={(c:any) => setSubmission((prev:any) => ({...prev, challengeId: c}))}>
             {allChallenges?.map(c =>
-              <Select2.Option value={c._id}>{c.name}</Select2.Option>
+              <Select2.Option id={c._id} value={c._id}>{c.name}</Select2.Option>
             )}
             </Select2>
             <Spacer h={1}/>
@@ -446,16 +477,6 @@ export const ProjectPage: React.FC = () => {
         </Card.Content>
       </Card>
       <Spacer h={0.5}/>
-      {submissions?.filter(submission => (submission && submission._id)).map(submission => (
-          <React.Fragment key={submission._id}>
-            <Card>
-              <Text>{submission.name}</Text>
-              <Button auto scale={0.5} value={submission._id} onClick={() => handleEditSubmission(submission._id)}>Edit</Button>
-            </Card>
-            <Spacer h={0.5}/>
-          </React.Fragment>
-        )
-      )}
     </>
     );
 };
