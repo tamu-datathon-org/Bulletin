@@ -249,7 +249,7 @@ export const ProjectPage: React.FC = () => {
 
     const [photos, setPhotos] = useState<any>();
     const photosHandler = (e:any, index:number) => {
-      if (!photos) {
+      if ((photos?.length ?? 0) !== 3) {
         setPhotos(new Array(3).fill(null));
       }
       photos[index] = e.target.files[0];
