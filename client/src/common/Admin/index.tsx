@@ -8,7 +8,7 @@ import 'react-datepicker/dist/react-datepicker.css'
 import DatePicker from "react-datepicker";
 import { authRedirector } from "../Project";
 
-export const CUR_EVENT_ID = "616890dff283920c53877448"
+export const CUR_EVENT_ID = "616a58066104381fa5371d55"
 
 /**
  * Entire admin page
